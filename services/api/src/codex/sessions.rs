@@ -256,6 +256,18 @@ pub async fn close_requests(conn: &mut PgConnection, session: Uuid) -> Result<()
     Ok(())
 }
 
+/// 끝났을 때의 한 줄. 차례는 끝났는데 한 일이 없으면 그대로 말해요
+fn end_line(good: bool, nothing: bool, ko: bool, title: &str) -> String {
+    match (good, nothing, ko) {
+        (true, false, true) => format!("Codex가 일을 마쳤어요: {title}"),
+        (true, false, false) => format!("Codex finished: {title}"),
+        (true, true, true) => format!("Codex가 끝냈는데 바뀐 것도 남긴 말도 없어요: {title}"),
+        (true, true, false) => format!("Codex stopped without changing or saying anything: {title}"),
+        (false, _, true) => format!("Codex가 일을 마치지 못했어요: {title}"),
+        (false, _, false) => format!("Codex couldn’t finish: {title}"),
+    }
+}
+
 /// 끝남 — 잘 끝나면 알려만, 실패면 카드
 pub async fn finished(db: &Db, cell: Uuid, session: &Session, outcome: &str, patch: Option<&str>, error: Option<&str>) -> Result<()> {
     let mut tx = db.cell_tx(cell).await?;
@@ -279,12 +291,9 @@ pub async fn finished(db: &Db, cell: Uuid, session: &Session, outcome: &str, pat
         let say = |k: &str, e: &str| if ko { k } else { e }.to_owned();
         let good = outcome == "done";
         let key = format!("codex-session:{}:end", session.id);
-        let question = match (good, ko) {
-            (true, true) => format!("Codex가 일을 마쳤어요: {}", session.title),
-            (true, false) => format!("Codex finished: {}", session.title),
-            (false, true) => format!("Codex가 일을 마치지 못했어요: {}", session.title),
-            (false, false) => format!("Codex couldn’t finish: {}", session.title),
-        };
+        // 남긴 말도 바뀐 것도 없으면 '마쳤다'고 하지 않아요
+        let nothing = session.summary.as_deref().is_none_or(|text| text.trim().is_empty()) && patch.is_none_or(str::is_empty);
+        let question = end_line(good, nothing, ko, &session.title);
         let mut summary = vec![];
         if let Some(text) = session.summary.as_deref() {
             let short: String = super::request::visible(text).chars().take(600).collect();
@@ -321,4 +330,17 @@ pub async fn finished(db: &Db, cell: Uuid, session: &Session, outcome: &str, pat
     emit(&mut tx, "session", None).await?;
     tx.commit().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_empty_session_is_not_called_finished() {
+        assert_eq!(end_line(true, false, true, "고치기"), "Codex가 일을 마쳤어요: 고치기");
+        assert!(end_line(true, true, true, "고치기").contains("바뀐 것도 남긴 말도 없어요"));
+        assert!(end_line(true, true, false, "fix").contains("without changing"));
+        assert!(end_line(false, true, true, "고치기").contains("마치지 못했어요"));
+    }
 }

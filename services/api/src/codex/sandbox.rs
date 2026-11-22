@@ -40,7 +40,8 @@ const DIFF: &str = r#"set -eu
 cd /workspace
 export GIT_INDEX_FILE="$(mktemp -u /tmp/catchup-index.XXXXXX)"
 git read-tree refs/catchup/base
-git add -A
+# 돌려 보다 생긴 파이썬 캐시는 바뀐 것이 아니에요(patch 에 섞이면 읽기도 적용하기도 어려워요)
+git add -A -- . ':(exclude,glob)**/__pycache__/**' ':(exclude,glob)**/*.py[co]'
 git diff --cached --binary --no-color --no-ext-diff --no-textconv refs/catchup/base
 rm -f "$GIT_INDEX_FILE""#;
 const WATCH: Duration = Duration::from_secs(2);
@@ -515,6 +516,31 @@ mod tests {
 
     fn owner() -> Owner {
         Owner { cell: Uuid::new_v4(), session: Uuid::new_v4() }
+    }
+
+    /// 시험에서는 /workspace 대신 임시 폴더에서 같은 스크립트를 돌려요
+    fn script(dir: &Path, script: &str) -> std::process::Output {
+        let script = script.replace("cd /workspace", &format!("cd '{}'", dir.display()));
+        std::process::Command::new("sh").args(["-c", &script]).output().unwrap()
+    }
+
+    #[test]
+    fn the_patch_leaves_out_python_caches() {
+        let dirs = Dirs::new();
+        let work = dirs.at("work");
+        fs::write(work.join("kept.py"), "print('base')\n").unwrap();
+        assert!(script(&work, START).status.success());
+        fs::write(work.join("hello.py"), "def greet(name):\n    return name\n").unwrap();
+        fs::write(work.join("stray.pyc"), [0u8, 1, 2]).unwrap();
+        for dir in ["__pycache__", "pkg/__pycache__"] {
+            fs::create_dir_all(work.join(dir)).unwrap();
+            fs::write(work.join(dir).join("hello.cpython-312.pyc"), [0u8, 1, 2]).unwrap();
+        }
+        let out = script(&work, DIFF);
+        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        let patch = String::from_utf8_lossy(&out.stdout);
+        assert!(patch.contains("+++ b/hello.py"), "{patch}");
+        assert!(!patch.contains("pycache") && !patch.contains(".pyc"), "{patch}");
     }
 
     #[test]

@@ -34,6 +34,7 @@ const ONCE = 'echo RAN >> runs.txt; cat runs.txt';
 const script = {
   approve: c => [exec('echo approved > approved.txt; cat approved.txt')][c.n],
   question: c => [questions(choice('where', '어디에서 다시 시도할까요?', '화면', '서버 (Recommended)'), choice('times', '몇 번 할까요?', '세 번 (Recommended)', '다섯 번')), exec('echo answered > answered.txt')][c.n],
+  cache: c => [exec('mkdir -p __pycache__ pkg/__pycache__ && echo x > __pycache__/a.cpython-312.pyc && echo x > pkg/__pycache__/b.pyc && echo KEEP > keep.txt')][c.n],
   decline: c => [exec('touch declined.txt')][c.n],
   words: c => [exec('touch words.txt')][c.n],
   risky: c => [exec('rm -rf build')][c.n],
@@ -412,6 +413,17 @@ const cases = {
       const good = typeof want === 'string' ? got[key] === want : want.test(got[key] ?? '');
       ok(good, `탈출: ${label}`, good ? '' : String(got[key]));
     }
+  },
+  async cache() {
+    const me = await person('cache');
+    const s = await me.start('cache');
+    const card = await me.card();
+    if (!card) return ok(false, '캐시: 카드 없음');
+    await me.pick(card, decides('accept'));
+    const end = await me.ended(s.id);
+    const patch = (await me.patch(s.id)).text;
+    ok(end?.state === 'done' && patch.includes('+KEEP'), '바뀐 파일은 patch 에 있어요');
+    ok(!/pycache|\.pyc/.test(patch), '돌려 보다 생긴 파이썬 캐시는 patch 에 없어요');
   },
   async leftover() {
     const a = await person('left-a'), b = await person('left-b');
