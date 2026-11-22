@@ -74,20 +74,21 @@ async function tell(words) {
 }
 
 /** 실제 코딩 세션을 끝까지 돌려요. 승인 카드는 위험하지 않은 것만 허용하고, 질문에는 추천대로 답해요 */
-async function session(task) {
+async function session(task, repo = null) {
   const at = Date.now();
-  const started = await call('POST', '/agent-sessions', { request_key: randomUUID(), task, repo: null });
-  const seen = new Set();
+  const started = await call('POST', '/agent-sessions', { request_key: randomUUID(), task, repo });
+  const seen = new Set(), questions = [];
   let asked = 0, declined = 0;
   const end = await until(async () => {
     const now = (await call('GET', '/agent-sessions')).find(x => x.id === started.id);
     if (['done', 'failed', 'cancelled'].includes(now?.state)) return now;
     for (const c of (await call('GET', '/cards')).cards) {
-      if (seen.has(`${c.id}:${c.version}`) || !['codex', 'claude'].includes(c.source?.type) || new Date(c.created_at).getTime() < at - 2000) continue;
+      // 끝났다는 알림(fyi)은 질문이 아니에요
+      if (c.kind === 'fyi' || seen.has(`${c.id}:${c.version}`) || !['codex', 'claude'].includes(c.source?.type) || new Date(c.created_at).getTime() < at - 2000) continue;
       seen.add(`${c.id}:${c.version}`);
       const safe = c.risk === 'low';
       const want = c.options.findIndex(o => o.effect?.reply?.decision === (safe ? 'accept' : 'decline'));
-      if (c.kind !== 'approve') asked++;
+      if (c.kind !== 'approve') { asked++; questions.push(c.question); }
       if (!safe) declined++;
       await call('POST', `/cards/${c.id}/answer`, { request_key: randomUUID(), version: c.version, turn_seq: c.turns.at(-1)?.seq ?? 0, option: want < 0 ? c.recommended : want, draft: null, confirmed: false, surface: 'web' }).catch(() => undefined);
     }
@@ -96,7 +97,7 @@ async function session(task) {
   if (!end) await call('DELETE', `/agent-sessions/${started.id}`).catch(() => undefined);
   const patch = end?.has_patch ? await call('GET', `/agent-sessions/${started.id}/patch`) : '';
   const pack = (await sql(`SELECT bytes || ' ' || cardinality(keys) FROM catchup.context_packs WHERE cell = ${lit(cell)} AND purpose = 'session' AND created_at >= to_timestamp(${(at - 500) / 1000}) ORDER BY created_at DESC LIMIT 1`)).split(' ');
-  return { text: end ? String(patch) : null, state: end?.state ?? 'timeout', code: end?.error_code, summary: end?.summary, ms: Date.now() - at, cards: seen.size, asked, declined, packBytes: Number(pack[0] || 0), packLines: Number(pack[1] || 0) };
+  return { text: end ? String(patch) : null, state: end?.state ?? 'timeout', code: end?.error_code, summary: end?.summary, ms: Date.now() - at, cards: seen.size, asked, questions, declined, packBytes: Number(pack[0] || 0), packLines: Number(pack[1] || 0) };
 }
 
 const sentences = t => t.split(/(?<=[.!?…])\s+|\n+/).map(s => s.trim()).filter(Boolean).length;
@@ -151,6 +152,16 @@ const cases = {
     run: async () => { const m = await tell('shop 결제 실패는 어디에서 다시 시도하기로 했지?'); return { text: m.reply ?? null, ms: m.ms, intent: m.intent, state: m.state, code: m.error_code }; },
     pass: d => d.intent === 'ask' && /결제 서버/.test(d.text ?? ''),
     absent: d => !/결제 서버/.test(d.text ?? ''),
+  },
+  7: {
+    name: '같은 저장소에서 지난번에 정한 것을 코딩 세션이 다시 묻지 않고 따라요',
+    before: async () => {
+      const c = await seed({ ...from('Codex', '설치 안내는 어떤 꾸러미 관리자 기준으로 쓸까요?', 'pnpm 기준으로 써요', 'pnpm 기준으로 써요'), source: { type: 'codex', from: 'Codex', org: 'octocat/Hello-World' } });
+      await answer(c);
+    },
+    run: () => session("README에 '설치' 절을 추가해 줘. 이 프로젝트는 Node 꾸러미(hello-world)로 배포할 거야. 정해야 할 것이 있으면 물어봐.", 'octocat/Hello-World'),
+    pass: d => d.state === 'done' && /pnpm/.test(d.text) && !d.questions.some(q => /꾸러미 관리자|패키지 매니저|package manager|npm|yarn/i.test(q)),
+    absent: d => d.state === 'done' && !/pnpm/.test(d.text),
   },
   '7c': {
     name: '(7번 대신) 내가 알려 준 것이 실제 코딩 세션의 결과에 반영돼요',

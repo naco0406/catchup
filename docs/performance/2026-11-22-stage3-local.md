@@ -56,6 +56,7 @@ SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY answered_at - created_at) FRO
 |---|---|
 | 다시 띄워도 로그인이 그대로인지 | 그대로였어요. 이미지 다시 굽기 · 컨테이너 다시 만들기를 여러 번 한 뒤에도 `in` |
 | 진짜 모델의 코딩 세션 | 끝까지 돌았어요. 빈 작업 폴더에 파일 하나 만들기: 맡김 → 끝 31.5~32.1초(승인 카드 2~3장을 바로 허용했을 때, 표본 2) |
+| 진짜 저장소를 받아 돌린 세션 | 됐어요. 공개 저장소 `octocat/Hello-World`의 README 고치기: 맡김 → 끝 57.5~59.7초(저장소 받기 포함, 표본 2) |
 | 말로 답하기 → 다듬은 초안 | 3.5~7.1초(표본 12). 첫 글자까지의 시간은 재지 않았어요 |
 | 남는 볼륨(`/data/codex`)에 로그인 토큰이 있는지 | **없었어요.** 파일 539개에서 `access_token` · `refresh_token` · `id_token` · `sk-…` · `rt_…` 모양은 0개 |
 | 그 볼륨에 토큰 모양(JWT)의 글이 있는지 | **있었어요, 로그인 토큰은 아니에요.** Codex의 로그 DB(`sqlite/logs_2.sqlite`) 한 곳에 8개. 모두 응답 머리글의 부하 분산 쿠키(`set-cookie: __oailb=`, 항목은 aud · exp · host · iat · iss)였어요 |
