@@ -232,7 +232,7 @@ body { margin: 0; background: var(--bd-paper); color: var(--bd-ink); font-family
 </style>
 <style id="kit">
 /*
-  CatchUp 디자인 토큰 — v0.2 · 2026-11-21
+  CatchUp 디자인 토큰 — v0.6 · 2026-11-22(스프링 둘 추가)
   정본은 이 파일이에요. 화면(웹 · 시안 보드)은 이 변수만 써요. iOS 앱은 같은 이름 · 값을 Swift 로 옮겨요.
 
   층은 둘이에요.
@@ -353,6 +353,9 @@ body { margin: 0; background: var(--bd-paper); color: var(--bd-ink); font-family
   --cu-dur-fast: 120ms;   /* 눌림 */
   --cu-dur: 200ms;        /* 상태 바뀜 */
   --cu-dur-card: 320ms;   /* 카드 넘김 */
+  /* 스프링(세기 · 감쇠) — 손을 뗀 속도를 이어받는 움직임. 밀던 카드가 돌아올 때 · 나갈 때 */
+  --cu-spring-return: 247 26.7;   /* 0.4초, 살짝 튀어요(튐 0.15) */
+  --cu-spring-exit: 439 41.9;     /* 0.3초, 튀지 않아요 */
 }
 
 /* 다크 모드 — 뜻 층만 바꿔요. 1차에서는 토큰만 정하고 화면은 그리지 않아요(plan.md). 원료 색을 직접 쓴 곳(--cu-warm-0 등)은 다크에서도 그대로예요. */
@@ -387,7 +390,7 @@ body { margin: 0; background: var(--bd-paper); color: var(--bd-ink); font-family
 }
 
 /*
-  CatchUp 컴포넌트 — v0.4 · 2026-11-21 (화면 검수 반영: 단추 글자 · 초점 · 선택지 모서리 · 위험 표시 · 코드 줄바꿈)
+  CatchUp 컴포넌트 — v0.6 · 2026-11-22 (밀기: 차오르는 추천 답 · 두 줄 토스트와 고리 · 방향 단추)
   값은 모두 tokens.css 의 변수예요. 여기서 새 색 · 크기 숫자를 지어내지 않아요(격자 안의 배치 값만 예외).
   클래스 이름 = 만들 컴포넌트 이름이에요. 목록과 쓰임은 README.md 의 '컴포넌트' 표에 있어요.
     .cu-card = <DecisionCard>   .cu-opt = <OptionRow>   .cu-composer = <Composer>   .cu-btn = <Button> …
@@ -725,6 +728,51 @@ button.cu-ib.listening { background: var(--cu-fg); color: var(--cu-fg-on-inverse
 .cu-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: var(--cu-t-body); color: var(--cu-fg); }
 .cu-search input::placeholder { color: var(--cu-fg-3); }
 .cu-search:focus-within { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+/* <TextArea> — 여러 줄 입력(v0.5). 입력창과 같은 선 · 같은 초점 */
+.cu-textarea { display: block; width: 100%; min-height: 96px; padding: 14px 20px; border: 0; border-radius: var(--cu-r-panel); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-strong); font: var(--cu-t-body); color: var(--cu-fg); resize: vertical; }
+.cu-textarea::placeholder { color: var(--cu-fg-3); }
+.cu-textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--cu-fg); }
+
+/* ── 밀기(v0.6 · 2026-11-22) ── 시안: docs/design/swipe-deck
+   움직임은 화면의 변수가 그려요: --dx(손가락을 따라간 거리) · --p(문턱까지 0~1) · --f(추천 답이 찬 만큼) · --d(다른 답이 흐려진 만큼).
+   미는 쪽은 data-pull(left · right · blocked), 놓아도 되는 때는 data-armed 로 알려요.
+   카드는 기울이지 않아요. 빨강은 추천 답 줄에만 — 토스트와 단추는 잉크색이에요. */
+/* <OptionRow> 차오르는 추천 답: 고른 모양(.picked)을 겹쳐 두고 --f 만큼만 보여요. 글자색도 그 경계에서 바뀌어요 */
+.cu-fill { position: relative; }
+.cu-fill > .cu-opt.picked { position: absolute; inset: 0; pointer-events: none; clip-path: inset(0 calc((1 - var(--f, 0)) * 100%) 0 0 round var(--cu-r-card)); }
+.cu-fill > .cu-opt.picked [data-t]::before { content: attr(data-t); }   /* 겹친 줄의 글은 문서에 두 번 넣지 않고 그려요 */
+.cu-opt.picked .key svg { width: 16px; height: 16px; }
+.cu-opt.picked .key .ck { display: none; }
+/* 문턱을 넘으면 숫자가 체크로 바뀌어요 — '조금 더 진하게'가 아니라 모양이 달라져요 */
+[data-pull="right"][data-armed] .cu-fill .ck, .filled .cu-fill .ck { display: block; }
+[data-pull="right"][data-armed] .cu-fill .cu-opt.picked .num, .filled .cu-fill .cu-opt.picked .num { display: none; }
+.cu-opts > .cu-opt, [data-pull="left"] .cu-fill { opacity: calc(1 - .55 * var(--d, 0)); }
+
+/* <Toast> 두 줄과 고리: 미는 동안 '놓으면 일어날 일'이 미리 서고, 놓으면 그 자리에서 되돌리기가 돼요 */
+.cu-toast .tx { flex: 1; min-width: 0; display: grid; }
+.cu-toast .l1, .cu-toast .l2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cu-toast.two { height: auto; min-height: 56px; padding: 8px 8px 8px 10px; }
+.cu-toast.two:not(:has(.u)) { padding-right: 22px; }
+.cu-toast.two .l1 { font: 600 14px/20px var(--cu-font); }
+.cu-toast .l2 { color: rgb(255 255 255 / .72); }
+/* 고리: 문턱까지 남은 만큼(미는 동안) · 되돌릴 수 있는 시간(놓은 뒤). --ring 0~1 */
+.cu-ring { position: relative; width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; }
+.cu-ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(currentColor calc(var(--ring, 0) * 1turn), rgb(255 255 255 / .24) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); }
+.cu-ring svg { width: 16px; height: 16px; }
+.cu-ring .n { font: var(--cu-t-micro); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+/* 놓아도 되는 때: 고리가 흰 원이 돼요 */
+.cu-ring.full { background: var(--cu-fg-on-inverse); color: var(--cu-bg-inverse); }
+.cu-ring.full::before { display: none; }
+
+/* 방향 단추: 자리가 미는 방향이에요(.act-l 왼쪽 = 미루기 · .act-m · .act-r 오른쪽 = 추천대로) */
+.act-l svg, .act-m svg, .act-r svg { color: inherit; }
+button.cu-btn:disabled { opacity: .4; cursor: default; }
+[data-pull="left"] .act-l { color: var(--cu-fg); font-weight: 600; }
+[data-pull="right"] .act-r, [data-nudge] .act-r { color: var(--cu-accent-text); font-weight: 600; }
+/* 추천 답이 없는 덱(알려만 드려요)의 오른쪽 단추는 잉크색이에요 — 빨강은 추천 답에만 */
+[data-pull="right"] .act-r.ink, [data-nudge] .act-r.ink { color: var(--cu-fg); }
+[data-armed] .act-m, [data-armed][data-pull="right"] .act-l, [data-armed][data-pull="left"] .act-r { color: var(--cu-warm-300); }
 
 </style>
 </head>
