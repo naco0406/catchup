@@ -907,7 +907,7 @@ async fn a_context_pack_carries_what_is_known_and_is_logged() {
 // ─── 3.6단계: 비서에게 말하기(명령이 들어오는 셋째 길) · 약속
 
 fn routed(intent: &str, reply: &str, task: &str, repo: &str) -> Routed {
-    Routed { intent: intent.into(), reply: reply.into(), task: task.into(), repo: repo.into() }
+    Routed { intent: intent.into(), reply: reply.into(), task: task.into(), repo: repo.into(), card: None }
 }
 
 /// 비서에게 말하면 먼저 받아 두고(생각 중), 갈래가 정해지면 그대로 처리해요. '기억해'로 남는 것은 내 말 그대로예요
@@ -1117,6 +1117,96 @@ async fn plain_replies_are_not_scanned_and_undone_promises_leave() {
     assert_eq!(memory::list(&w.db, cell).await.unwrap().iter().filter(|m| m.kind == "promise").count(), 1);
     cards::undo(&w.db, cell, copied.id, Some(receipt.id)).await.unwrap();
     assert_eq!(memory::list(&w.db, cell).await.unwrap().iter().filter(|m| m.kind == "promise").count(), 0);
+}
+
+/// 비서에게 카드에 대해 말하면 그 카드를 찾아 주기만 해요. 내가 눌러야 내 말이 그 카드의 답으로 가고, 그다음은 카드의 규칙 그대로예요
+#[tokio::test]
+async fn words_about_a_card_go_to_that_card_only_when_i_accept() {
+    let mut w = World::new().await;
+    let (cell, other) = (w.cell().await, w.cell().await);
+    let first = cards::create(&w.db, cell, &from("이도현", "리뷰는 몇 시에 할까요?", "11시로 해요", "11시에 해요")).await.unwrap();
+    let quote =
+        cards::create(&w.db, cell, &from("박서연", "견적은 어느 안으로 할까요?", "A안으로 진행해요", "A안으로 갈게요")).await.unwrap();
+    let said = assistant::say(&w.db, cell, Uuid::new_v4(), "서연 님 견적은 B안으로 한다고 해 줘").await.unwrap();
+    assistant::settle(&w.db, cell, said.id, &Routed { card: Some(quote), ..routed("card", "모델의 말", "", "") }).await.unwrap();
+
+    let found = assistant::list(&w.db, cell).await.unwrap().remove(0);
+    assert_eq!(
+        (found.intent.as_deref(), found.card, found.card_question.as_deref(), found.accepted),
+        (Some("card"), Some(quote), Some("견적은 어느 안으로 할까요?"), false)
+    );
+    assert!(opened(&w, cell, quote).await.turns.is_empty(), "누르기 전에는 카드가 그대로예요");
+    assert_eq!(w.open(cell).await[0].id, first);
+
+    let (a, b) = (assistant::accept(&w.db, cell, said.id).await.unwrap(), assistant::accept(&w.db, cell, said.id).await.unwrap());
+    assert!(a.accepted && b.accepted);
+    let open = w.open(cell).await;
+    assert_eq!(open[0].id, quote, "그 카드가 맨 앞으로 와요");
+    assert_eq!(open[0].turns.len(), 1, "두 번 눌러도 말은 한 번만 가요");
+    assert_eq!(open[0].turns[0].said, "서연 님 견적은 B안으로 한다고 해 줘");
+    assert_eq!(open[0].state, "open", "답은 아직 내가 골라야 해요");
+    assert!(w.fake.done.lock().unwrap().is_empty());
+
+    // 없는 카드 · 남의 카드 · 이미 닫힌 카드는 가리킬 수 없어요
+    let theirs = cards::create(&w.db, other, &from("박서연", "남의 카드", "네", "네")).await.unwrap();
+    let card = opened(&w, cell, first).await;
+    cards::answer(&w.db, cell, first, &input(&card)).await.unwrap();
+    for target in [Uuid::new_v4(), theirs, first] {
+        let m = assistant::say(&w.db, cell, Uuid::new_v4(), "그 카드 그렇게 해 줘").await.unwrap();
+        assistant::settle(&w.db, cell, m.id, &Routed { card: Some(target), ..routed("card", "", "", "") }).await.unwrap();
+        let settled = assistant::list(&w.db, cell).await.unwrap().into_iter().find(|x| x.id == m.id).unwrap();
+        assert_eq!((settled.intent.as_deref(), settled.card), (Some("unclear"), None));
+    }
+    assert!(opened(&w, other, theirs).await.turns.is_empty());
+}
+
+/// 약속한 날이 오면 카드로 한 번 올려요. 지운 약속은 올리지 않아요
+#[tokio::test]
+async fn a_promise_comes_back_as_a_card_on_its_day() {
+    let mut w = World::new().await;
+    let (cell, other) = (w.cell().await, w.cell().await);
+    let today = chrono::Utc::now().date_naive();
+    let promise = async |w: &mut World, text: &str, what: &str, due: Option<chrono::NaiveDate>| {
+        let id = cards::create(&w.db, cell, &from("박서연", "언제 주실 수 있나요?", "보내요", text)).await.unwrap();
+        let card = opened(w, cell, id).await;
+        cards::answer(&w.db, cell, id, &input(&card)).await.unwrap();
+        w.elapse().await;
+        w.worker().run_once().await.unwrap();
+        let sent = promises::next(&w.db, cell).await.unwrap().unwrap();
+        promises::settle(&w.db, cell, sent.answer, &[Promise { what: what.into(), due }]).await.unwrap();
+    };
+    promise(&mut w, "내일까지 견적서 보내 드릴게요", "견적서 보내기", Some(today - chrono::Duration::days(1))).await;
+    promise(&mut w, "다음 달까지 계약서 드릴게요", "계약서 드리기", Some(today + chrono::Duration::days(30))).await;
+    promise(&mut w, "곧 자료 드릴게요", "자료 드리기", None).await;
+    promise(&mut w, "오늘까지 시안 보낼게요", "시안 보내기", Some(today - chrono::Duration::days(1))).await;
+    let forgotten = memory::list(&w.db, cell).await.unwrap().into_iter().find(|m| m.text.contains("시안 보내기")).unwrap();
+    memory::forget(&w.db, cell, &forgotten.key).await.unwrap();
+
+    w.worker().run_once().await.unwrap();
+    w.worker().run_once().await.unwrap();
+    let open = w.open(cell).await;
+    assert_eq!(open.len(), 1, "{:?}", open.iter().map(|c| &c.question).collect::<Vec<_>>());
+    assert!(open[0].question.contains("견적서 보내기"));
+    assert_eq!((open[0].options.len(), open[0].risk.as_str()), (2, "low"));
+    assert!(open[0].options.iter().all(|o| o.effect == Effect::None), "약속 카드는 아무것도 보내지 않아요");
+    assert!(open[0].remembered.iter().any(|m| m.kind == "promise"), "그 사람의 기억이 같이 붙어요");
+    assert!(w.open(other).await.is_empty());
+    // 올렸거나 넘긴 약속은 다시 보지 않아요(일꾼이 헛돌지 않게)
+    let left: i64 = sqlx::query_scalar("SELECT count(*) FROM catchup.memory_promises WHERE raised_at IS NULL AND due <= current_date")
+        .fetch_one(&mut w.owner)
+        .await
+        .unwrap();
+    assert_eq!(left, 0);
+
+    // 답하면 그 약속을 어떻게 했는지가 기억에 남아요
+    w.answer(cell, &open[0]).await;
+    assert!(
+        memory::list(&w.db, cell)
+            .await
+            .unwrap()
+            .iter()
+            .any(|m| m.kind == "person" && m.text.contains("견적서 보내기") && m.text.contains("했어요"))
+    );
 }
 
 /// 기억이 많을 때의 속도(측정용). `CATCHUP_MEASURE=<파일>` 을 주면 재서 그 파일에 적어요:

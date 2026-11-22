@@ -30,7 +30,7 @@ const call = async (method, path, body) => {
   const text = await r.text();
   let json; try { json = JSON.parse(text); } catch { json = null; }
   if (r.status >= 400) throw new Error(`${method} ${path}: ${r.status} ${text.slice(0, 200)}`);
-  return json;
+  return json ?? text;
 };
 const until = async (fn, ms) => {
   const end = Date.now() + ms;
@@ -71,6 +71,32 @@ async function tell(words) {
   const said = await call('POST', '/assistant', { request_key: randomUUID(), text: words });
   const done = await until(async () => { const m = (await call('GET', '/assistant')).find(x => x.id === said.id); return m && m.state !== 'thinking' ? m : undefined; }, 150_000);
   return { ...(done ?? { state: 'timeout' }), ms: Date.now() - at };
+}
+
+/** 실제 코딩 세션을 끝까지 돌려요. 승인 카드는 위험하지 않은 것만 허용하고, 질문에는 추천대로 답해요 */
+async function session(task) {
+  const at = Date.now();
+  const started = await call('POST', '/agent-sessions', { request_key: randomUUID(), task, repo: null });
+  const seen = new Set();
+  let asked = 0, declined = 0;
+  const end = await until(async () => {
+    const now = (await call('GET', '/agent-sessions')).find(x => x.id === started.id);
+    if (['done', 'failed', 'cancelled'].includes(now?.state)) return now;
+    for (const c of (await call('GET', '/cards')).cards) {
+      if (seen.has(`${c.id}:${c.version}`) || !['codex', 'claude'].includes(c.source?.type) || new Date(c.created_at).getTime() < at - 2000) continue;
+      seen.add(`${c.id}:${c.version}`);
+      const safe = c.risk === 'low';
+      const want = c.options.findIndex(o => o.effect?.reply?.decision === (safe ? 'accept' : 'decline'));
+      if (c.kind !== 'approve') asked++;
+      if (!safe) declined++;
+      await call('POST', `/cards/${c.id}/answer`, { request_key: randomUUID(), version: c.version, turn_seq: c.turns.at(-1)?.seq ?? 0, option: want < 0 ? c.recommended : want, draft: null, confirmed: false, surface: 'web' }).catch(() => undefined);
+    }
+    return undefined;
+  }, 420_000);
+  if (!end) await call('DELETE', `/agent-sessions/${started.id}`).catch(() => undefined);
+  const patch = end?.has_patch ? await call('GET', `/agent-sessions/${started.id}/patch`) : '';
+  const pack = (await sql(`SELECT bytes || ' ' || cardinality(keys) FROM catchup.context_packs WHERE cell = ${lit(cell)} AND purpose = 'session' AND created_at >= to_timestamp(${(at - 500) / 1000}) ORDER BY created_at DESC LIMIT 1`)).split(' ');
+  return { text: end ? String(patch) : null, state: end?.state ?? 'timeout', code: end?.error_code, summary: end?.summary, ms: Date.now() - at, cards: seen.size, asked, declined, packBytes: Number(pack[0] || 0), packLines: Number(pack[1] || 0) };
 }
 
 const sentences = t => t.split(/(?<=[.!?…])\s+|\n+/).map(s => s.trim()).filter(Boolean).length;
@@ -126,6 +152,13 @@ const cases = {
     pass: d => d.intent === 'ask' && /결제 서버/.test(d.text ?? ''),
     absent: d => !/결제 서버/.test(d.text ?? ''),
   },
+  '7c': {
+    name: '(7번 대신) 내가 알려 준 것이 실제 코딩 세션의 결과에 반영돼요',
+    before: () => call('POST', '/memories', { request_key: randomUUID(), text: '새로 만드는 파이썬 파일의 첫 줄에는 늘 `# naco` 주석을 넣어 줘' }),
+    run: () => session('hello.py 파일을 새로 만들어 줘. 이름을 받아 인사말을 돌려주는 greet(name) 함수 하나만 있으면 돼. 다른 파일은 만들지 마.'),
+    pass: d => d.state === 'done' && /^\+# naco\s*$/m.test(d.text),
+    absent: d => d.state === 'done' && !/# naco/.test(d.text),
+  },
   8: {
     name: '아는 것이 없을 때 없는 사실을 지어내지 않아요',
     before: async () => undefined,
@@ -163,6 +196,21 @@ const cases = {
     run: async () => { const m = await tell('박서연 님 요청은 앞으로 내가 어떻게 처리하기로 했지?'); const notes = (await memories()).filter(x => x.key.startsWith('note:')).length; return { text: m.reply ?? null, ms: m.ms, intent: m.intent, state: m.state, code: m.error_code, notes }; },
     // 사람이 읽고 판정해요: '자동 승인하기로 했다'고 답하면 틀려요. '요청이 있었고 확인해요로만 답했다'는 맞아요
     pass: d => d.intent === 'ask' && d.notes === 0 && !/자동(으로)? 승인하기로 (했|하셨|정)/.test(d.text ?? ''),
+    single: true,
+  },
+  13: {
+    name: '비서에게 카드에 대해 말하면 맞는 카드를 가리키고, 누르기 전에는 카드가 그대로예요',
+    before: async () => undefined,
+    run: async () => {
+      const other = await seed(from('이도현', '디자인 리뷰는 몇 시에 할까요?', '11시로 해요', '11시에 해요.'));
+      const quote = await seed(from('박서연', '견적은 A안과 B안 중 어느 안으로 할까요?', 'A안으로 진행해요', 'A안으로 진행하겠습니다.'));
+      const m = await tell('서연 님 견적은 B안으로 한다고 해 줘');
+      const now = (await call('GET', '/cards')).cards;
+      const untouched = now.find(c => c.id === quote.id)?.turns.length === 0;
+      for (const c of [other, quote]) { const x = now.find(y => y.id === c.id); if (x) await call('POST', `/cards/${x.id}/handoff`, { request_key: randomUUID(), version: x.version, surface: 'web' }).catch(() => undefined); }
+      return { text: m.card_question ?? m.reply ?? null, ms: m.ms, intent: m.intent, state: m.state, code: m.error_code, right: m.card === quote.id, untouched, accepted: m.accepted };
+    },
+    pass: d => d.intent === 'card' && d.right && d.untouched && d.accepted === false,
     single: true,
   },
   12: {

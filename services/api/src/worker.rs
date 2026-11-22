@@ -120,6 +120,7 @@ impl Worker {
 
     async fn run_cell(&self, cell: Uuid) -> Result<()> {
         self.wake_snoozed(cell).await?;
+        crate::promises::raise_due(&self.db, cell).await?;
         for _ in 0..PER_PASS {
             let Some((was, job)) = self.claim(cell).await? else { break };
             match was.as_str() {

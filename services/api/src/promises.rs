@@ -4,7 +4,13 @@
 use chrono::NaiveDate;
 use uuid::Uuid;
 
-use crate::{codex::request::visible, db::Db, error::Result};
+use crate::{
+    cards,
+    codex::request::visible,
+    db::Db,
+    error::Result,
+    model::{CardOption, Effect, NewCard, Risk},
+};
 
 const MAX_FOUND: usize = 3;
 const MAX_TEXT: usize = 300;
@@ -117,6 +123,75 @@ pub async fn settle(db: &Db, cell: Uuid, answer: Uuid, found: &[Promise]) -> Res
 /// 모델이 답하지 못했어요. 다시 묻지 않아요(한도를 헛돌리지 않게)
 pub async fn skip(db: &Db, cell: Uuid, answer: Uuid) -> Result<()> {
     mark(db, cell, answer, "failed").await.map(|_| ())
+}
+
+#[derive(sqlx::FromRow)]
+struct Due {
+    id: Uuid,
+    text: String,
+    subject: Option<String>,
+    day: String,
+    until: chrono::DateTime<chrono::Utc>,
+    ko: bool,
+}
+
+/// 약속한 날이 된 것을 카드로 한 번 올려요. 답을 되돌렸거나 지운 약속은 올리지 않고 넘겨요.
+/// 카드는 아무것도 보내지 않아요 — 했는지 묻고, 답은 그 사람의 기억으로 남아요
+pub async fn raise_due(db: &Db, cell: Uuid) -> Result<usize> {
+    let mut tx = db.cell_tx(cell).await?;
+    let due: Vec<Due> = sqlx::query_as(
+        "SELECT p.id, p.text, m.subject, to_char(p.due, 'FMMM/FMDD') AS day,
+                ((p.due + 1)::timestamp AT TIME ZONE z.time_zone) AS until, z.lang = 'ko' AS ko
+         FROM catchup.memory_promises p JOIN catchup.cells z ON z.cell = p.cell
+         LEFT JOIN catchup.memories m ON m.cell = p.cell AND m.key = 'promise:' || p.id
+         WHERE p.raised_at IS NULL AND p.due IS NOT NULL AND p.due <= (now() AT TIME ZONE z.time_zone)::date
+         ORDER BY p.due LIMIT 20 FOR UPDATE OF p SKIP LOCKED",
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+    let mut raised = 0;
+    for d in due {
+        if let Some(subject) = &d.subject {
+            let say = |k: String, e: String| if d.ko { k } else { e };
+            let option = |k: &str, e: &str, dk: &str, de: &str, done_k: &str, done_e: &str| CardOption {
+                label: say(k.into(), e.into()),
+                detail: say(dk.into(), de.into()),
+                risk: Risk::Low,
+                done: say(done_k.into(), done_e.into()),
+                effect: Effect::None,
+            };
+            let key = format!("promise:{}", d.id);
+            let card = NewCard {
+                dedupe_key: key.clone(),
+                kind: "choose".into(),
+                source: serde_json::json!({ "type": "local", "from": subject }),
+                source_ref: key,
+                source_version: "1".into(),
+                question: say(
+                    format!("‘{}’ — {}까지 하기로 한 약속이에요. 했나요?", d.text, d.day),
+                    format!("“{}” — you promised this by {}. Is it done?", d.text, d.day),
+                ),
+                body: serde_json::json!({ "summary": [say(
+                    "보낸 글에서 뽑은 약속이에요. 이 카드는 아무것도 보내지 않아요.".into(),
+                    "Picked up from a message you sent. This card sends nothing.".into(),
+                )] }),
+                options: vec![
+                    option("했어요", "Done", "지켰다고 적어 둬요", "Notes it as kept", "약속을 지켰다고 적었어요", "Noted as kept"),
+                    option("아직이에요", "Not yet", "적어만 둬요", "Just notes it", "아직이라고 적었어요", "Noted as not yet"),
+                ],
+                recommended: 0,
+                risk: Risk::Low,
+                reply_path: "none".into(),
+                waiting: false,
+                due_at: Some(d.until),
+            };
+            cards::create_in(&mut tx, cell, &card).await?;
+            raised += 1;
+        }
+        sqlx::query("UPDATE catchup.memory_promises SET raised_at = now() WHERE id = $1").bind(d.id).execute(&mut *tx).await?;
+    }
+    tx.commit().await?;
+    Ok(raised)
 }
 
 #[cfg(test)]

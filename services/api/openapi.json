@@ -1639,9 +1639,28 @@
           "id",
           "said",
           "state",
+          "accepted",
           "created_at"
         ],
         "properties": {
+          "accepted": {
+            "type": "boolean",
+            "description": "가리킨 카드에 이 말을 전했어요"
+          },
+          "card": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "이 말이 가리킨 카드와 그 질문"
+          },
+          "card_question": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time"
@@ -1661,7 +1680,7 @@
               "string",
               "null"
             ],
-            "description": "remember · ask · task · unclear"
+            "description": "remember · ask · task · card · unclear"
           },
           "memory": {
             "type": [

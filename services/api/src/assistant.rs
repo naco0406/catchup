@@ -4,6 +4,7 @@
 //! - 기억해 → **내 말 그대로** 기억에 남겨요(모델이 쓴 글은 기억이 되지 않아요)
 //! - 물어봐 → 답만 해요. 아무것도 바꾸지 않아요
 //! - 일 맡겨 → 제안까지만. 내가 눌러야 코딩 세션이 생겨요
+//! - 카드 → 그 카드를 찾아 주기만. 내가 눌러야 내 말이 그 카드의 답(말로 답하기)으로 가고, 그 뒤는 카드의 규칙 그대로예요
 //!
 //! 모델에 닿지 못해도 말은 남고, 그대로 기억해 둘 수 있어요.
 
@@ -37,7 +38,7 @@ pub struct Message {
     pub said: String,
     /// thinking · done · failed
     pub state: String,
-    /// remember · ask · task · unclear
+    /// remember · ask · task · card · unclear
     pub intent: Option<String>,
     pub reply: Option<String>,
     /// 맡길 일의 제안. `session` 이 없으면 아직 맡기지 않은 것이에요
@@ -46,6 +47,11 @@ pub struct Message {
     /// 이 말로 생긴 기억의 key. 지웠으면 없어요
     pub memory: Option<String>,
     pub session: Option<Uuid>,
+    /// 이 말이 가리킨 카드와 그 질문
+    pub card: Option<Uuid>,
+    pub card_question: Option<String>,
+    /// 가리킨 카드에 이 말을 전했어요
+    pub accepted: bool,
     pub error_code: Option<String>,
     pub created_at: DateTime<Utc>,
 }
@@ -53,7 +59,8 @@ pub struct Message {
 const VIEW: &str = "m.id, m.said, m.state, m.intent, m.reply, m.task, m.repo, \
     CASE WHEN m.note IS NOT NULL AND NOT EXISTS (SELECT 1 FROM catchup.memory_edits e \
       WHERE e.cell = m.cell AND e.key = 'note:' || m.note AND e.state = 'forgotten') THEN 'note:' || m.note END AS memory, \
-    m.session, m.error_code, m.created_at";
+    m.session, m.card, (SELECT d.question FROM catchup.decision_cards d WHERE d.cell = m.cell AND d.id = m.card) AS card_question, \
+    m.accepted_at IS NOT NULL AS accepted, m.error_code, m.created_at";
 
 /// 모델이 정한 것. 믿지 않는 값이라 서버가 다시 걸러요
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -65,6 +72,9 @@ pub struct Routed {
     pub task: String,
     #[serde(default)]
     pub repo: String,
+    /// 가리킨 카드(모델은 번호만 고르고, 부르는 쪽이 id 로 바꿔 넣어요)
+    #[serde(skip)]
+    pub card: Option<Uuid>,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -160,12 +170,14 @@ struct Held {
     session: Option<Uuid>,
     task: Option<String>,
     repo: Option<String>,
+    card: Option<Uuid>,
+    accepted: bool,
     ko: bool,
 }
 
 async fn hold(conn: &mut PgConnection, id: Uuid) -> Result<Held> {
     sqlx::query_as(
-        "SELECT m.said, m.state, m.intent, m.note, m.session, m.task, m.repo, c.lang = 'ko' AS ko
+        "SELECT m.said, m.state, m.intent, m.note, m.session, m.task, m.repo, m.card, m.accepted_at IS NOT NULL AS accepted, c.lang = 'ko' AS ko
          FROM catchup.assistant_messages m JOIN catchup.cells c ON c.cell = m.cell WHERE m.id = $1 FOR UPDATE OF m",
     )
     .bind(id)
@@ -217,6 +229,15 @@ async fn finish(
     Ok(())
 }
 
+/// 가리킬 수 있는 카드인지 — 이 칸의, 열려 있는, 정할 일이 있는 카드만
+async fn open_card(conn: &mut PgConnection, card: Option<Uuid>) -> Result<bool> {
+    let Some(card) = card else { return Ok(false) };
+    Ok(sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM catchup.decision_cards WHERE id = $1 AND state = 'open' AND kind <> 'fyi')")
+        .bind(card)
+        .fetch_one(conn)
+        .await?)
+}
+
 /// 모델이 정한 갈래대로 처리해요. 이미 처리된 말에는 얹지 않아요
 pub async fn settle(db: &Db, cell: Uuid, id: Uuid, routed: &Routed) -> Result<()> {
     let mut tx = db.cell_tx(cell).await?;
@@ -229,6 +250,15 @@ pub async fn settle(db: &Db, cell: Uuid, id: Uuid, routed: &Routed) -> Result<()
         "remember" => {
             let note = remember(&mut tx, cell, id, &held.said).await?;
             finish(&mut tx, id, "remember", remembered(held.ko), None, None, Some(note)).await?;
+        }
+        "card" if open_card(&mut tx, routed.card).await? => {
+            let reply = if held.ko { "이 카드에 그렇게 답할까요?" } else { "Answer this card that way?" };
+            finish(&mut tx, id, "card", reply, None, None, None).await?;
+            sqlx::query("UPDATE catchup.assistant_messages SET card = $2 WHERE id = $1")
+                .bind(id)
+                .bind(routed.card)
+                .execute(&mut *tx)
+                .await?;
         }
         "task" if !task.is_empty() => {
             let reply = if held.ko { "코딩 세션으로 맡길까요?" } else { "Start a coding session for this?" };
@@ -284,25 +314,44 @@ pub async fn keep(db: &Db, cell: Uuid, id: Uuid) -> Result<Message> {
     Ok(message)
 }
 
-/// 제안한 일을 맡겨요. 두 번 눌러도 세션은 하나예요
+/// 제안을 받아들여요. 일 → 코딩 세션이 생겨요 · 카드 → 내 말이 그 카드의 답으로 가요. 두 번 눌러도 한 번만이에요
 pub async fn accept(db: &Db, cell: Uuid, id: Uuid) -> Result<Message> {
     let mut tx = db.cell_tx(cell).await?;
     let held = hold(&mut tx, id).await?;
     tx.commit().await?;
-    let task = match (held.intent.as_deref(), held.task) {
-        (Some("task"), Some(task)) => task,
+    match (held.intent.as_deref(), held.task, held.card) {
+        (Some("task"), Some(task), _) => {
+            if held.session.is_none() {
+                let started = sessions::create(db, cell, &StartInput { request_key: id, task, repo: held.repo }).await?;
+                let mut tx = db.cell_tx(cell).await?;
+                sqlx::query("UPDATE catchup.assistant_messages SET session = $2 WHERE id = $1 AND session IS NULL")
+                    .bind(id)
+                    .bind(started.id)
+                    .execute(&mut *tx)
+                    .await?;
+                emit(&mut tx, "assistant", None).await?;
+                tx.commit().await?;
+            }
+        }
+        (Some("card"), _, Some(card)) => {
+            if !held.accepted {
+                // 말로 답하기와 같은 길 — 위험한 카드에서 말이 승인이 되지 않는 규칙도 그대로예요
+                crate::cards::say(db, cell, card, id, &held.said).await?;
+                let mut tx = db.cell_tx(cell).await?;
+                sqlx::query("UPDATE catchup.decision_cards SET front_at = clock_timestamp() WHERE id = $1 AND state = 'open'")
+                    .bind(card)
+                    .execute(&mut *tx)
+                    .await?;
+                sqlx::query("UPDATE catchup.assistant_messages SET accepted_at = now() WHERE id = $1 AND accepted_at IS NULL")
+                    .bind(id)
+                    .execute(&mut *tx)
+                    .await?;
+                emit(&mut tx, "card", Some(card)).await?;
+                emit(&mut tx, "assistant", None).await?;
+                tx.commit().await?;
+            }
+        }
         _ => return Err(Error::Conflict("nothing_to_accept")),
-    };
-    if held.session.is_none() {
-        let started = sessions::create(db, cell, &StartInput { request_key: id, task, repo: held.repo }).await?;
-        let mut tx = db.cell_tx(cell).await?;
-        sqlx::query("UPDATE catchup.assistant_messages SET session = $2 WHERE id = $1 AND session IS NULL")
-            .bind(id)
-            .bind(started.id)
-            .execute(&mut *tx)
-            .await?;
-        emit(&mut tx, "assistant", None).await?;
-        tx.commit().await?;
     }
     let mut tx = db.cell_tx(cell).await?;
     let message = one(&mut tx, id).await?;

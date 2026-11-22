@@ -49,6 +49,29 @@ http://127.0.0.1:5181 에서 그 이메일과 코드로 들어가요. 끌 때는
 pnpm test:codex
 ```
 
+## 이어지는 비서(3.6단계)
+
+기억은 따로 베껴 두지 않고 이미 남긴 것에서 뷰(`catchup.memories`)로 읽어 내요. 모델이 쓰는 것은 약속 뽑기와 비서에게 한 말의 갈래 고르기뿐이고, 둘 다 서버가 정해진 일만 실행해요.
+
+| 파일 | 맡는 일 |
+|---|---|
+| `src/memory.rs` | 기억 읽기 · 고치기 · 지우기 · 알려 주기, 모델에 넣는 맥락 꾸러미(초안 · 세션 · 묻기)와 그 기록 |
+| `src/promises.rs` | 내가 보낸 글의 약속(낌새가 있을 때만 모델에 물어요), 약속한 날이 되면 카드로 올리기 |
+| `src/assistant.rs` | 비서에게 말하기: 기억해 · 물어봐 · 일 맡겨 · 카드 찾기. 일과 카드는 내가 눌러야 실행돼요 |
+| `src/codex/talk.rs` | 위 둘의 모델 호출(글만, 도구 없음) |
+
+실제 모델로 재는 평가(ChatGPT 한도를 써요. 그 계정의 기억을 모두 '지움'으로 돌려요):
+
+```bash
+node services/api/tests/memory-eval.mjs
+```
+
+기억이 많을 때의 속도:
+
+```bash
+CATCHUP_MEASURE=$PWD/.local/memory-scale.txt zsh services/api/tests/run.sh memory_at_scale
+```
+
 ## 시험
 
 ```bash
@@ -66,7 +89,8 @@ node services/api/tests/resilience.mjs
 | 시험 | 보는 것 |
 |---|---|
 | `tests/schema.sh` | DB가 스스로 막는 것: 칸 경계(RLS) · 한 번만 · 영수증은 못 지움 |
-| `tests/stage2.rs` | 2단계 끝 기준. 진짜 Postgres + 일부러 죽고 막히는 커넥터 |
+| `tests/stage2.rs` | 2단계 끝 기준과 3.6단계(기억 · 약속 · 비서에게 말하기). 진짜 Postgres + 일부러 죽고 막히는 커넥터 |
+| `tests/memory-eval.mjs` | 실제 모델로 기억이 초안 · 답 · 세션에 반영되는지(문항은 `docs/eval/memory-cases.md`) |
 | `tests/live.mjs` | 실제 컨테이너를 HTTP로: 로그인 · SSE · 10초 · 강제 종료 · 측정 |
 | `tests/resilience.mjs` | 칸 200개 · Postgres 강제 종료 |
 | `apps/web/e2e-live` | 실제 서버에 붙은 화면(아이패드 · 아이폰 · 데스크톱) |
