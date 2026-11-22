@@ -1,37 +1,35 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { altOptions, datasets, getCard as findCard, turnsOf } from './data';
-import type { Card, Lang } from './data/types';
-import { HOLD_MS, initial, openIds, reduce, snoozedIds, type Action, type State } from './state/store';
+import { altOptions, swipeRules, turnsOf, undoableAfterRun, withDraft } from './data';
+import type { Card, Effect } from './data/types';
+import { draftKey, HOLD_MS, openIds, snoozedIds, stateOf } from './state/store';
+import { useBackend } from './backend';
+import { Login } from './live/Login';
+import { Connections } from './live/Connections';
+import { Sessions } from './live/Sessions';
+import { Memory } from './live/Memory';
+import { Assistant } from './live/Assistant';
+import { MemoryView } from './screens/Memory';
+import { turnOnNotifications } from './live/notifications';
+import { copyText } from './clipboard';
 import { Sidebar, type Route } from './components/Sidebar';
 import { Sprite } from './components/icons';
+import { Toast, type ToastView } from './components/Toast';
 import { Catchup } from './screens/Catchup';
-import { Activity, Done, First, Fyi, Snoozed } from './screens/Pages';
+import { Activity, Done, First, Snoozed } from './screens/Pages';
+import { FyiDeck } from './screens/FyiDeck';
 
-const KEY = 'catchup-proto-v1';
-const ROUTES: Route[] = ['catchup', 'fyi', 'snoozed', 'activity'];
+const RUNS: Record<Exclude<Effect['kind'], 'copy'>, string> = { send: 'toast.runsSend', tell: 'toast.runsTell', change: 'toast.runsDo', none: 'toast.runsNone' };
+/** 미룬 뒤 되돌릴 수 있는 시간 */
+const SNOOZE_UNDO_MS = 5_000;
+const ROUTES: Route[] = ['catchup', 'fyi', 'snoozed', 'activity', 'connections', 'sessions', 'memory', 'assistant'];
 
-/** 주소로 여는 방법 — 소개 페이지가 프로토타입을 품을 때 써요. ?start=1 처음 화면을 건너뛰어요 · ?reset=1 처음부터 다시 */
-function fromUrl(s: State, today: string[]): State {
-  const q = new URLSearchParams(location.search);
-  let out = s;
-  if (q.get('reset') === '1') out = reduce(out, { type: 'reset', today });
-  if (q.get('start') === '1' && !out.started) out = reduce(out, { type: 'start' });
-  if (q.has('reset') || q.has('start')) { q.delete('reset'); q.delete('start'); history.replaceState(null, '', `${location.pathname}${q.size ? `?${q}` : ''}${location.hash}`); }
-  return out;
-}
-
-function load(today: string[]): State {
-  // 기다리던 답이 있었다면(새로 고침 · 창 닫기) 그대로 실행된 것으로 남겨요 — 답이 사라지지 않게
-  try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw) as State; if (Array.isArray(s.deck) && s.progress) return reduce(s, { type: 'commit' }); } } catch { /* 처음부터 */ }
-  return initial(today);
-}
 const routeOf = (): Route => { const r = location.hash.replace('#/', '') as Route; return ROUTES.includes(r) ? r : 'catchup'; };
 
 export function App() {
   const { t, i18n } = useTranslation();
-  const ds = datasets[(i18n.language as Lang) in datasets ? (i18n.language as Lang) : 'en'];
-  const [s, dispatch] = useReducer(reduce, ds.today, today => fromUrl(load(today), today));
+  const backend = useBackend();
+  const { live, s, ds, act, getCard } = backend;
   const [route, setRoute] = useState<Route>(routeOf);
   const [drawer, setDrawer] = useState(false);
   const [toast, setToast] = useState<{ text: string; n: number } | null>(null);
@@ -40,13 +38,16 @@ export function App() {
   const searchRef = useRef<HTMLInputElement | null>(null);
   const [list, setList] = useState(false);
   const sRef = useRef(s); sRef.current = s;
+  /** 방금 미룬 카드 — 5초 동안 토스트에서 되돌릴 수 있어요 */
+  const [snoozed, setSnoozed] = useState<{ id: string; at: number } | null>(null);
+  /** 카드가 덱에서 빠지기 직전에 불러요 — 덱이 나가는 모습을 남겨요(Catchup 이 채워요) */
+  /** 알려만 드려요에서 '나중에'로 넘긴 것 — 앱을 연 동안만 기억해요 */
+  const [fyiLater, setFyiLater] = useState<string[]>([]);
+  const leaveRef = useRef<((dir: 1 | -1, filled?: boolean) => void) | null>(null);
 
-  const getCard = useCallback((id: string) => findCard(ds, t, id), [ds, t]);
   const open = openIds(s);
   const card = open.length ? getCard(open[0]!) : undefined;
 
-  // 저장 — 막혀 있으면 이 화면에서만 기억해요
-  useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* 무시 */ } }, [s]);
   useEffect(() => { const f = () => setRoute(routeOf()); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
   const nav = (r: Route) => { location.hash = `#/${r}`; setRoute(r); setDrawer(false); };
 
@@ -60,46 +61,66 @@ export function App() {
 
   const say = useCallback((text: string) => { const n = Date.now(); setToast({ text, n }); setTimeout(() => setToast(x => (x?.n === n ? null : x)), 2800); }, []);
 
-  // 10초 기다렸다가 실행 — 그사이 되돌릴 수 있어요
+  useEffect(() => { if (backend.error) say(backend.error.text); }, [backend.error, say]);
+
+  // 답마다 10초 — 가장 이른 것의 때에 맞춰 실행해요
   useEffect(() => {
-    if (!s.pending) return;
-    const p = s.pending;
+    if (!s.pending.length) return;
+    setNow(Date.now());
+    const due = Math.min(...s.pending.map(p => p.at + HOLD_MS));
     const tick = setInterval(() => setNow(Date.now()), 250);
-    const done = setTimeout(() => {
-      const c = getCard(p.cardId);
-      if (c?.effect?.kind === 'reply' && c.effect.copy && !p.alt) {
-        // 고친 초안이 있으면 그 글을 복사해요
-        void navigator.clipboard?.writeText(sRef.current.progress[p.cardId]?.draft ?? c.effect.text).catch(() => undefined);
-        say(t('toast.copied', { to: t(`src.${c.source}`) }));
-      }
-      dispatch({ type: 'commit' });
-    }, Math.max(0, p.at + HOLD_MS - Date.now()));
+    const done = setTimeout(() => act({ type: 'commit', now: Math.max(Date.now(), due) }), Math.max(0, due - Date.now()));
     return () => { clearInterval(tick); clearTimeout(done); };
-  }, [s.pending, getCard, say, t]);
+  }, [s.pending, act]);
 
   const optsOf = useCallback((c: Card) => {
     const p = s.progress[c.id]; const turns = turnsOf(p);
     return p?.alt && turns.length ? altOptions(c, t, turns) : { options: c.options, recommended: c.recommended };
   }, [s.progress, t]);
 
-  const act = useCallback((a: Action) => dispatch(a), []);
   const pick = useCallback((i: number) => {
     if (!card) return;
-    const { options } = optsOf(card); const o = options[i]; if (!o) return;
-    act({ type: 'pick', cardId: card.id, pick: i, risky: Boolean(o.risk && o.risk !== 'low'), now: Date.now() });
-  }, [card, optsOf, act]);
-  const snooze = useCallback(() => { if (card) { act({ type: 'snooze', cardId: card.id, now: Date.now() }); say(t('toast.snoozed')); } }, [card, act, say, t]);
-  const handoff = useCallback(() => { if (card) { act({ type: 'handoff', cardId: card.id, now: Date.now() }); say(t('toast.handed')); } }, [card, act, say, t]);
-  const undo = useCallback(() => { if (s.pending) { act({ type: 'undo' }); say(t('toast.undone')); } }, [s.pending, act, say, t]);
+    const { options, recommended } = optsOf(card); const o = options[i]; if (!o) return;
+    const risky = Boolean(o.risk && o.risk !== 'low'), prog = sRef.current.progress[card.id];
+    const effect = withDraft(o.effect, prog?.drafts?.[draftKey(prog, i)]);
+    if (!risky || prog?.confirm === i) leaveRef.current?.(1, i === recommended); // 위험한 답의 첫 번째 누르기는 카드가 그대로예요
+    act({ type: 'pick', cardId: card.id, pick: i, risky, undoable: undoableAfterRun(o.effect), now: Date.now() });
+    if (effect.kind !== 'copy' || (risky && prog?.confirm !== i)) return;
+    // 복사는 밖으로 나가는 일이 아니라서 기다리지 않아요. 누르는 순간이 아니면 Safari 가 막기도 해요
+    void copyText(effect.text).then(ok => { if (!ok) { act({ type: 'undo', cardId: card.id }); say(t('toast.copyFailed')); } });
+  }, [card, optsOf, act, say, t]);
+  const snooze = useCallback(() => {
+    if (!card) return;
+    leaveRef.current?.(-1);
+    const at = Date.now();
+    act({ type: 'snooze', cardId: card.id, now: at });
+    setSnoozed({ id: card.id, at });
+    setTimeout(() => setSnoozed(x => (x?.at === at ? null : x)), SNOOZE_UNDO_MS);
+  }, [card, act]);
+  const handoff = useCallback(() => { if (card) { leaveRef.current?.(-1); act({ type: 'handoff', cardId: card.id, now: Date.now() }); say(t('toast.handed')); } }, [card, act, say, t]);
+  const latestAt = s.pending.at(-1)?.at ?? 0;
+  /** 방금 미룬 것이 가장 최근 일이면 그것부터 되돌려요 */
+  const snoozedNow = snoozed && snoozed.at >= latestAt && stateOf(s, snoozed.id) === 'snoozed' ? snoozed : null;
+  const undo = useCallback((cardId?: string) => {
+    if (!cardId && snoozedNow) { act({ type: 'unsnooze', cardId: snoozedNow.id }); setSnoozed(null); say(t('toast.undone')); return; }
+    if (s.pending.length) { act({ type: 'undo', cardId }); say(t('toast.undone')); }
+  }, [s.pending, snoozedNow, act, say, t]);
 
-  // 키보드 — 1~4 · ↵ · S · D · Z · /
+  // 키보드 — 1~4 · ↵ · → 추천대로 · ← 미루기 · S · D · Z · /
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || !s.started || route !== 'catchup' || !card || list || drawer) return;
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       const k = e.key.toLowerCase();
-      if (/^[1-4]$/.test(k)) { e.preventDefault(); pick(Number(k) - 1); }
+      // 누르고 있으면 다음 카드까지 정해지니까 한 번만 받아요
+      if (e.repeat && /^([1-5sdz]|enter|arrowleft|arrowright)$/.test(k)) { e.preventDefault(); return; }
+      if (k === 'arrowleft' || k === 'arrowright') {
+        const { options, recommended } = optsOf(card), can = swipeRules(card, options, recommended);
+        if (k === 'arrowright' && can.right) { e.preventDefault(); pick(recommended); }
+        else if (k === 'arrowleft' && can.left) { e.preventDefault(); snooze(); }
+      }
+      else if (/^[1-5]$/.test(k)) { e.preventDefault(); pick(Number(k) - 1); }
       else if (k === 'enter' && !(e.target as HTMLElement).closest('button, a, summary')) { e.preventDefault(); pick(optsOf(card).recommended); }
       else if (k === 's') snooze();
       else if (k === 'd') handoff();
@@ -110,29 +131,52 @@ export function App() {
     return () => removeEventListener('keydown', onKey);
   }, [s.started, route, card, pick, optsOf, snooze, handoff, undo, list, drawer]);
 
-  const counts = useMemo(() => ({ open: open.length, fyi: ds.fyi.filter(f => !s.deck.includes(`p-${f.id}`)).length, snoozed: snoozedIds(s).length }), [open.length, ds, s]);
+  const counts = useMemo(() => ({ open: open.length, fyi: ds.fyi.filter(f => stateOf(s, f.id) === 'open' && !s.deck.includes(`p-${f.id}`)).length, snoozed: snoozedIds(s).length }), [open.length, ds, s]);
   const more = () => act({ type: 'more', ids: ds.cards.map(c => c.id).filter(id => !ds.today.includes(id)) });
   const reset = () => { act({ type: 'reset', today: ds.today }); nav('catchup'); };
   const search = () => { nav('catchup'); setList(true); setTimeout(() => searchRef.current?.focus(), 0); };
-  const sideProps = { ds, route, counts, onNav: (r: Route) => { setList(false); nav(r); }, onMore: () => { more(); nav('catchup'); }, onReset: reset, onSearch: search, moreAdded: s.moreAdded };
+  const sideProps = { ds, route, counts, onNav: (r: Route) => { setList(false); nav(r); }, onMore: () => { more(); nav('catchup'); }, onReset: reset, onSearch: search, moreAdded: s.moreAdded,
+    account: live ? { logout: backend.logout, notify: () => void turnOnNotifications().then(ok => say(t(ok ? 'live.notifyOn' : 'live.notifyFailed'))) } : undefined };
   const menu = () => setDrawer(true);
 
   // 고른 바로 그 순간엔 now 가 아직 예전 값이라 11이 나올 수 있어요 — 10을 넘지 않게 잘라요
-  const left = s.pending ? Math.min(HOLD_MS / 1000, Math.max(1, Math.ceil((s.pending.at + HOLD_MS - now) / 1000))) : 0;
-  // 기다리는 동안 무엇이 일어나는지 — 보내기 · 복사 · 그 밖의 실행
-  const pendingCard = s.pending ? getCard(s.pending.cardId) : undefined;
-  const verb = pendingCard?.effect?.kind === 'reply' ? (pendingCard.effect.copy ? 'toast.runsCopy' : 'toast.runsSend') : 'toast.runsDo';
-  const toastEl = s.pending ? <div className="cu-toast" role="status"><span>{t(verb, { s: left })}</span><button type="button" className="u" onClick={undo}>{t('top.undo')}</button></div>
-    : toast ? <div className="cu-toast" role="status" key={toast.n}><span>{toast.text}</span></div> : null;
+  const latest = s.pending.at(-1);
+  const left = latest ? Math.min(HOLD_MS / 1000, Math.max(1, Math.ceil((latest.at + HOLD_MS - now) / 1000))) : 0;
+  // 기다리는 동안의 말은 고른 선택지의 실행 종류에서 나와요
+  const latestCard = latest ? getCard(latest.cardId) : undefined;
+  const latestEffect = latest && latestCard ? optsOf(latestCard).options[latest.pick]?.effect : undefined;
+  const waiting = !latestEffect ? '' : latestEffect.kind === 'copy' ? t('toast.copied', { to: t(`src.${latestCard!.source}`) }) : t(RUNS[latestEffect.kind], { s: left });
+  const latestOption = latest && latestCard ? optsOf(latestCard).options[latest.pick] : undefined;
+  // 토스트 한 장: 방금 미룬 것 → 기다리는 답(남은 초를 고리로) → 알림 → 서버에 다시 잇는 중
+  const view: ToastView | null = snoozedNow ? { text: t('toast.snoozed'), sub: t('toast.snoozedUndo'), icon: 'clock', undo: () => undo() }
+    : latest ? { text: waiting, sub: latestOption?.label, undo: () => undo(), ...(latestEffect?.kind === 'copy' ? { icon: 'check' as const } : { count: left, ring: left / (HOLD_MS / 1000) }) }
+    : toast ? { text: toast.text }
+    : backend.offline ? { text: t('live.reconnecting') } : null;
+  // 덱이 있는 화면(캐치업 · 알려만 드려요)은 토스트의 제자리가 덱 안에 있어요
+  const onDeck = s.started && ((route === 'catchup' && Boolean(card)) || route === 'fyi');
+
+  if (backend.auth !== 'in') {
+    return (
+      <div className="shell">
+        <Sprite />
+        <main className="cu-main">{backend.auth === 'out' ? <Login onDone={() => void backend.refresh()} /> : <div className="center-page"><p className="cu-sub" role="status">{t(backend.offline ? 'live.reconnecting' : 'live.loading')}</p></div>}</main>
+      </div>
+    );
+  }
 
   let main: React.ReactNode;
   if (!s.started) main = <First s={s} onConnect={id => act({ type: 'connect', id })} onStart={() => { act({ type: 'start' }); nav('catchup'); }} />;
-  else if (route === 'fyi') main = <Fyi s={s} ds={ds} onMenu={menu} onPromote={id => act({ type: 'promote', fyiId: id })} />;
+  else if (live && route === 'connections') main = <Connections onMenu={menu} />;
+  else if (live && route === 'assistant') main = <Assistant onMenu={menu} onNav={nav} />;
+  else if (live && route === 'memory') main = <Memory onMenu={menu} />;
+  else if (route === 'memory') main = <MemoryView items={backend.memories} onMenu={menu} onTell={text => act({ type: 'tell', text, now: Date.now() })} onEdit={(key, text) => act({ type: 'fix', key, text })} onForget={key => act({ type: 'forget', key })} />;
+  else if (live && route === 'sessions') main = <Sessions sessions={backend.sessions} onMenu={menu} refresh={backend.refresh} onConnect={() => nav('connections')} onCards={() => nav('catchup')} />;
+  else if (route === 'fyi') main = <FyiDeck s={s} ds={ds} onMenu={menu} onPromote={id => act({ type: 'promote', fyiId: id })} onRead={id => act({ type: 'read', fyiId: id, now: Date.now() })} onUnread={id => act({ type: 'unread', fyiId: id })} toast={view} later={fyiLater} setLater={setFyiLater} />;
   else if (route === 'snoozed') main = <Snoozed s={s} getCard={getCard} onMenu={menu} onBack={id => { act({ type: 'unsnooze', cardId: id }); nav('catchup'); }} />;
   else if (route === 'activity') main = <Activity s={s} ds={ds} getCard={getCard} onMenu={menu} onUndo={id => act({ type: 'undoEntry', entryId: id })} onUndoPending={undo} onUndoAuto={id => act({ type: 'undoAuto', id })} onRoutine={id => act({ type: 'routine', id })} />;
-  else if (card) main = <Catchup s={s} card={card} getCard={getCard} onPick={pick} onSay={text => act({ type: 'say', cardId: card.id, text })} onDraft={text => act({ type: 'draft', cardId: card.id, text })}
+  else if (card) main = <Catchup s={s} card={card} getCard={getCard} onPick={pick} onSay={text => act({ type: 'say', cardId: card.id, text })} onDraft={(key, text) => act({ type: 'draft', cardId: card.id, key, text })}
     onFocus={id => act({ type: 'focus', cardId: id })} onUnsnooze={id => act({ type: 'unsnooze', cardId: id })} list={list} setList={setList} searchRef={searchRef}
-    onSnooze={snooze} onHandoff={handoff} onAuto={() => say(t('card.autoToast'))} onUndo={undo} onMenu={menu} composerRef={composerRef} toast={toastEl} />;
+    onSnooze={snooze} onHandoff={handoff} onUndo={() => undo()} onMenu={menu} composerRef={composerRef} toast={view} leaveRef={leaveRef} />;
   else main = <Done s={s} ds={ds} onMenu={menu} onNav={nav} onMore={more} onUndoAuto={id => act({ type: 'undoAuto', id })} />;
 
   return (
@@ -141,7 +185,8 @@ export function App() {
       {s.started && <Sidebar {...sideProps} />}
       <main className="cu-main">{main}</main>
       {drawer && <><div className="drawer-bg" onClick={() => setDrawer(false)} /><Sidebar {...sideProps} drawer onClose={() => setDrawer(false)} /></>}
-      <div className={`toasts${s.started && route === 'catchup' && card ? ' on-deck' : ''}`} aria-live="polite">{toastEl}</div>
+      {/* 덱에서는 토스트가 덱 안의 제자리에 서요(Catchup). 다른 화면에서는 아래 가운데예요 */}
+      {!onDeck && <div className="toasts" aria-live="polite">{view && <Toast key={toast && !latest && !snoozedNow ? toast.n : 'now'} v={view} />}</div>}
     </div>
   );
 }

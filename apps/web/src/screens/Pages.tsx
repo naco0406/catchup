@@ -7,7 +7,7 @@ import { I, Mascot, SourceIcon } from '../components/icons';
 
 const hhmm = (ms: number, lang: string) => new Date(ms).toLocaleTimeString(lang === 'ko' ? 'ko-KR' : 'en-US', { hour: 'numeric', minute: '2-digit' });
 
-function Top({ title, left, onMenu, children, page }: { title: string; left?: string; onMenu: () => void; children?: React.ReactNode; page?: boolean }) {
+export function Top({ title, left, onMenu, children, page }: { title: string; left?: string; onMenu: () => void; children?: React.ReactNode; page?: boolean }) {
   const { t } = useTranslation();
   const inner = <>
     <button type="button" className="cu-ib menu" onClick={onMenu} aria-label={t('side.menu')}><I.list aria-hidden /></button>
@@ -56,7 +56,7 @@ export function First({ s, onConnect, onStart }: { s: State; onConnect: (id: str
 /** 다 봤어요 — 끝과 그동안 비서가 한 일 */
 export function Done({ s, ds, onMenu, onNav, onMore, onUndoAuto }: { s: State; ds: Dataset; onMenu: () => void; onNav: (r: 'fyi' | 'snoozed') => void; onMore: () => void; onUndoAuto: (id: string) => void }) {
   const { t, i18n } = useTranslation();
-  const decided = s.log.filter(e => e.kind === 'decided' && !e.undone).length + (s.pending ? 1 : 0);
+  const decided = s.log.filter(e => e.kind === 'decided' && !e.undone).length + s.pending.length;
   const snoozed = snoozedIds(s).length;
   const secs = s.firstPickAt && s.lastPickAt ? Math.max(1, Math.round((s.lastPickAt - s.firstPickAt) / 1000)) : 0;
   const time = i18n.language === 'ko' ? `${Math.floor(secs / 60) ? `${Math.floor(secs / 60)}분 ` : ''}${secs % 60}초` : `${Math.floor(secs / 60) ? `${Math.floor(secs / 60)}m ` : ''}${secs % 60}s`;
@@ -69,13 +69,13 @@ export function Done({ s, ds, onMenu, onNav, onMore, onUndoAuto }: { s: State; d
           <span className="cu-mascot md"><Mascot face="done" /></span>
           <div><p className="cu-big">{t('done.title')}</p><p className="cu-sub">{decided === 0 ? t('done.subSnoozedOnly', { snoozed }) : t(snoozed ? 'done.sub' : 'done.subNone', { decided, time, snoozed })}<br />{t('done.sub2')}</p></div>
         </div>
-        <div className="cu-h"><b>{t('done.auto')}</b><span>{ds.autoDone.length}</span><span className="sp" /></div>
+        {ds.autoDone.length > 0 && <div className="cu-h"><b>{t('done.auto')}</b><span>{ds.autoDone.length}</span><span className="sp" /></div>}
         {ds.autoDone.map(a => (
           <div className="cu-row" key={a.id}><span className="cu-tile"><SourceIcon source={a.source} /></span><div><div className="t">{a.title}</div><div className="s">{a.sub}</div></div>
             <span className="acts"><button type="button" className="cu-link" onClick={() => onUndoAuto(a.id)} disabled={s.autoUndone.includes(a.id)}>{s.autoUndone.includes(a.id) ? t('log.undone') : t('log.undo')}</button></span></div>
         ))}
         {(fyiLeft > 0 || snoozed > 0) && <div className="cu-h"><b>{t('done.left')}</b></div>}
-        {fyiLeft > 0 && <div className="cu-row"><span className="cu-tile"><I.listChecks aria-hidden /></span><div><div className="t">{t('done.fyi', { count: fyiLeft })}</div><div className="s">{t('done.fyiSub')}</div></div><button type="button" className="cu-btn" onClick={() => onNav('fyi')}>{t('done.skim')}</button></div>}
+        {fyiLeft > 0 && <div className="cu-row"><span className="cu-tile"><I.listChecks aria-hidden /></span><div><div className="t">{t('done.fyi', { count: fyiLeft })}</div><div className="s">{ds.today.length ? t('done.fyiSub') : ds.fyi.map(f => f.title).join(' · ')}</div></div><button type="button" className="cu-btn" onClick={() => onNav('fyi')}>{t('done.skim')}</button></div>}
         {snoozed > 0 && <div className="cu-row"><span className="cu-tile"><I.clock aria-hidden /></span><div><div className="t">{t('done.snoozed', { n: snoozed })}</div><div className="s">{t('done.snoozedSub')}</div></div><button type="button" className="cu-btn" onClick={() => onNav('snoozed')}>{t('done.view')}</button></div>}
         {!s.moreAdded && <div style={{ marginTop: 24 }}><button type="button" className="cu-btn" onClick={onMore}>{t('done.more')}</button></div>}
       </div></div>
@@ -84,25 +84,6 @@ export function Done({ s, ds, onMenu, onNav, onMore, onUndoAuto }: { s: State; d
 }
 
 /** 알려만 드려요 */
-export function Fyi({ s, ds, onMenu, onPromote }: { s: State; ds: Dataset; onMenu: () => void; onPromote: (id: string) => void }) {
-  const { t } = useTranslation();
-  return (
-    <>
-      <Top page title={t('fyi.title')} left={t('fyi.sub', { count: ds.fyi.length })} onMenu={onMenu} />
-      <div className="cu-page"><div className="cu-page-in">
-        <div className="cu-h"><b>{t('fyi.section')}</b><span>{ds.fyi.length}</span></div>
-        {ds.fyi.map(f => {
-          const done = s.deck.includes(`p-${f.id}`);
-          return (
-            <div className="cu-row" key={f.id}><span className="cu-tile"><SourceIcon source={f.source} /></span><div><div className="t">{f.title}</div><div className="s">{f.sub}</div></div>
-              <span className="acts"><button type="button" className="cu-link" disabled={done} onClick={() => onPromote(f.id)}>{done ? t('fyi.promoted') : t('fyi.promote')}</button></span></div>
-          );
-        })}
-      </div></div>
-    </>
-  );
-}
-
 /** 미뤄 둔 것 */
 export function Snoozed({ s, getCard, onMenu, onBack }: { s: State; getCard: (id: string) => Card | undefined; onMenu: () => void; onBack: (id: string) => void }) {
   const { t } = useTranslation();
@@ -123,12 +104,17 @@ export function Snoozed({ s, getCard, onMenu, onBack }: { s: State; getCard: (id
 
 /** 처리 기록 — 내가 정한 것과 비서가 한 것을 시간순으로 */
 export function Activity({ s, ds, getCard, onMenu, onUndo, onUndoPending, onUndoAuto, onRoutine }: {
-  s: State; ds: Dataset; getCard: (id: string) => Card | undefined; onMenu: () => void; onUndo: (id: string) => void; onUndoPending: () => void; onUndoAuto: (id: string) => void; onRoutine: (id: string) => void;
+  s: State; ds: Dataset; getCard: (id: string) => Card | undefined; onMenu: () => void; onUndo: (id: string) => void; onUndoPending: (cardId: string) => void; onUndoAuto: (id: string) => void; onRoutine: (id: string) => void;
 }) {
   const { t, i18n } = useTranslation();
   const [filter, setFilter] = useState<'all' | 'mine' | 'auto'>('all');
   const line = (e: Entry) => {
-    const c = getCard(e.cardId); if (!c) return null;
+    const c = getCard(e.cardId);
+    if (e.kind === 'read') { // 읽은 소식 — 예시 자료에서는 알려만 목록에서, 실제 모드에서는 서버가 준 기록에서 찾아요
+      const f = ds.fyi.find(x => x.id === e.cardId), q = f?.title ?? c?.question, source = f?.source ?? c?.source;
+      return q && source ? { title: t('log.read', { q }), sub: t('log.subRead'), source } : null;
+    }
+    if (!c) return null;
     if (e.kind !== 'decided') return { title: t(e.kind === 'snoozed' ? 'log.snoozed' : 'log.handed', { q: c.question }), sub: t(e.kind === 'snoozed' ? 'log.subSnoozed' : 'log.subHanded'), source: c.source };
     const turns = turnsOf(s.progress[e.cardId]);
     const alt = e.alt && turns.length ? altOptions(c, t, turns) : null;
@@ -139,18 +125,18 @@ export function Activity({ s, ds, getCard, onMenu, onUndo, onUndoPending, onUndo
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
   type Row = { key: string; at: number; mine: boolean; node: React.ReactNode };
   const rows: Row[] = [];
-  if (s.pending) {
-    // 10초 대기 중인 답 — 아직 나가지 않았어요
-    const p = s.pending; const l = line({ id: 'pending', cardId: p.cardId, kind: 'decided', pick: p.pick, alt: p.alt, at: p.at, edited: p.edited });
-    if (l) rows.push({ key: 'pending', at: p.at, mine: true, node: (
-      <div className="cu-row" key="pending"><span className="cu-tile"><SourceIcon source={l.source} /></span><div><div className="t">{l.title}</div><div className="s">{[t('log.pending'), p.edited ? t('log.edited') : null].filter(Boolean).join(' · ')}</div></div>
-        <span className="e"><span>{hhmm(p.at, i18n.language)}</span><button type="button" className="cu-link" onClick={onUndoPending}>{t('log.undo')}</button></span></div>) });
+  for (const p of s.pending) {
+    // 10초 대기 중인 답들 — 아직 나가지 않았어요
+    const l = p.line ?? line({ id: 'pending', cardId: p.cardId, kind: 'decided', pick: p.pick, alt: p.alt, at: p.at, edited: p.edited });
+    if (l) rows.push({ key: `pending-${p.cardId}`, at: p.at, mine: true, node: (
+      <div className="cu-row" key={`pending-${p.cardId}`}><span className="cu-tile"><SourceIcon source={l.source} /></span><div><div className="t">{l.title}</div><div className="s">{p.line?.sub ?? [t('log.pending'), p.edited ? t('log.edited') : null].filter(Boolean).join(' · ')}</div></div>
+        <span className="e"><span>{hhmm(p.at, i18n.language)}</span><button type="button" className="cu-link" onClick={() => onUndoPending(p.cardId)}>{t('log.undo')}</button></span></div>) });
   }
   for (const e of s.log) {
-    const l = line(e); if (!l) continue;
+    const l = e.line ?? line(e); if (!l) continue;
     rows.push({ key: e.id, at: e.at, mine: true, node: (
       <div className="cu-row" key={e.id}><span className="cu-tile"><SourceIcon source={l.source} /></span><div><div className="t">{l.title}</div><div className="s">{l.sub}</div></div>
-        <span className="e"><span>{hhmm(e.at, i18n.language)}</span><button type="button" className="cu-link" disabled={!canUndo(s, e)} onClick={() => onUndo(e.id)}>{e.undone ? t('log.undone') : t('log.undo')}</button></span></div>) });
+        <span className="e"><span>{hhmm(e.at, i18n.language)}</span>{e.undone ? <span>{t('log.undone')}</span> : canUndo(s, e) && <button type="button" className="cu-link" onClick={() => onUndo(e.id)}>{t('log.undo')}</button>}</span></div>) });
   }
   for (const a of ds.autoDone) {
     rows.push({ key: a.id, at: midnight.getTime() + a.min * 60_000, mine: false, node: (
@@ -174,7 +160,7 @@ export function Activity({ s, ds, getCard, onMenu, onUndo, onUndoPending, onUndo
         <div className="cu-h"><b>{t('log.today')}</b></div>
         {shown.map(r => r.node)}
         {shown.length === 0 && <Empty text={t('log.empty')} face="basic" />}
-        <div className="cu-h" style={{ marginTop: 28 }}><b>{t('log.routines')}</b><span>{t('log.routinesSub')}</span></div>
+        {ds.routines.length > 0 && <div className="cu-h" style={{ marginTop: 28 }}><b>{t('log.routines')}</b><span>{t('log.routinesSub')}</span></div>}
         {ds.routines.map(r => (
           <div className="cu-row" key={r.id}><span className="cu-tile">{r.icon === 'calendar' ? <I.calendarCheck aria-hidden /> : r.icon === 'terminal' ? <I.terminal aria-hidden /> : r.icon === 'archive' ? <I.archive aria-hidden /> : <I.money aria-hidden />}</span>
             <div><div className="t">{r.title}</div><div className="s">{r.sub}</div></div>

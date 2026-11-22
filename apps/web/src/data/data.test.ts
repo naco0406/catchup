@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { en } from './cards.en';
 import { ko } from './cards.ko';
-import { altOptions, evidenceIcon } from './index';
+import { altOptions, evidenceIcon, swipeRules } from './index';
 
 // 예시 자료도 설계 원칙을 지켜요(design.md 2장)
 describe.each([['en', en], ['ko', ko]] as const)('%s 예시 카드', (_, ds) => {
@@ -14,6 +14,13 @@ describe.each([['en', en], ['ko', ko]] as const)('%s 예시 카드', (_, ds) => 
   it('선택지는 2~4개예요', () => {
     for (const c of ds.cards) expect(c.options.length, c.id).toBeGreaterThanOrEqual(2), expect(c.options.length, c.id).toBeLessThanOrEqual(4);
   });
+  it('보여 줄 글은 선택지마다 다르고 비어 있지 않아요', () => {
+    for (const c of ds.cards) for (const list of [c.options, c.followUp?.options ?? []]) {
+      const texts = list.flatMap(o => (o.effect.kind === 'send' || o.effect.kind === 'copy' ? [o.effect.text] : []));
+      for (const x of texts) expect(x.trim(), c.id).not.toBe('');
+      expect(new Set(texts).size, c.id).toBe(texts.length);
+    }
+  });
   it('추천은 위험한 답이 아니에요', () => {
     for (const c of ds.cards) expect(c.options[c.recommended]?.risk ?? 'low', c.id).toBe('low');
   });
@@ -25,7 +32,8 @@ it('두 언어의 카드는 같은 id · 같은 선택지 수 · 같은 위험�
     const k = ko.cards[i]!;
     expect(k.options.map(o => o.risk ?? 'low'), c.id).toEqual(c.options.map(o => o.risk ?? 'low'));
     expect(Boolean(k.followUp), c.id).toBe(Boolean(c.followUp));
-    expect(k.effect?.kind, c.id).toBe(c.effect?.kind);
+    expect(k.context?.kind, c.id).toBe(c.context?.kind);
+    expect(k.options.map(o => o.effect.kind), c.id).toEqual(c.options.map(o => o.effect.kind));
   });
   expect(en.today).toEqual(ko.today);
 });
@@ -40,7 +48,7 @@ describe('말로 답한 뒤 · 근거 아이콘', () => {
     const two = altOptions(c, t, ['a wedding on Saturday', 'later please']);
     expect(two.exchanges.map(x => x.said)).toEqual(['a wedding on Saturday', 'later please']);
     expect(two.options[0]?.detail).toBe('“later please”');
-    expect(two.preview).toBe('later please');
+    expect(two.options[0]?.effect).toMatchObject({ kind: 'copy', text: 'later please' });
   });
   it('근거 알약은 글자로 아이콘을 골라요', () => {
     expect(evidenceIcon('quote_hanbit_v2.pdf')).toBe('pdf');
@@ -51,5 +59,23 @@ describe('말로 답한 뒤 · 근거 아이콘', () => {
     expect(evidenceIcon('글 14개')).toBe('chat');
     expect(evidenceIcon('실패 기록 11번')).toBe('warning');
     expect(evidenceIcon('2 files')).toBe('file');
+  });
+});
+
+describe('밀기 규칙(Q7)', () => {
+  const card = ko.cards.find(c => c.due?.tone !== 'risk')!;
+  const best = card.options[0]!;
+
+  it('보통 카드는 양쪽으로 밀려요', () => {
+    expect(swipeRules(card, [best], 0)).toEqual({ left: true, right: true });
+  });
+  it('추천만 위험하면 미루기만 돼요', () => {
+    expect(swipeRules(card, [{ ...best, risk: 'money' }], 0)).toEqual({ left: true, right: false });
+  });
+  it('추천이 없으면 오른쪽으로 정해지지 않아요', () => {
+    expect(swipeRules(card, [best], 3)).toEqual({ left: true, right: false });
+  });
+  it('위험한 카드는 어느 쪽도 안 돼요', () => {
+    expect(swipeRules({ ...card, due: { text: '위험', tone: 'risk' } }, [best], 0)).toEqual({ left: false, right: false });
   });
 });

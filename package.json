@@ -7,6 +7,14 @@
     "build": "pnpm --filter @catchup/web build",
     "test": "pnpm --filter @catchup/web test",
     "e2e": "pnpm --filter @catchup/web e2e",
-    "typecheck": "pnpm --filter @catchup/web typecheck"
+    "typecheck": "pnpm --filter @catchup/web typecheck",
+    "dev:live": "pnpm --filter @catchup/web dev:live",
+    "backend:up": "zsh infra/local/local.sh up",
+    "backend:stop": "zsh infra/local/local.sh stop",
+    "test:api": "zsh infra/local/cargo.sh test -p catchup-api --lib && zsh services/api/tests/schema.sh && zsh services/api/tests/run.sh",
+    "test:live": "node services/api/tests/live.mjs && pnpm --filter @catchup/web e2e:live",
+    "contracts": "pnpm --filter @catchup/web contracts",
+    "backend:demo": "node infra/local/demo-cards.mjs | zsh infra/local/local.sh ops seed demo@example.test",
+    "test:codex": "node services/api/tests/codex-login.mjs && node services/api/tests/codex-gateway.mjs && node services/api/tests/codex-sessions.mjs"
   }
 }

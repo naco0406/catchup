@@ -4,11 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5180",
+    "dev:live": "vite --mode live --host 127.0.0.1 --port 5181 --strictPort",
     "build": "tsc -b && vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 5181",
+    "preview": "vite preview --host 127.0.0.1 --port 5182",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:live": "playwright test --config playwright.live.config.ts",
+    "contracts": "zsh ../../infra/local/cargo.sh run -q -p catchup-api -- openapi > ../../services/api/openapi.json && openapi-typescript ../../services/api/openapi.json -o src/live/api.gen.ts"
   },
   "dependencies": {
     "@catchup/design-system": "workspace:*",
@@ -25,6 +28,7 @@
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "@vitejs/plugin-react": "6.1.2",
+    "openapi-typescript": "7.13.0",
     "typescript": "5.9.3",
     "vite": "8.3.5",
     "vitest": "4.0.9"
