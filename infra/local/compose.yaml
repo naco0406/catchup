@@ -1,0 +1,239 @@
+# 로컬 2 · 3단계. 포트는 127.0.0.1 에만, 비밀값은 .local/secrets 에서만 읽어요. EC2 로 옮길 때도 같은 이미지를 써요.
+name: catchup
+
+x-app: &app
+  image: catchup-api:local
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: local
+    options: { max-size: "10m", max-file: "3" }
+
+x-sandbox: &sandbox
+  image: catchup-sandbox:local
+  restart: unless-stopped
+  # 밖으로 나가는 길이 없어요. DB · 다른 샌드박스 · LLM 창구 · 인터넷 모두
+  network_mode: none
+  read_only: true
+  init: true
+  cap_drop: [ALL]
+  # 감독(root)만 써요: 소켓 주인 바꾸기 · 명령을 uid 10002 로 · 그 프로세스 멈추기 · 작업 폴더 비우기
+  cap_add: [CHOWN, SETUID, SETGID, KILL, DAC_OVERRIDE, FOWNER]
+  security_opt: ["no-new-privileges:true"]
+  pids_limit: 512
+  mem_limit: 1g
+  memswap_limit: 1g
+  cpus: 2
+  ulimits:
+    nofile: 4096
+    fsize: 1073741824
+  tmpfs:
+    - /tmp:exec,nosuid,nodev,size=256m,mode=1777
+    - /home/agent:exec,nosuid,nodev,uid=10002,gid=10002,mode=0700,size=256m
+  environment:
+    CATCHUP_SANDBOX_SOCKET: /sock/exec.sock
+    CATCHUP_SANDBOX_STATE: /state
+    CATCHUP_SANDBOX_WORK: /workspace
+    CATCHUP_SANDBOX_CODEX: /opt/codex/codex-aarch64-unknown-linux-musl
+    CATCHUP_SANDBOX_MAX_MB: "1024"
+  logging:
+    driver: local
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  postgres:
+    image: postgres:18.6-bookworm@sha256:bbf83594798e144bff365a9c191c5d779f181fb3135902064ab8ff11918020fc
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: catchup
+      POSTGRES_USER: catchup_owner
+      POSTGRES_PASSWORD: ${CATCHUP_DB_OWNER_PASSWORD:?missing}
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --host 127.0.0.1 --username catchup_owner --dbname catchup"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    mem_limit: 512m
+    logging:
+      driver: local
+      options: { max-size: "10m", max-file: "3" }
+
+  # 주인 접속은 여기서만. 서버와 일꾼은 RLS 에 갇힌 앱 역할로만 붙어요
+  migrate:
+    <<: *app
+    restart: "no"
+    build:
+      context: ../..
+      dockerfile: infra/docker/api.Dockerfile
+      target: runtime
+    command: [migrate]
+    environment:
+      CATCHUP_DB_HOST: postgres
+      CATCHUP_DB_OWNER_PASSWORD: ${CATCHUP_DB_OWNER_PASSWORD:?missing}
+      CATCHUP_DB_APP_PASSWORD: ${CATCHUP_DB_APP_PASSWORD:?missing}
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    <<: *app
+    command: [serve]
+    environment:
+      CATCHUP_DB_HOST: postgres
+      CATCHUP_DB_APP_PASSWORD: ${CATCHUP_DB_APP_PASSWORD:?missing}
+      CATCHUP_BIND: 0.0.0.0:4320
+      CATCHUP_ORIGINS: http://127.0.0.1:5180,http://localhost:5180,http://127.0.0.1:5181,http://localhost:5181
+      CATCHUP_INSECURE_COOKIE: "1"   # 로컬 http 에서만
+      CATCHUP_MASTER_KEY: ${CATCHUP_MASTER_KEY:?missing}
+      CATCHUP_VAPID_KEY: ${CATCHUP_VAPID_KEY:?missing}
+      CATCHUP_PUSH_CONTACT: https://localhost   # 3.5단계에 서비스 주소로
+    ports:
+      - "127.0.0.1:4320:4320"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/catchup-api", "health"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    mem_limit: 256m
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    <<: *app
+    command: [worker]
+    stop_grace_period: 35s
+    environment:
+      CATCHUP_DB_HOST: postgres
+      CATCHUP_DB_APP_PASSWORD: ${CATCHUP_DB_APP_PASSWORD:?missing}
+      CATCHUP_MASTER_KEY: ${CATCHUP_MASTER_KEY:?missing}
+      CATCHUP_VAPID_KEY: ${CATCHUP_VAPID_KEY:?missing}
+      CATCHUP_PUSH_CONTACT: https://localhost   # 3.5단계에 서비스 주소로
+    mem_limit: 256m
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  # 3단계: Codex 로그인 · LLM 창구. auth.json 은 tmpfs 와 DB(잠근 값)에만
+  agent:
+    <<: *app
+    image: catchup-agent:local
+    build:
+      context: ../..
+      dockerfile: infra/docker/api.Dockerfile
+      target: agent
+      additional_contexts:
+        codex: ../../.local/codex/0.163.0-linux-arm64
+    command: [agent]
+    stop_grace_period: 25s
+    environment:
+      CATCHUP_DB_HOST: postgres
+      CATCHUP_DB_APP_PASSWORD: ${CATCHUP_DB_APP_PASSWORD:?missing}
+      CATCHUP_MASTER_KEY: ${CATCHUP_MASTER_KEY:?missing}
+      CATCHUP_GATEWAY_SECRET: ${CATCHUP_GATEWAY_SECRET:?missing}
+      CATCHUP_BIND: 0.0.0.0:4330
+      CATCHUP_CODEX_BIN: /opt/codex/bin/codex-app-server
+      CATCHUP_CODEX_VOLATILE: /run/codex
+      CATCHUP_CODEX_DURABLE: /data/codex
+      CATCHUP_CODE_HOST: /run/codehost/code.sock
+      CATCHUP_SANDBOXES: /run/sandbox/1/exec.sock,/run/sandbox/2/exec.sock,/run/sandbox/3/exec.sock
+    tmpfs:
+      - /run/codex:uid=10001,gid=10001,mode=0700,size=256m
+      - /tmp:size=32m
+    volumes:
+      - codex:/data/codex
+      - codehost-sock:/run/codehost:ro
+      - sandbox1-sock:/run/sandbox/1:ro
+      - sandbox2-sock:/run/sandbox/2:ro
+      - sandbox3-sock:/run/sandbox/3:ro
+    mem_limit: 768m
+    memswap_limit: 768m   # 로그인이 스왑으로 디스크에 내려가지 않게
+    pids_limit: 512
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  # 세션마다 한 자리. 로그인 · 비밀 · Docker 소켓이 없어요. 자리 수 = 동시에 도는 세션 수
+  sandbox-1:
+    <<: *sandbox
+    build:
+      context: ../..
+      dockerfile: infra/docker/api.Dockerfile
+      target: sandbox
+      additional_contexts:
+        codexcli: ../../.local/codex/0.163.0-linux-arm64-cli
+    volumes:
+      - sandbox1-sock:/sock
+      - sandbox1-state:/state
+      - sandbox1-work:/workspace
+
+  sandbox-2:
+    <<: *sandbox
+    volumes:
+      - sandbox2-sock:/sock
+      - sandbox2-state:/state
+      - sandbox2-work:/workspace
+
+  sandbox-3:
+    <<: *sandbox
+    volumes:
+      - sandbox3-sock:/sock
+      - sandbox3-state:/state
+      - sandbox3-work:/workspace
+
+  # 모델이 쓴 JS 를 돌려요(code_mode_only 모델). 망 · 비밀 · 작업 폴더가 없어요
+  codehost:
+    image: catchup-codehost:local
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: infra/docker/api.Dockerfile
+      target: codehost
+      additional_contexts:
+        codex: ../../.local/codex/0.163.0-linux-arm64
+    network_mode: none
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    # 감독만 써요: 소켓 주인 바꾸기 · 연결마다 다른 uid · 끝난 실행기 멈추기
+    cap_add: [CHOWN, SETUID, SETGID, KILL, FOWNER]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 1024
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 1.5
+    environment:
+      CATCHUP_CODE_HOST_SOCKET: /sock/code.sock
+      CATCHUP_CODE_HOST_BIN: /opt/codex/bin/codex-code-mode-host
+    volumes:
+      - codehost-sock:/sock
+    logging:
+      driver: local
+      options: { max-size: "10m", max-file: "3" }
+
+  # 운영 명령: zsh infra/local/local.sh ops provision|login-code|seed …
+  ops:
+    <<: *app
+    restart: "no"
+    profiles: [ops]
+    environment:
+      CATCHUP_DB_HOST: postgres
+      CATCHUP_DB_OWNER_PASSWORD: ${CATCHUP_DB_OWNER_PASSWORD:?missing}
+      CATCHUP_DB_APP_PASSWORD: ${CATCHUP_DB_APP_PASSWORD:?missing}
+      CATCHUP_MASTER_KEY: ${CATCHUP_MASTER_KEY:?missing}
+
+volumes:
+  postgres:
+  codex:
+  codehost-sock:
+  sandbox1-sock:
+  sandbox1-state:
+  sandbox1-work:
+  sandbox2-sock:
+  sandbox2-state:
+  sandbox2-work:
+  sandbox3-sock:
+  sandbox3-state:
+  sandbox3-work:

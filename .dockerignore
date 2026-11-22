@@ -1,0 +1,10 @@
+# 빌드에 필요한 것만 보내요. .local(비밀값 · DB) · node_modules · 문서는 이미지에 들어갈 수 없어요
+*
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+!services/api/Cargo.toml
+!services/api/build.rs
+!services/api/src
+!services/api/migrations
+!infra/codex/*.sha256

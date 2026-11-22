@@ -1,0 +1,19 @@
+[workspace]
+members = ["services/api"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.99"
+license = "UNLICENSED"
+
+# 디스크가 빠듯해서 개발 빌드에 디버그 정보를 넣지 않아요(AI1 의 target/debug 는 63GB)
+[profile.dev]
+debug = 0
+incremental = false
+strip = "none"   # 이 Mac 툴체인의 rust-objcopy 는 libLLVM 을 못 찾아요
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

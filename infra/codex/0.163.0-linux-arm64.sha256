@@ -1,0 +1,5 @@
+476a105fdd36d8b44ea134dcf89ef788e61482d79c08cd11caf0691bf8aabd38  ./bin/codex-app-server
+92f56c79381eecc611c61dc073e91169b06708532630a1eb1a03f47789a80e8e  ./bin/codex-code-mode-host
+208153b5b90eefa14e044a1b4e30f5fe6bd6f1aa1f83d7df29e80f3217fa0f01  ./codex-package.json
+e36d0eb52e70696bdf1781392722e05a21bb91d3b7b762ef5ec20e5df2ec687b  ./codex-path/rg
+c547cbdc762a70ed216789ffaa4c6c0e7d2beabe32245a498f8e365a9fc8dab4  ./codex-resources/bwrap
