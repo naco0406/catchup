@@ -6,12 +6,13 @@ import type { components } from './api.gen';
 import { ApiError, call, newKey } from './api';
 
 type Msg = components['schemas']['Message'];
-const WHY = new Set(['signed_out', 'limit_reached', 'still_thinking']);
+const WHY = new Set(['signed_out', 'limit_reached', 'still_thinking', 'card_not_open']);
 
 /** 비서에게 말하기(3.6단계) — 명령이 들어오는 셋째 길이에요.
- *  말은 세 갈래로만 받아요: 기억해(내 말 그대로 남겨요) · 물어봐(답만 해요) · 일 맡겨(제안까지만, 눌러야 시작해요).
+ *  말은 네 갈래로만 받아요: 기억해(내 말 그대로 남겨요) · 물어봐(답만 해요) · 일 맡겨(제안까지만, 눌러야 시작해요) ·
+ *  카드(그 카드를 찾아 주고, 눌러야 내 말이 그 카드의 '말로 답하기'로 가요).
  *  보내기 · 결제처럼 밖으로 나가는 일은 여기서 하지 않고 카드로 여쭤봐요. */
-export function Assistant({ onMenu, onNav }: { onMenu: () => void; onNav: (r: 'memory' | 'sessions' | 'connections') => void }) {
+export function Assistant({ onMenu, onNav }: { onMenu: () => void; onNav: (r: 'memory' | 'sessions' | 'connections' | 'catchup') => void }) {
   const { t } = useTranslation();
   const [items, setItems] = useState<Msg[]>();
   const [text, setText] = useState('');
@@ -81,6 +82,15 @@ export function Assistant({ onMenu, onNav }: { onMenu: () => void; onNav: (r: 'm
                 {m.session
                   ? <><span className="cu-work"><I.check aria-hidden /><span>{t('assistant.started')}</span></span><button type="button" className="cu-link" onClick={() => onNav('sessions')}>{t('assistant.seeSession')}</button></>
                   : <button type="button" className="cu-btn primary" onClick={() => void act(() => call<Msg>('POST', `/me/assistant/${m.id}/accept`))}>{t('assistant.start')}</button>}
+              </div>
+            </>}
+            {m.state === 'done' && m.intent === 'card' && <>
+              <div className="cu-work"><I.cards aria-hidden /><span>{t('assistant.card')}</span></div>
+              <p className="cu-reply task">{m.card_question ?? t('assistant.cardGone')}</p>
+              <div className="talk-acts">
+                {m.accepted
+                  ? <><span className="cu-work"><I.check aria-hidden /><span>{t('assistant.cardSaid')}</span></span><button type="button" className="cu-link" onClick={() => onNav('catchup')}>{t('assistant.seeCard')}</button></>
+                  : <button type="button" className="cu-btn primary" disabled={!m.card_question} onClick={() => void act(async () => { const done = await call<Msg>('POST', `/me/assistant/${m.id}/accept`); onNav('catchup'); return done; })}>{t('assistant.cardSay')}</button>}
               </div>
             </>}
             {m.state === 'done' && (m.intent === 'ask' || m.intent === 'unclear') && <>

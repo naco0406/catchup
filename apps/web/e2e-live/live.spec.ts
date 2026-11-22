@@ -250,7 +250,7 @@ test('비서에게 한 말은 모델이 없어도 남고, 그대로 기억해 �
   const me = await signIn(page, []);
   await expect(page.getByText('다 봤어요')).toBeVisible();
   await page.evaluate(() => { location.hash = '#/assistant'; });
-  await expect(page.locator('.talk-examples button')).toHaveCount(3);
+  await expect(page.locator('.talk-examples button')).toHaveCount(4);
   await page.getByRole('textbox', { name: '비서에게 말하기' }).fill('서연 님 메일은 세 문장 안으로 써 줘');
   await page.getByRole('button', { name: '보내기' }).click();
   const turn = page.locator('[data-talk]').filter({ hasText: '세 문장 안으로' });
@@ -286,4 +286,37 @@ test('내가 보낸 글의 약속이 맨 위 칸에 보이고, 같은 사람의 
   await expect(page.locator('section').first()).toHaveAttribute('data-kind', 'promise');
   await expect(page.locator('[data-kind="promise"] [data-memory]')).toContainText('약속했어요: “견적서 보내기” · 11월 27일까지');
   await noOverflow(page);
+});
+
+test('비서에게 말한 카드는 눌러야 그 말이 전해지고, 답은 카드에서 골라요', async ({ page }) => {
+  const me = await signIn(page, [card('리뷰는 몇 시에 할까요?', [option('11시로 해요', send('11시에 해요'))]), card('견적은 어느 안으로 할까요?', [option('A안으로 진행해요', send('A안으로 갈게요'))])]);
+  await expect(question(page)).toHaveText('리뷰는 몇 시에 할까요?');
+  // 갈래를 고르는 것은 모델이라(시험 계정은 연결돼 있지 않아요) 고른 결과를 넣어요
+  sql(`INSERT INTO catchup.assistant_messages (cell, request_key, said, state, intent, reply, card, answered_at) SELECT cell, gen_random_uuid(), '견적은 B안으로 한다고 해 줘', 'done', 'card', '이 카드에 그렇게 답할까요?', id, now() FROM catchup.decision_cards WHERE cell = '${me.cell}' AND question = '견적은 어느 안으로 할까요?'`);
+  await page.evaluate(() => { location.hash = '#/assistant'; });
+  const turn = page.locator('[data-talk][data-intent="card"]');
+  await expect(turn).toContainText('견적은 어느 안으로 할까요?');
+  await noOverflow(page);
+  await turn.getByRole('button', { name: '이 말로 답해요' }).click();
+  // 그 카드가 맨 앞으로 오고, 내 말이 '말씀하신 대로'로 서요. 아직 아무것도 나가지 않았어요
+  await expect(question(page)).toHaveText('견적은 어느 안으로 할까요?');
+  await expect(page.locator('[data-card] .cu-said')).toHaveText('견적은 B안으로 한다고 해 줘');
+  expect(await me.sent()).toBe('');
+  await opt(page, 0).click();
+  await expect.poll(me.sent, { timeout: 20_000 }).toBe('견적은 B안으로 한다고 해 줘');
+});
+
+test('약속한 날이 되면 카드로 올라오고, 아무것도 보내지 않아요', async ({ page }) => {
+  const me = await signIn(page, [card('견적서는 언제 주실 수 있나요?', [option('오늘 보내요', send('오늘까지 견적서 보내 드릴게요'))])]);
+  await opt(page, 0).click();
+  await expect(page.getByText('다 봤어요')).toBeVisible();
+  sql(`INSERT INTO catchup.memory_promises (cell, answer, text, due) SELECT cell, id, '견적서 보내기', current_date - 1 FROM catchup.card_answers WHERE cell = '${me.cell}'`);
+  await expect(question(page)).toContainText('‘견적서 보내기’', { timeout: 20_000 });
+  await expect(question(page)).toContainText('하기로 한 약속이에요. 했나요?');
+  await noOverflow(page);
+  await opt(page, 0).click();
+  await expect(page.getByText('다 봤어요')).toBeVisible();
+  await page.waitForTimeout(11_000);
+  expect(await me.sent()).toBe('오늘까지 견적서 보내 드릴게요');
+  expect(sql(`SELECT count(*) FROM catchup.decision_cards WHERE cell = '${me.cell}' AND dedupe_key LIKE 'promise:%'`)).toBe('1');
 });

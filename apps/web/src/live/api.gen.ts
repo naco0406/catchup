@@ -631,12 +631,20 @@ export interface components {
         };
         /** @description 비서와 주고받은 한 번 */
         Message: {
+            /** @description 가리킨 카드에 이 말을 전했어요 */
+            accepted: boolean;
+            /**
+             * Format: uuid
+             * @description 이 말이 가리킨 카드와 그 질문
+             */
+            card?: string | null;
+            card_question?: string | null;
             /** Format: date-time */
             created_at: string;
             error_code?: string | null;
             /** Format: uuid */
             id: string;
-            /** @description remember · ask · task · unclear */
+            /** @description remember · ask · task · card · unclear */
             intent?: string | null;
             /** @description 이 말로 생긴 기억의 key. 지웠으면 없어요 */
             memory?: string | null;
