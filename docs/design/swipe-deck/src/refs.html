@@ -1,0 +1,41 @@
+    <div class="bd-card"><h3>밀어서 넘기는 제품</h3><ul>
+<!--@refs-swipe-->
+    </ul></div>
+    <div class="bd-card"><h3>사람에게 결정을 묻는 에이전트</h3><ul>
+      <li><a href="https://raw.githubusercontent.com/openai/codex/main/codex-rs/core/src/tools/handlers/request_user_input_spec.rs">Codex — 질문 도구의 규격(소스)</a> — <span class="bd-muted">질문 하나, 선택지 2~3개, 추천은 맨 위에 두고 낱말로 표시, ‘기타’는 화면이 붙여요</span></li>
+      <li><a href="https://raw.githubusercontent.com/openai/codex/main/codex-rs/tui/src/bottom_pane/approval_overlay.rs">Codex CLI — 승인 화면(소스)</a> — <span class="bd-muted">거절이 ‘다르게 하라고 말하기’로 이어져요</span></li>
+      <li><a href="https://learn.chatgpt.com/docs/notifications.md">Codex 앱 — 알림과 Activity view</a> — <span class="bd-muted">상태는 Running · Needs input · Ready · Blocked 넷</span></li>
+      <li><a href="https://code.claude.com/docs/en/permissions">Claude Code — 권한 물음</a> — <span class="bd-muted">‘다시 묻지 않기’는 범위를 적어요. 권한 물음은 저절로 닫히지 않아요</span></li>
+      <li><a href="https://code.claude.com/docs/en/agent-view">Claude Code — agent view</a> — <span class="bd-muted">입력을 기다리는 것부터, 질문 원문과 기다린 시간을 한 줄에</span></li>
+      <li><a href="https://linear.app/developers/aig">Linear — Agent Interaction Guidelines</a> — <span class="bd-muted">말로 답하면 선택지를 건너뛰어요</span></li>
+      <li><a href="https://help.openai.com/en/articles/20001280-using-cloud-browser-in-chatgpt">ChatGPT — cloud browser의 확인</a> — <span class="bd-muted">되돌리기 어려운 일은 따로 확인해요</span></li>
+      <li><a href="https://jules.google/docs/review-plan/">Jules — 계획 검토</a> — <span class="bd-muted">가져오지 않은 것: 자리를 비우면 저절로 승인</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>OpenAI의 화면 지침과 ‘AI가 만든 티’</h3><ul>
+      <li><a href="https://developers.openai.com/apps-sdk/concepts/ui-guidelines">OpenAI Apps SDK — UI guidelines</a> — <span class="bd-muted">카드의 행동은 둘까지, 색은 주 단추에만, 아이콘은 한 색 선, 카드 속 탭 · 속 스크롤 · 그러데이션 금지</span></li>
+      <li><a href="https://openai.com/index/introducing-chatgpt-pulse/">ChatGPT Pulse 소개</a> — <span class="bd-muted">훑는 카드, 끝은 ‘That’s all for today.’로 닫아요</span></li>
+      <li><a href="https://pages.thefountaininstitute.com/posts/7-tells-that-a-ui-is-ai-generated">7 tells that a UI is AI-generated</a> (의견) — <span class="bd-muted">색 옆줄, 카드 속 카드, 이모지 아이콘, 상태 점 남발</span></li>
+      <li><a href="https://world.hey.com/kostac/spot-the-slop-a-ui-designer-s-guide-to-fixing-ai-defaults-4c448c9c">Spot the slop</a> (의견) — <span class="bd-muted">모두 같은 여백 · 같은 흐려지기, 빈 · 오류 상태 빠짐</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>움직임과 손맛</h3><ul>
+      <li><a href="https://developer.apple.com/videos/play/wwdc2018/803/">Apple WWDC18 — Designing Fluid Interfaces</a> — <span class="bd-muted">1:1 따라오기, 도중에 다시 잡기, 놓은 속도 잇기, 멈출 자리로 판단, 시작은 10</span></li>
+      <li><a href="https://developer.apple.com/videos/play/wwdc2023/10158/">Apple WWDC23 — Animate with springs</a> — <span class="bd-muted">튐 0.15는 살짝 경쾌, 0.4를 넘기지 않기</span></li>
+      <li><a href="https://developer.apple.com/design/human-interface-guidelines/playing-haptics">Apple HIG — Playing haptics</a> — <span class="bd-muted">뜻대로만, 아껴서, 끌 수 있게</span></li>
+      <li><a href="https://developer.android.com/design/ui/mobile/guides/patterns/predictive-back">Android — Predictive back</a> — <span class="bd-muted">뒤 화면을 줄여서 미리 보여 주고, 취소하면 제자리로</span></li>
+      <li><a href="https://api.flutter.dev/flutter/widgets/Dismissible-class.html">Flutter Dismissible</a> · <a href="https://github.com/yuyakaido/CardStackView">CardStackView</a> · <a href="https://github.com/webraptor/react-native-deck-swiper">react-native-deck-swiper</a> — <span class="bd-muted">문턱 25~50%, 튕김 700/초, 반대로 튕기면 취소, 뒤 카드 0.95, 나가기 200~350ms</span></li>
+      <li><a href="https://github.com/nathangitter/fluid-interfaces">fluid-interfaces</a> (2차) — <span class="bd-muted">‘멈출 자리’ 계산식</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>접근성과 복구</h3><ul>
+      <li><a href="https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html">WCAG 2.2 — 2.5.7 Dragging Movements</a> — <span class="bd-muted">끌지 않고도 한 번 눌러서 같은 일을 할 수 있어야 해요</span></li>
+      <li><a href="https://www.w3.org/WAI/WCAG22/Understanding/pointer-cancellation.html">WCAG 2.2 — 2.5.2 Pointer Cancellation</a> — <span class="bd-muted">손을 뗄 때 실행하고, 그 전에 그만둘 수 있어야 해요</span></li>
+      <li><a href="https://alistapart.com/article/neveruseawarning/">Aza Raskin — Never use a warning when you mean undo</a> — <span class="bd-muted">확인창은 습관이 돼요. 되돌리기를 줘요</span></li>
+      <li><a href="https://support.google.com/mail/answer/2819488">Gmail — 보내기 취소</a> · <a href="https://developer.android.com/reference/kotlin/androidx/compose/material3/SnackbarDuration">Compose SnackbarDuration</a> — <span class="bd-muted">되돌릴 시간 5~30초 · 4초/10초</span></li>
+      <li><a href="https://developer.apple.com/design/human-interface-guidelines/accessibility">Apple HIG — Accessibility</a> — <span class="bd-muted">움직임 줄이기: 튐과 깊이 움직임을 빼고 흐려지기로</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>웹에서 걸리는 것 · 확인하지 못한 것</h3><ul>
+      <li><a href="https://bugs.webkit.org/show_bug.cgi?id=248265">WebKit 버그 248265</a> · <a href="https://webkit.org/blog/10855/async-clipboard-api/">WebKit — Async Clipboard API</a> — <span class="bd-muted">밀기 끝에서의 복사가 아이폰에서 막힐 수 있어요(Q5)</span></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Navigator/vibrate">MDN — Navigator.vibrate</a> · <a href="https://bugs.webkit.org/show_bug.cgi?id=285120">WebKit 버그 285120</a> — <span class="bd-muted">아이폰 웹에는 진동이 없어요</span></li>
+      <li><a href="https://bugs.webkit.org/show_bug.cgi?id=240183">WebKit 버그 240183</a> — <span class="bd-muted">Safari의 가장자리 뒤로 가기는 끌 수 없어요. 왼쪽 끝 20은 비워 둬요</span></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/touch-action">MDN — touch-action</a> — <span class="bd-muted">카드에 <code>pan-y</code>를 미리. 브라우저가 가져가면 취소로 와요</span></li>
+      <li><span class="bd-muted"><b>확인하지 못한 것</b> — OpenAI의 글자 · 모서리 · 움직임 수치(공개된 값이 없어요), Codex · ChatGPT 모바일 앱의 승인 화면 모양, ‘오른쪽 = 끝냄’을 정한 공식 지침(Slack · Mailbox는 오른쪽, Superhuman 기본값은 왼쪽이에요), Tinder 도장의 정확한 모양과 문턱, Slack 캐치업의 미는 동안 모습과 처음 안내, Spark · HEY · Shortwave(보지 못했어요), m3.material.io의 밀기 지침 본문(열리지 않아 Android 문서로 대신했어요).</span></li>
+    </ul></div>

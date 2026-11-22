@@ -1,0 +1,89 @@
+/* 밀기 시안에서 새로 필요한 것 — 값은 모두 tokens.css 변수예요(새 색 · 크기 없음).
+   구현할 때 packages/design-system/components.css 의 <CardDeck> · <OptionRow> · <Toast> · 아이폰 도크로 옮겨요.
+   움직임은 변수 둘로 몰아요: --dx(손가락을 따라간 거리) · --p(문턱까지 0~1). 카드는 기울이지 않아요 — 글이 많은 카드라 기울면 난잡해요. */
+
+/* 변수: --dx · --p 는 덱에, --f(추천 답이 찬 만큼) · --d(다른 답이 흐려진 만큼)는 맨 위 카드에 걸어요 */
+/* 지금 앱(app.css)의 좁은 화면 배치 — 출처 줄이 두 줄로 접혀요 */
+.cu-card.p .cu-from { flex-wrap: wrap; row-gap: 0; }
+.cu-card.p .cu-from .meta { order: 5; flex-basis: 100%; padding-left: 42px; margin-top: -4px; overflow: hidden; text-overflow: ellipsis; }
+.cu-card.p .cu-sum { font: var(--cu-t-caption); gap: 6px; }
+.cu-card.p .cu-sum li::before { top: 7px; }
+.cu-card.p .cu-ev { margin-top: 12px; }
+
+/* ── <CardDeck> 좁은 모양: 카드가 도는 자리 ── */
+.sw-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; --dx: 0px; --p: 0; }
+.sw-stage > .cu-card { position: absolute; left: 12px; right: 12px; top: 0; margin: 0; }
+/* 다음 카드: 평소엔 맨 위 카드 뒤에 숨어 있고, 미는 만큼 올라와요. 놓기 전까지는 흐리게 둬서 글 두 장이 다투지 않게 해요 */
+.sw-next { transform-origin: 50% 0; transform: translateY(calc((1 - var(--p)) * 10px)) scale(calc(.95 + .05 * var(--p))); }
+.sw-next::before { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: var(--cu-bg-canvas); opacity: calc(.78 - .34 * var(--p)); }
+.go > .sw-next::before { opacity: 0; transition: opacity var(--cu-dur) var(--cu-ease); }
+/* 맨 위 카드: 손가락을 그대로 따라오고, 들린 만큼 그늘이 깊어져요 */
+.sw-top { z-index: 2; transform: translateX(var(--dx)); }
+.sw-top.lift { box-shadow: var(--cu-shadow-pop); }
+
+/* ── <OptionRow> 차오르는 추천 답 ── 고른 모양(.picked)을 겹쳐 두고 --p 만큼만 보여요. 글자색도 경계에서 바뀌어요 */
+.sw-fill { position: relative; }
+.sw-fill > .cu-opt.picked { position: absolute; inset: 0; clip-path: inset(0 calc((1 - var(--f, 0)) * 100%) 0 0 round var(--cu-r-card)); }
+/* 문턱을 넘으면 숫자가 체크로 바뀌어요 */
+.cu-opt.picked .key .ck { display: none; }
+.armed .cu-opt.picked .key .ck { display: block; }
+.armed .cu-opt.picked .key .num { display: none; }
+.cu-card.p .cu-opt.picked { background: var(--cu-accent); }
+.cu-card.p .cu-opt.picked::after { box-shadow: none; }
+.cu-root .cu-opt.picked .key svg { width: 16px; height: 16px; }
+.sw-dim, .to-left .sw-fill, .to-left .cu-opt.rec { opacity: calc(1 - .55 * var(--d, 0)); }
+
+/* ── <Toast> 미리 보이는 토스트 ── 미는 동안 '놓으면 일어날 일'이 서고, 놓으면 그 자리에서 되돌리기 토스트가 돼요 */
+.sw-pill { min-height: 56px; display: flex; align-items: center; gap: var(--cu-s-3); padding: var(--cu-s-2) var(--cu-s-2) var(--cu-s-2) 10px; border-radius: var(--cu-r-full); background: var(--cu-bg-inverse); color: var(--cu-fg-on-inverse); box-shadow: var(--cu-shadow-pop); }
+.sw-pill .tx { flex: 1; min-width: 0; display: grid; }
+.sw-pill .l1 { font: 600 14px/20px var(--cu-font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sw-pill .l2 { font: var(--cu-t-caption); color: rgb(255 255 255 / .72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sw-pill .u { height: 36px; padding: 0 14px; border-radius: var(--cu-r-full); background: rgb(255 255 255 / .16); display: inline-flex; align-items: center; font: 600 14px/20px var(--cu-font); flex: none; }
+.sw-pill.one { min-height: 44px; padding-right: var(--cu-s-5); }
+.sw-pill.one:has(.u) { padding-right: 4px; }
+/* 고리: 문턱까지 남은 만큼(미는 동안) · 되돌릴 수 있는 시간(놓은 뒤) */
+.sw-ring { position: relative; width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; }
+.cu-root .sw-ring .g { position: absolute; inset: 0; width: 36px; height: 36px; fill: none; transform: rotate(-90deg); }
+.sw-ring .g circle { fill: none; stroke-width: 2.5; }
+.sw-ring .g .t { stroke: rgb(255 255 255 / .24); }
+.sw-ring .g .a { stroke: var(--cu-fg-on-inverse); stroke-linecap: round; }
+.cu-root .sw-ring .ic { width: 16px; height: 16px; }
+.sw-ring.full { background: var(--cu-fg-on-inverse); color: var(--cu-bg-inverse); }
+.sw-ring .n { font: var(--cu-t-micro); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.sw-pill.one .sw-ring, .sw-pill.one .sw-ring .g { width: 28px; height: 28px; }
+.cu-root .sw-pill.one .sw-ring .g { width: 28px; height: 28px; }
+
+/* ── 아이폰 도크: 단추의 자리가 미는 방향이에요 ── */
+.sw-dock { padding-top: var(--cu-s-2); background: var(--cu-bg-canvas); position: relative; z-index: 4; }
+.sw-dock .sw-pill { margin-bottom: var(--cu-s-2); }
+.cu-pacts.sw-mirror span.on { color: var(--cu-fg); font-weight: 600; }
+.cu-pacts.sw-mirror span.on.rec { color: var(--cu-accent-text); }
+.cu-pacts.sw-mirror span.off { color: var(--cu-warm-300); }
+.cu-pacts.two { grid-template-columns: repeat(2, 1fr); }
+
+/* ── 넓은 화면: 덱 · 위 막대의 토스트 자리 · 아래 단추 ── */
+.cu-main.sw-wide { overflow: hidden; }
+.sw-wide .cu-deck { --dx: 0px; --p: 0; }
+.sw-wide .cu-deck > .sw-next { position: absolute; left: 0; top: 0; z-index: 1; }
+.sw-wide .cu-deck > .sw-top { position: relative; }
+.sw-slot { display: flex; justify-content: center; min-width: 0; }
+.cu-btn.ghost.on { color: var(--cu-fg); font-weight: 600; background: var(--cu-bg-soft); }
+.cu-btn.ghost.on.rec { color: var(--cu-accent-text); background: var(--cu-accent-soft); }
+.cu-btn.ghost.on.rec svg { color: var(--cu-accent-text); }
+
+/* ── 알려만 드려요 카드 ── 결정이 없어서 선택지 대신 본문만 있어요 */
+.sw-fyi .cu-ask { font: 700 20px/28px var(--cu-font); }
+.sw-fyi .cu-sum { margin-top: var(--cu-s-3); }
+.sw-fyi .cu-link { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--cu-s-4); }
+.cu-root .sw-fyi .cu-link svg { width: 16px; height: 16px; }
+
+/* ── 직접 밀어 보는 칸 ── */
+#sw-demo .sw-stage { touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+#sw-demo .sw-stage.grabbing { cursor: grabbing; }
+#sw-demo .sw-pillbox { height: 0; overflow: hidden; transition: height var(--cu-dur) var(--cu-ease); }
+#sw-demo .sw-pillbox.show { height: 64px; }
+#sw-demo .sw-pill .u, #sw-demo .cu-pacts span { cursor: pointer; }
+#sw-demo .sw-pill .u { border: 0; color: inherit; }
+#sw-demo .sw-pill .u[hidden] { display: none; }
+#sw-demo .sw-device:focus-visible { outline: 2px solid var(--cu-fg); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { #sw-demo .sw-next { transform: none; } }

@@ -1,0 +1,6 @@
+{
+  "phone-rest": { "width": 390, "height": 844, "pins": [ { "n": 1, "x": 195, "y": 484 }, { "n": 2, "x": 130, "y": 815 } ] },
+  "phone-right-armed": { "width": 390, "height": 844, "pins": [ { "n": 3, "x": 60, "y": 318 }, { "n": 4, "x": 70, "y": 470 }, { "n": 5, "x": 140, "y": 548 } ] },
+  "phone-after": { "width": 390, "height": 844, "pins": [ { "n": 6, "x": 306, "y": 692 } ] },
+  "phone-risky": { "width": 390, "height": 844, "pins": [ { "n": 7, "x": 352, "y": 222 } ] }
+}
