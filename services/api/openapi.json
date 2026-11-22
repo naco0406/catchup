@@ -1,0 +1,1937 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "catchup-api",
+    "description": "",
+    "license": {
+      "name": "UNLICENSED",
+      "identifier": "UNLICENSED"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/auth/session": {
+      "post": {
+        "tags": [],
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "tags": [],
+        "operationId": "logout",
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "tags": [],
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/activity": {
+      "get": {
+        "tags": [],
+        "operationId": "activity",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Activity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/agent-sessions": {
+      "get": {
+        "tags": [],
+        "operationId": "list_sessions",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentSession"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [],
+        "operationId": "start_session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSession"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": ""
+          },
+          "422": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/agent-sessions/{id}": {
+      "delete": {
+        "tags": [],
+        "operationId": "stop_session",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/agent-sessions/{id}/patch": {
+      "get": {
+        "tags": [],
+        "operationId": "session_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/assistant": {
+      "get": {
+        "tags": [],
+        "summary": "비서와 주고받은 것(3.6단계 · 명령이 들어오는 셋째 길)",
+        "operationId": "assistant_thread",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Message"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [],
+        "summary": "비서에게 말하기 — 기억할 것 · 궁금한 것 · 맡길 일. 먼저 받아 두고 답은 뒤따라와요",
+        "operationId": "tell_assistant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SayInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": ""
+          },
+          "422": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/assistant/{id}/accept": {
+      "post": {
+        "tags": [],
+        "summary": "제안한 일을 맡겨요(코딩 세션이 생겨요)",
+        "operationId": "accept_proposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/assistant/{id}/keep": {
+      "post": {
+        "tags": [],
+        "summary": "답을 기다리지 않고 내 말 그대로 기억해 둬요",
+        "operationId": "keep_words",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/cards": {
+      "get": {
+        "tags": [],
+        "operationId": "list_cards",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/cards/{id}/answer": {
+      "post": {
+        "tags": [],
+        "operationId": "answer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": ""
+          },
+          "428": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/cards/{id}/handoff": {
+      "post": {
+        "tags": [],
+        "operationId": "handoff",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsideInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/cards/{id}/promote": {
+      "post": {
+        "tags": [],
+        "operationId": "promote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/cards/{id}/read": {
+      "post": {
+        "tags": [],
+        "summary": "알려만 드려요를 읽음으로. 결정이 필요한 카드에는 422",
+        "operationId": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsideInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          },
+          "422": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/cards/{id}/snooze": {
+      "post": {
+        "tags": [],
+        "operationId": "snooze",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsideInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/cards/{id}/turns": {
+      "post": {
+        "tags": [],
+        "operationId": "say",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SayInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/cards/{id}/undo": {
+      "post": {
+        "tags": [],
+        "operationId": "undo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UndoInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/codex": {
+      "get": {
+        "tags": [],
+        "operationId": "codex_status",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodexStatus"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [],
+        "operationId": "codex_logout",
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/codex/login": {
+      "post": {
+        "tags": [],
+        "operationId": "codex_login",
+        "responses": {
+          "202": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "tags": [],
+        "operationId": "codex_cancel",
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/connections": {
+      "get": {
+        "tags": [],
+        "operationId": "list_connections",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Connection"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/connections/{id}": {
+      "delete": {
+        "tags": [],
+        "operationId": "disconnect",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/memories": {
+      "get": {
+        "tags": [],
+        "summary": "비서가 아는 것(3.6단계). 내 답 · 고친 초안 · 내 말 · 끝난 세션 · 내가 알려 준 것에서 읽어 내요",
+        "operationId": "memories",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Memory"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [],
+        "summary": "직접 알려 주기",
+        "operationId": "tell_memory",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TellInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "422": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/memories/{key}": {
+      "put": {
+        "tags": [],
+        "summary": "기억 고치기",
+        "operationId": "edit_memory",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          },
+          "422": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "tags": [],
+        "summary": "기억 지우기 — 다음 판단부터 쓰지 않아요",
+        "operationId": "forget_memory",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/push": {
+      "get": {
+        "tags": [],
+        "operationId": "push_key",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushKey"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [],
+        "operationId": "push_on",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Subscription"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushDevice"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/push/{id}": {
+      "delete": {
+        "tags": [],
+        "operationId": "push_off",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Activity": {
+        "type": "object",
+        "required": [
+          "id",
+          "card",
+          "kind",
+          "question",
+          "source",
+          "edited",
+          "turn_seq",
+          "card_state",
+          "created_at"
+        ],
+        "properties": {
+          "card": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "card_state": {
+            "type": "string"
+          },
+          "chosen": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CardOption"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "edited": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "receipt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "receipt_state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "remaining_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "source": {
+            "type": "object"
+          },
+          "turn_seq": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "undoable": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "AgentSession": {
+        "type": "object",
+        "required": [
+          "id",
+          "agent",
+          "title",
+          "state",
+          "has_patch",
+          "cancel_wanted",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "agent": {
+            "type": "string"
+          },
+          "cancel_wanted": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "error_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "has_patch": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string"
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AnswerInput": {
+        "type": "object",
+        "required": [
+          "request_key",
+          "version",
+          "option",
+          "surface"
+        ],
+        "properties": {
+          "confirmed": {
+            "type": "boolean"
+          },
+          "draft": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "option": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "request_key": {
+            "type": "string",
+            "format": "uuid",
+            "description": "기기가 만드는 열쇠. 같은 요청을 다시 보내도 한 번만 실행돼요"
+          },
+          "surface": {
+            "$ref": "#/components/schemas/Surface"
+          },
+          "turn_seq": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AsideInput": {
+        "type": "object",
+        "required": [
+          "request_key",
+          "version",
+          "surface"
+        ],
+        "properties": {
+          "request_key": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "surface": {
+            "$ref": "#/components/schemas/Surface"
+          },
+          "until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "미루기에만"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Card": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "source",
+          "question",
+          "body",
+          "options",
+          "recommended",
+          "risk",
+          "reply_path",
+          "waiting",
+          "state",
+          "version",
+          "created_at",
+          "turns",
+          "remembered"
+        ],
+        "properties": {
+          "body": {
+            "type": "object"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "due_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardOption"
+            }
+          },
+          "question": {
+            "type": "string"
+          },
+          "recommended": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "remembered": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Memory"
+            },
+            "description": "같은 사람 · 같은 일에 대해 비서가 기억하는 것(열린 카드에만 붙여요)"
+          },
+          "reply_path": {
+            "type": "string"
+          },
+          "risk": {
+            "type": "string"
+          },
+          "snooze_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object"
+          },
+          "state": {
+            "type": "string"
+          },
+          "turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Turn"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "답할 때 그대로 돌려줘요. 그사이 카드가 바뀌었으면 409"
+          },
+          "waiting": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CardList": {
+        "type": "object",
+        "required": [
+          "cards",
+          "cursor"
+        ],
+        "properties": {
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Card"
+            }
+          },
+          "cursor": {
+            "type": "integer",
+            "format": "int64",
+            "description": "SSE 를 여기서부터 이어 받아요"
+          }
+        }
+      },
+      "CardOption": {
+        "type": "object",
+        "required": [
+          "label",
+          "done",
+          "effect"
+        ],
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "done": {
+            "type": "string",
+            "description": "실행하면 처리 기록에 남는 한 줄"
+          },
+          "effect": {
+            "$ref": "#/components/schemas/Effect"
+          },
+          "label": {
+            "type": "string"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/Risk"
+          }
+        }
+      },
+      "CodeChange": {
+        "type": "object",
+        "required": [
+          "file",
+          "add",
+          "del",
+          "files",
+          "lines"
+        ],
+        "properties": {
+          "add": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "del": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "file": {
+            "type": "string"
+          },
+          "files": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeLine"
+            }
+          }
+        }
+      },
+      "CodeLine": {
+        "type": "object",
+        "required": [
+          "t",
+          "s"
+        ],
+        "properties": {
+          "s": {
+            "type": "string"
+          },
+          "t": {
+            "type": "string"
+          }
+        }
+      },
+      "CodexStatus": {
+        "type": "object",
+        "required": [
+          "state",
+          "busy"
+        ],
+        "properties": {
+          "busy": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "기다리는 동안만. ChatGPT 화면에 넣을 코드"
+          },
+          "error_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "limits": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "plan": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "verification_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Connection": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "reply_path",
+          "scopes",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "last_failed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "last_ok_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reply_path": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "state": {
+            "type": "string"
+          }
+        }
+      },
+      "EditInput": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "Effect": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "밖으로 보내요. 보낸 뒤에는 못 거둬들여요",
+            "required": [
+              "to",
+              "text",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "send"
+                ]
+              },
+              "text": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "기기에서 누르는 순간 복사해요. 밖으로 나가지 않아요",
+            "required": [
+              "to",
+              "text",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "copy"
+                ]
+              },
+              "text": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "에이전트에게 답을 전해요",
+            "required": [
+              "to",
+              "kind"
+            ],
+            "properties": {
+              "code": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CodeChange"
+                  }
+                ]
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "tell"
+                ]
+              },
+              "reply": {
+                "description": "세션에 돌려줄 값(승인 · 질문의 답)"
+              },
+              "text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "밖의 것을 바꿔요",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "args": {},
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "change"
+                ]
+              },
+              "undo": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "기록만 남겨요",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "none"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "고르면 일어나는 일 — 선택지마다 하나. 보여 준 글이 곧 실행하는 글이에요"
+      },
+      "LoginInput": {
+        "type": "object",
+        "required": [
+          "email",
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "Me": {
+        "type": "object",
+        "required": [
+          "cell",
+          "lang",
+          "time_zone"
+        ],
+        "properties": {
+          "cell": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lang": {
+            "type": "string"
+          },
+          "time_zone": {
+            "type": "string"
+          }
+        }
+      },
+      "Memory": {
+        "type": "object",
+        "description": "기억 한 줄. `key` 는 어디서 알았는지예요(answer · draft · said · session · note · promise)",
+        "required": [
+          "key",
+          "kind",
+          "subject",
+          "text",
+          "edited"
+        ],
+        "properties": {
+          "at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "card": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "edited": {
+            "type": "boolean",
+            "description": "내가 고친 기억"
+          },
+          "key": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "description": "person · project · preference · promise"
+          },
+          "session": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "subject": {
+            "type": "string",
+            "description": "누구 · 어느 일에 대한 것인지. 내가 알려 준 것은 비어 있어요"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "description": "비서와 주고받은 한 번",
+        "required": [
+          "id",
+          "said",
+          "state",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "error_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "intent": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "remember · ask · task · unclear"
+          },
+          "memory": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "이 말로 생긴 기억의 key. 지웠으면 없어요"
+          },
+          "reply": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "repo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "said": {
+            "type": "string"
+          },
+          "session": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "description": "thinking · done · failed"
+          },
+          "task": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "맡길 일의 제안. `session` 이 없으면 아직 맡기지 않은 것이에요"
+          }
+        }
+      },
+      "PushDevice": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "PushKey": {
+        "type": "object",
+        "required": [
+          "public_key"
+        ],
+        "properties": {
+          "public_key": {
+            "type": "string"
+          }
+        }
+      },
+      "Receipt": {
+        "type": "object",
+        "required": [
+          "id",
+          "card",
+          "effect",
+          "state",
+          "undoable",
+          "run_after",
+          "remaining_ms",
+          "created_at"
+        ],
+        "properties": {
+          "card": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effect": {
+            "$ref": "#/components/schemas/Effect"
+          },
+          "error_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "remaining_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "서버 시계로 센 남은 시간. 기기 시계가 틀려도 10초는 10초예요"
+          },
+          "run_after": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string"
+          },
+          "undoable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Risk": {
+        "type": "string",
+        "enum": [
+          "low",
+          "money",
+          "production",
+          "irreversible"
+        ]
+      },
+      "SayInput": {
+        "type": "object",
+        "required": [
+          "request_key",
+          "text"
+        ],
+        "properties": {
+          "request_key": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "StartInput": {
+        "type": "object",
+        "required": [
+          "request_key",
+          "task"
+        ],
+        "properties": {
+          "repo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`owner/name` · GitHub 주소. 없으면 빈 작업 폴더"
+          },
+          "request_key": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "task": {
+            "type": "string"
+          }
+        }
+      },
+      "Subscription": {
+        "type": "object",
+        "required": [
+          "endpoint",
+          "p256dh",
+          "auth"
+        ],
+        "properties": {
+          "auth": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "p256dh": {
+            "type": "string"
+          }
+        }
+      },
+      "Surface": {
+        "type": "string",
+        "enum": [
+          "web",
+          "ipad",
+          "iphone",
+          "notification"
+        ]
+      },
+      "TellInput": {
+        "type": "object",
+        "required": [
+          "request_key",
+          "text"
+        ],
+        "properties": {
+          "request_key": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "Turn": {
+        "type": "object",
+        "required": [
+          "seq",
+          "said",
+          "recommended"
+        ],
+        "properties": {
+          "options": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CardOption"
+            }
+          },
+          "recommended": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reply": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "said": {
+            "type": "string"
+          },
+          "seq": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "work": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "UndoInput": {
+        "type": "object",
+        "properties": {
+          "receipt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      }
+    }
+  }
+}
