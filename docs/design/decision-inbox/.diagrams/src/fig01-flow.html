@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<script src="icons.js"></script><script src="draw.js"></script>
+<!-- 결정함 · 사용자 흐름 (doc 960)
+     받치는 문장: 들어온 것 가운데 내 결정이 필요한 것만 카드가 되고, 내가 고른 답을 비서가 실행해요.
+     틀: 단계 흐름 + 분기(fan-out)를 섞었다. 네 칸 격자 — 위 줄 ①② / 가운데 세 갈래 / 아래 줄 ③④⑤⑥.
+     - 갈래 알약은 닿는 단계 바로 위 칸에 둔다(물어봐요 → ③, 알아서 해요 → ⑤, 알려만 드려요 → ⑥). 선이 모두 일자로 떨어진다.
+     - 강조는 호박색 하나: ‘물어봐요’ 갈래와 ③④ 묶음(카드와 답). 나머지는 잉크·회색.
+     - ⑥ → ② 되먹임은 오른쪽 여백으로 올라가 위 줄의 빈 오른쪽을 지난다. 라벨은 선 위로 띄운다.
+     - 단계 설명은 ‘·’로 이은 한 줄이 네 칸 폭에 안 들어가 항목마다 한 줄로 쌓았다. -->
+<style>
+  #fig { position: relative; }
+  .flow { padding-right: 18px; }
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); column-gap: 32px; }
+  .node { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px 14px; position: relative; z-index: 1; }
+  .node .hd { display: flex; align-items: center; gap: 8px; }
+  .num { width: 24px; height: 24px; border-radius: 50%; background: var(--ink-strong); color: #fff; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; flex: none; font-variant-numeric: tabular-nums; }
+  .node h3 { font-size: 14.5px; font-weight: 700; color: var(--ink-strong); line-height: 20px; white-space: nowrap; }
+  .node ul { list-style: none; margin: 8px 0 0 32px; }
+  .node li { font-size: 12.5px; line-height: 19px; color: var(--ink-subtle); white-space: nowrap; }
+  .r1 { align-items: center; }
+  .bus { height: 48px; }
+  .br { justify-self: center; min-width: 150px; text-align: center; background: var(--raised); border: 1px solid var(--line-strong); border-radius: 999px; padding: 7px 20px 8px; }
+  .br b { display: block; font-size: 13.5px; font-weight: 700; color: var(--ink-strong); line-height: 19px; white-space: nowrap; }
+  .br span { display: block; font-size: 12px; color: var(--ink-subtle); line-height: 16px; white-space: nowrap; }
+  .br.ask { background: var(--human-soft); border: 1.5px solid var(--human); }
+  .br.ask b, .br.ask span { color: #7A5007; }
+  .drop { height: 30px; }
+  .r3 { grid-template-rows: auto 50px; }
+  .r3 .node { grid-row: 1; }
+  .heart { grid-column: 1 / 3; grid-row: 1 / 3; margin: -10px -10px 0; background: var(--human-soft); border: 1px solid rgba(194,124,14,.45); border-radius: 18px; }
+  .heart ~ .node .num.h { background: var(--human-ink); }
+  .lb { position: absolute; transform: translateX(-50%); font-size: 12px; font-weight: 600; line-height: 16px; white-space: nowrap; color: var(--ink-subtle); z-index: 2; }
+  .lb.amber { color: #7A5007; }
+</style></head>
+<body>
+<div id="fig" data-preset="doc">
+  <div class="flow">
+    <div class="g4 r1">
+      <div class="node" id="n1" style="grid-column:1">
+        <div class="hd"><span class="num">1</span><h3>들어와요</h3></div>
+        <ul><li>메일</li><li>메신저</li><li>일정</li><li>코딩 에이전트</li></ul>
+      </div>
+      <div class="node" id="n2" style="grid-column:2">
+        <div class="hd"><span class="num">2</span><h3>비서가 갈라요</h3></div>
+      </div>
+    </div>
+    <div class="bus" id="bus"></div>
+    <div class="g4 r2">
+      <div class="br ask" id="b1" style="grid-column:1"><b>물어봐요</b><span>내 결정이 필요</span></div>
+      <div class="br" id="b2" style="grid-column:3"><b>알아서 해요</b><span>정해 둔 범위 안</span></div>
+      <div class="br" id="b3" style="grid-column:4"><b>알려만 드려요</b><span>모아서 한 번에</span></div>
+    </div>
+    <div class="drop"></div>
+    <div class="g4 r3">
+      <div class="heart" id="heart"></div>
+      <div class="node" id="n3" style="grid-column:1">
+        <div class="hd"><span class="num h">3</span><h3>카드가 꽂혀요</h3></div>
+        <ul><li>질문 한 줄</li><li>요약</li><li>선택지 2~4개</li></ul>
+      </div>
+      <div class="node" id="n4" style="grid-column:2">
+        <div class="hd"><span class="num h">4</span><h3>내가 답해요</h3></div>
+        <ul><li>번호로 고르기</li><li>말로 다르게 답하기</li><li>미루기</li></ul>
+      </div>
+      <div class="node" id="n5" style="grid-column:3">
+        <div class="hd"><span class="num">5</span><h3>비서가 실행해요</h3></div>
+        <ul><li>답장 보내기</li><li>일정 바꾸기</li><li>에이전트에 전달</li></ul>
+      </div>
+      <div class="node" id="n6" style="grid-column:4">
+        <div class="hd"><span class="num">6</span><h3>기록이 남아요</h3></div>
+        <ul><li>되돌리기</li><li>“앞으로 이런 건 알아서”</li></ul>
+      </div>
+    </div>
+  </div>
+  <span class="lb amber" id="lbLoop">말로 답하면 선택지를 다시 만들어요</span>
+  <span class="lb" id="lbBack">내 답이 다음 가르기의 기준이 돼요</span>
+</div>
+<script>
+afterLayout(() => {
+  const G = '#686871', A = '#C27C0E'
+  const [n1, n2, n3, n4, n5, n6] = [1, 2, 3, 4, 5, 6].map(i => box('#n' + i))
+  const [b1, b2, b3] = [1, 2, 3].map(i => box('#b' + i))
+  const g = { color: G, width: 1.5 }, a = { color: A, width: 1.75 }
+
+  // ① → ②
+  wire([[n1.r, n2.cy], [n2.l, n2.cy]], g)
+
+  // ② 에서 세 갈래 — 줄기 하나, 가로 버스, 갈래마다 화살촉
+  const by = box('#bus').t + 22
+  wire([[n2.cx, n2.b], [n2.cx, by]], { ...g, head: false })
+  wire([[n2.cx, by], [b1.cx, by], [b1.cx, b1.t]], a)            // 물어봐요(강조)
+  wire([[n2.cx, by], [b3.cx, by], [b3.cx, b3.t]], g)            // 알려만 드려요
+  wire([[b2.cx, by], [b2.cx, b2.t]], g)                         // 알아서 해요
+
+  // 갈래 → 닿는 단계
+  wire([[b1.cx, b1.b], [b1.cx, n3.t]], a)
+  wire([[b2.cx, b2.b], [b2.cx, n5.t]], g)
+  wire([[b3.cx, b3.b], [b3.cx, n6.t]], g)
+
+  // ③ → ④ → ⑤ → ⑥
+  wire([[n3.r, n3.cy], [n4.l, n3.cy]], a)
+  wire([[n4.r, n4.cy], [n5.l, n4.cy]], g)
+  wire([[n5.r, n5.cy], [n6.l, n5.cy]], g)
+
+  // ④ → ③ 되돌이 — 묶음 안 아래쪽, 라벨은 선 아래
+  const ly = n3.b + 20
+  wire([[n4.cx, n4.b], [n4.cx, ly], [n3.cx, ly], [n3.cx, n3.b]], { color: A, width: 1.5 })
+  const l1 = document.getElementById('lbLoop')
+  l1.style.left = ((n3.cx + n4.cx) / 2) + 'px'
+  l1.style.top = (ly + 7) + 'px'
+
+  // ⑥ → ② 되먹임 — 오른쪽 여백으로 올라가 위 줄 빈 곳을 지난다
+  const fx = n6.r + 16
+  wire([[n6.r, n6.cy], [fx, n6.cy], [fx, n2.cy], [n2.r, n2.cy]], { color: G, width: 1.5, dash: '4 4' })
+  const l2 = document.getElementById('lbBack')
+  l2.style.left = ((n2.r + fx) / 2) + 'px'
+  l2.style.top = (n2.cy - 9 - 16) + 'px'
+})
+</script>
+</body></html>

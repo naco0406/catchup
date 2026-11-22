@@ -1,0 +1,94 @@
+/* 설명 도식 공통 — Dot Design System 의 semantic 토큰 값을 hex 로 옮겼다(dot-design-system ebcceeca, src/styles/tokens.css).
+   그림 폭은 용도 프리셋이 정한다(#fig 의 data-preset — 아래 #fig 규칙). 기본은 블로그 본문 폭 700 CSS px.
+   어느 프리셋이든 정보 글자 12px 이상(레이아웃 px 기준), 글자 대비 4.5:1 이상(DS foundations).
+   이 파일의 색 이름이 곧 그림의 색 뜻이다 — 그림마다 hex 를 새로 고르지 말고 여기 변수를 쓴다. */
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('fonts/PretendardVariable.woff2') format('woff2-variations');
+  font-weight: 45 920;
+}
+:root {
+  --canvas: #F4F4F5;        /* surface-subtle: 그림 바탕 */
+  --raised: #FFFFFF;        /* surface-raised: 카드 */
+  --emphasis: #E9E9EB;      /* surface-emphasis */
+  --ink-strong: #111115;
+  --ink: #2B2B2F;
+  --ink-subtle: #686871;
+  --ink-disabled: #98989D;
+  --line: #E4E4E7;          /* line-subtle */
+  --line-strong: #B7B7BC;
+  --neutral-2: #D4D4D8;     /* 두 번째 중립 범주(막대·칩 바탕) — 잉크 다음의 '다른 것' */
+  /* 누가 하는가: 잉크 = 시스템(규칙·코드), 보라 = 모델(LLM), 호박 = 사람. 글 한 편 안에서 뜻을 바꾸지 않는다 */
+  --model: #7C3AED;
+  --model-soft: #F3EEFF;
+  --human: #C27C0E;
+  --human-soft: #FFF6E5;
+  --human-ink: #9A6206;     /* 사람 색의 글자용(대비 4.5:1 이상) */
+  --ok: #1F7A42;            /* success 를 글자 대비 4.5:1 이상으로 어둡게 */
+  --ok-soft: #EAF7EF;
+  --warn: #A86500;          /* 흰 바탕 글자 4.6:1. 바탕(#F4F4F5)·warn-soft 위 글자는 4.2:1 이라 --warn-ink */
+  --warn-ink: #965A00;      /* 경고 글자를 옅은 바탕에 얹을 때(5.1:1) */
+  --warn-soft: #FFF4DF;
+  --bad: #C8232B;
+  --bad-soft: #FDECEC;
+  --mono: 'SF Mono', SFMono-Regular, Menlo, monospace;
+  --radius: 10px;
+  --hair: 1.3333px;         /* 가는 세로선 굵기 — 렌더 배율에서 짝수 장치 픽셀이 되게 프리셋마다 바뀐다(blog 3배 → 4px) */
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #fff; }
+body {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 0;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+/* 용도 프리셋 — <div id="fig" data-preset="doc"> 처럼 고른다. 없으면 blog.
+   | 프리셋 | 레이아웃       | 렌더 배율 | 게시 PNG     | 쓰는 곳 |
+   | blog  | 700 × 내용     | 3배      | 2100 × …    | 블로그 본문(기본) |
+   | doc   | 960 × 내용     | 2배      | 1920 × …    | 넓은 문서(설계 문서·Notion/Confluence 전체 폭·GitHub) |
+   | slide | 768 × 432 고정 | 2.5배    | 1920 × 1080 | 16:9 슬라이드 한 장을 채움 |
+   slide 는 블로그 틀이 그대로 들어가는 크기로 잡았다(내용 폭 688 ≥ 블로그 644). 12px 글자가 1080p 슬라이드에서 30px 이 된다.
+   배율은 render.cjs 가 이 속성을 읽어 정한다. */
+#fig {
+  width: 700px;
+  background: var(--canvas);
+  border-radius: 16px;
+  padding: 28px;
+  overflow: hidden;
+}
+#fig[data-preset="doc"] { width: 960px; padding: 32px; --hair: 1px; }
+#fig[data-preset="slide"] {
+  width: 768px; height: 432px; padding: 36px 40px; border-radius: 0; --hair: 1.6px;
+  display: flex; flex-direction: column; justify-content: center;   /* 내용이 적으면 세로 가운데 */
+}
+#fig[data-preset="slide"] > * { flex-shrink: 0; }   /* 넘치는 내용을 몰래 찌그러뜨리지 않는다 — 넘치면 render.cjs 가 경고 */
+.card {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.mono { font-family: var(--mono); letter-spacing: -0.01em; }
+.label { font-size: 12px; font-weight: 600; color: var(--ink-subtle); line-height: 16px; }
+.tnum { font-variant-numeric: tabular-nums; }
+.who { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; line-height: 16px; }
+.who::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.who.platform, .who.system { color: var(--ink); }
+.who.model { color: var(--model); }
+.who.human { color: var(--human-ink); }
+.who.human::before { background: var(--human); }
+/* 강조 — 대상 요소 자체에 outline 을 두른다. 좌표로 따로 그린 링은 대상과 어긋난다.
+   조상에 overflow:hidden 이 있으면 outline 이 잘리니, 강조 대상의 조상은 overflow 를 열어 두거나 바깥 래퍼에 강조를 건다.
+   기본은 outline 하나. 줄여 그린 화면 속 작은 대상처럼 눈에 잘 안 띌 때만 .glow 로 번짐을 더한다 —
+   테두리 있는 큰 상자에 번짐까지 걸면 강조가 그림에서 가장 무거운 요소가 된다. */
+.hl { outline: 2px solid var(--model); outline-offset: 3px; border-radius: 5px; }
+.hl.human { outline-color: var(--human); }
+.hl.ink { outline-color: var(--ink-strong); }   /* 주체 색(보라 = 모델)을 쓰는 그림에서 강조가 '모델'로 읽히지 않게 */
+.hl.glow { box-shadow: 0 0 0 6px rgba(124,58,237,.14); }
+.hl.human.glow { box-shadow: 0 0 0 6px rgba(194,124,14,.16); }
+/* 문자열 일부 짚기 — 값의 한 부분을 가리킬 때. 칩·상자로 감싸면 '휴가 (오전)' 처럼 띄어 쓴 것으로 보여 실제 값과 달라진다.
+   .ul = 밑줄(값 모양을 그대로 둔다), .mark = 연보라 형광(두 곳의 같은 값을 짝지을 때 — 양쪽에 같이 칠한다). */
+.ul { text-decoration: underline 2px var(--line-strong); text-underline-offset: 4px; }
+.mark { background: #EDE5FE; color: #4C1D95; border-radius: 3px; padding: 0 2px; }

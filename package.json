@@ -1,0 +1,12 @@
+{
+  "name": "catchup",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm --filter @catchup/web dev",
+    "build": "pnpm --filter @catchup/web build",
+    "test": "pnpm --filter @catchup/web test",
+    "e2e": "pnpm --filter @catchup/web e2e",
+    "typecheck": "pnpm --filter @catchup/web typecheck"
+  }
+}

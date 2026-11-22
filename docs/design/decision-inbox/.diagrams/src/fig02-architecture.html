@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<script src="icons.js"></script><script src="draw.js"></script>
+<!-- CatchUp · 시스템 구조 (doc 960) — 2026-11-21 소유자 답(모두 클라우드 · 유저마다 개인 서버)에 맞춰 다시 그림
+     받치는 문장: 들어오는 것은 모두 클라우드의 '내 칸(개인 서버)'이 받아 가르고, 내 결정이 필요한 것만 카드로 내 기기에 보내요.
+     - 서버 묶음 위에 '공용 앞단' 띠, 그 아래 점선 '내 칸' 안에 다섯 단계 · 샌드박스 · 저장소. Mac 다리는 없어졌고, 그 자리는 '안드로이드 동반 앱(선택)'이에요.
+     틀: 시스템 개요를 세 열로 — 들어오는 곳(서버 밖, 점선 묶음) → 비서 서버(흰 카드, 세로 다섯 단계) → 내 기기(서버 밖, 점선 묶음).
+     - 서버 밖과 오가는 선이 모두 일자가 되게 줄을 맞춘다: 받기 ← 들어오는 곳 · Mac 다리, 카드 만들기 → 앱, 앱 → 실행, 실행 → 들어오는 곳.
+       그래서 내 기기 열은 Mac 다리가 위(받기 높이), 앱이 아래(카드 만들기~실행 높이)다.
+     - 에이전트 실행기와 저장소는 단계 줄 왼쪽에 — 오른쪽은 앱과 오가는 선이 지난다. 실행기는 카드 만들기·실행 두 칸 옆에 걸쳐 둔다.
+     - 강조는 호박색 하나: ‘카드 만들기’.
+     - 옆 묶음 높이·앱 카드 자리는 단계 칸의 실제 상자에서 읽어 맞춘다(숫자 좌표 없음). -->
+<style>
+  #fig { position: relative; }
+  .arch { display: grid; grid-template-columns: 196px 36px 416px 64px 184px; align-items: start; }
+  .gt { font-size: 13px; font-weight: 700; color: var(--ink-strong); line-height: 18px; height: 18px; margin-bottom: 10px; white-space: nowrap; }
+  .gt span { font-size: 12.5px; font-weight: 500; color: var(--ink-subtle); }
+  /* 서버 밖 묶음 — 점선 */
+  .grp { border: 1px dashed var(--line-strong); border-radius: 14px; padding: 13px 11px 11px; display: flex; flex-direction: column; position: relative; }
+  .grp .gt { padding-left: 2px; }
+  .stack { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+  .it { background: var(--raised); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .ico { width: 28px; height: 28px; border-radius: 8px; background: var(--canvas); display: grid; place-items: center; color: var(--ink); margin-bottom: 8px; }
+  .it .t { font-size: 13.5px; font-weight: 700; color: var(--ink-strong); line-height: 18px; }
+  .it .t em { font-style: normal; font-weight: 500; color: var(--ink-subtle); }
+  .it .s { font-size: 12px; color: var(--ink-subtle); line-height: 17px; margin-top: 2px; }
+  #app { position: absolute; left: 11px; right: 11px; display: flex; flex-direction: column; justify-content: center; }
+  /* 비서 서버 */
+  .srv { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px 14px 16px; }
+  .front { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: var(--canvas); font-size: 12px; line-height: 17px; color: var(--ink-subtle); margin-bottom: 12px; white-space: nowrap; }
+  .front b { font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+  .cell { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 10px 10px 12px; }
+  .cell > .ct { font-size: 12px; font-weight: 700; color: var(--ink-strong); line-height: 16px; margin-bottom: 10px; }
+  .cell > .ct span { font-weight: 500; color: var(--ink-subtle); }
+  .in { display: grid; grid-template-columns: 140px 22px 1fr; row-gap: 22px; }
+  .st { grid-column: 3; background: var(--canvas); border: 1.5px solid transparent; border-radius: 10px; padding: 11px 12px 12px; }
+  .st .hd { display: flex; align-items: center; gap: 8px; }
+  .num { width: 22px; height: 22px; border-radius: 50%; background: var(--ink-strong); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; font-variant-numeric: tabular-nums; }
+  .st h3 { font-size: 14px; font-weight: 700; color: var(--ink-strong); line-height: 20px; white-space: nowrap; }
+  .st p { font-size: 12px; color: var(--ink-subtle); line-height: 17px; margin-top: 6px; white-space: nowrap; }
+  .st.key { background: var(--human-soft); border-color: var(--human); }
+  .st.key .num { background: var(--human-ink); }
+  .aux { grid-column: 1; border: 1px solid var(--line-strong); border-radius: 10px; padding: 11px 12px 12px; background: var(--raised); }
+  .aux .t { font-size: 13.5px; font-weight: 700; color: var(--ink-strong); line-height: 18px; white-space: nowrap; }
+  .aux .u { font-size: 12px; color: var(--ink-subtle); line-height: 17px; white-space: nowrap; }
+  .aux .s { font-size: 12px; color: var(--ink-subtle); line-height: 17px; margin-top: 7px; white-space: nowrap; }
+  #runner { grid-row: 3 / span 2; align-self: stretch; margin-bottom: 42px; }
+  #db { grid-row: 5; align-self: center; display: flex; align-items: center; gap: 10px; }
+  #db .ico { margin: 0; flex: none; }
+  /* 선 라벨 */
+  .lb { position: absolute; font-size: 12px; font-weight: 600; line-height: 16px; white-space: nowrap; color: var(--ink); z-index: 2; }
+  .lb.c { transform: translateX(-50%); }
+  /* 아래 띠 */
+  .strip { margin-top: 16px; display: flex; align-items: baseline; gap: 12px; padding: 10px 14px; border-radius: 10px; background: var(--emphasis); font-size: 12.5px; line-height: 18px; color: var(--ink); white-space: nowrap; }
+  .strip b { font-weight: 700; color: var(--ink-strong); }
+</style></head>
+<body>
+<div id="fig" data-preset="doc">
+  <div class="arch">
+    <div class="grp" id="L">
+      <div class="gt">들어오는 곳</div>
+      <div class="stack">
+        <div class="it" id="s1"><div class="ico" data-icon="plug" data-size="15"></div><div class="t">메일 · 일정 · 업무 도구</div><div class="s">Gmail · 캘린더 · Slack 등<br>공식 API와 웹훅</div></div>
+        <div class="it" id="s2"><div class="ico" data-icon="message-circle" data-size="15"></div><div class="t">카카오톡</div><div class="s">채널 챗봇으로 받고 보내요<br>대화를 읽는 공식 길은 없어요</div></div>
+        <div class="it" id="s3"><div class="ico" data-icon="git-branch" data-size="15"></div><div class="t">코드 저장소</div><div class="s">에이전트가 내 칸의<br>샌드박스에서 작업해요</div></div>
+      </div>
+    </div>
+    <div></div>
+    <div class="srv" id="S">
+      <div class="gt">CatchUp 클라우드 <span>(모든 로직이 여기서 돌아요)</span></div>
+      <div class="front"><b>공용 앞단</b>로그인 · 웹훅 받기 · 푸시 → 사람마다 칸으로</div>
+      <div class="cell"><div class="ct">내 칸 <span>(나만의 개인 서버 — 데이터 · 키가 따로예요)</span></div>
+      <div class="in">
+        <div class="st" id="c1" style="grid-row:1"><div class="hd"><span class="num">1</span><h3>받기</h3></div><p>같은 대화끼리 묶고<br>중복을 걸러요</p></div>
+        <div class="st" id="c2" style="grid-row:2"><div class="hd"><span class="num">2</span><h3>가르기</h3></div><p>알아서 / 알려만 / 물어보기<br>(작은 모델 + 규칙)</p></div>
+        <div class="st key" id="c3" style="grid-row:3"><div class="hd"><span class="num">3</span><h3>카드 만들기</h3></div><p>요약 · 선택지 · 답장 초안<br>(큰 모델)</p></div>
+        <div class="st" id="c4" style="grid-row:4"><div class="hd"><span class="num">4</span><h3>실행</h3></div><p>고른 답대로 보내고 바꿔요.<br>영수증과 되돌리기를 남겨요</p></div>
+        <div class="st" id="c5" style="grid-row:5"><div class="hd"><span class="num">5</span><h3>기억과 규칙</h3></div><p>내 답에서 배운 기준,<br>알아서 해도 되는 범위</p></div>
+        <div class="aux" id="runner">
+          <div class="t">에이전트 샌드박스</div><div class="u">(세션마다 격리)</div>
+          <div class="s">Claude Code ·<br>Codex를 돌리고,<br>질문과 승인 요청을<br>카드로 바꿔요</div>
+        </div>
+        <div class="aux" id="db"><div class="ico" data-icon="database" data-size="15"></div><div><div class="t">내 저장소</div><div class="u">(칸 키로 암호화)</div></div></div>
+      </div>
+      </div>
+    </div>
+    <div></div>
+    <div class="grp" id="R">
+      <div class="gt">내 기기</div>
+      <div class="it" id="mac"><div class="ico" data-icon="smartphone" data-size="15"></div><div class="t">안드로이드 앱 <em>(선택)</em></div><div class="s">카카오톡 알림을<br>내 칸으로 이어 줘요</div></div>
+      <div class="it" id="app"><div class="ico" data-icon="tablet-smartphone" data-size="15"></div><div class="t">웹 → iPhone · iPad</div><div class="s">카드에 답하기 · 푸시<br>카카오톡 채널에서도</div></div>
+    </div>
+  </div>
+  <div class="strip"><b>AI1에서 방식을 가져오는 것</b><span>객관식 질문 · 승인 뒤 실행 · 영수증과 되돌리기 · 규칙 · 연결 허브 · 여러 모델 공급자</span></div>
+  <span class="lb c" id="lbCard">결정 카드</span>
+  <span class="lb c" id="lbAns">내 답</span>
+  <span class="lb" id="lbOut">답장 · 일정 · 승인</span>
+</div>
+<script>
+afterLayout(() => {
+  const G = '#686871'
+  const $ = id => document.getElementById(id)
+  const g = { color: G, width: 1.5 }
+
+  // 옆 묶음 높이와 앱 카드 자리를 단계 칸에 맞춘다 — 앱은 카드 만들기~실행 높이에 걸치고, 두 묶음은 앱 아래에서 함께 끝난다
+  {
+    const c3 = box('#c3'), c4 = box('#c4'), R = box('#R'), L = box('#L')
+    const top = c3.cy - 26, bottom = c4.cy + 26
+    $('app').style.top = (top - R.t - 1) + 'px'
+    $('app').style.height = (bottom - top) + 'px'
+    $('R').style.height = (bottom + 12 - R.t) + 'px'
+    $('L').style.height = (bottom + 12 - L.t) + 'px'
+  }
+
+  const [c1, c2, c3, c4, c5] = [1, 2, 3, 4, 5].map(i => box('#c' + i))
+  const L = box('#L'), S = box('#S'), R = box('#R'), mac = box('#mac'), app = box('#app'), run = box('#runner')
+
+  // 단계 사이
+  for (const [a, b] of [[c1, c2], [c2, c3], [c3, c4], [c4, c5]]) wire([[a.cx, a.b], [a.cx, b.t]], { ...g, headSize: 5 })
+
+  // 들어오는 곳 → 받기
+  wire([[L.r, c1.cy], [c1.l, c1.cy]], g)
+  // 안드로이드 앱 → 받기 (선택 — 점선)
+  wire([[mac.l, c1.cy], [c1.r, c1.cy]], { ...g, dash: '4 4' })
+
+  // 카드 만들기 → 앱, 앱 → 실행
+  wire([[c3.r, c3.cy], [app.l, c3.cy]], g)
+  wire([[app.l, c4.cy], [c4.r, c4.cy]], g)
+  const mid = (S.r + R.l) / 2
+  $('lbCard').style.left = mid + 'px'; $('lbCard').style.top = (c3.cy - 8 - 16) + 'px'
+  $('lbAns').style.left = mid + 'px'; $('lbAns').style.top = (c4.cy - 8 - 16) + 'px'
+
+  // 에이전트 실행기 ↔ 카드 만들기 · 실행
+  const up = c4.cy - 20, down = c4.cy + 22
+  wire([[run.r, c3.cy], [c3.l, c3.cy]], g)
+  wire([[c4.l, up], [run.r, up]], g)
+
+  // 실행 → 들어오는 곳 — 라벨은 선 아래(위는 실행기)
+  wire([[c4.l, down], [L.r, down]], g)
+  $('lbOut').style.left = run.l + 'px'; $('lbOut').style.top = (down + 7) + 'px'
+})
+</script>
+</body></html>

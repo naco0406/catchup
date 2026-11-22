@@ -1,0 +1,154 @@
+/*
+  CatchUp 디자인 토큰 — v0.2 · 2026-11-21
+  정본은 이 파일이에요. 화면(웹 · 시안 보드)은 이 변수만 써요. iOS 앱은 같은 이름 · 값을 Swift 로 옮겨요.
+
+  층은 둘이에요.
+  1) 원료(--cu-tomato-*, --cu-warm-* …): 색 이름. 화면 코드에서 바로 쓰지 않아요.
+  2) 뜻(--cu-bg-*, --cu-fg-*, --cu-accent …): 화면 코드가 쓰는 이름. 다크 모드는 이 층만 바꿔요.
+
+  대비(WCAG, 흰 바탕 기준)는 README.md 의 색 표에 적었어요. 본문 글자는 모두 4.5:1 이상이에요.
+*/
+:root {
+  /* ── 원료: 토마토(케첩 빨강) ── */
+  --cu-tomato-50: #FFF3EF;
+  --cu-tomato-100: #FFE6DE;
+  --cu-tomato-200: #FFC9B9;
+  --cu-tomato-300: #FF9A86;   /* 캐릭터 볼 */
+  --cu-tomato-400: #F2553A;
+  --cu-tomato-500: #E5391F;   /* 로고 · 캐릭터 몸 */
+  --cu-tomato-600: #D12C14;   /* 강조 칠 — 흰 글자 5.15:1 */
+  --cu-tomato-700: #B8280F;   /* 강조 글자 · 눌림 — 흰 바탕 6.3:1 */
+  --cu-tomato-800: #8E1F0E;   /* 위험 · 실패 글자 — 흰 바탕 8.9:1 */
+  --cu-tomato-900: #5E160B;
+
+  /* ── 원료: 따뜻한 회색 — 거의 무채색, 아주 살짝 따뜻해요(채도 5~9%, 붉은 쪽이 아니라 노란 쪽). 빨간 느낌은 강조색에만 둬요 ── */
+  --cu-warm-0: #FFFFFF;
+  --cu-warm-25: #FAFAF9;
+  --cu-warm-50: #F5F5F3;
+  --cu-warm-100: #EEEDEB;
+  --cu-warm-150: #E6E4E1;
+  --cu-warm-200: #D8D5D1;
+  --cu-warm-300: #C2BEB9;
+  --cu-warm-500: #6D6863;     /* 셋째 글자 — 흰 바탕 5.5:1 */
+  --cu-warm-700: #4C4844;     /* 둘째 글자 — 흰 바탕 9.1:1 */
+  --cu-warm-950: #1C1A18;     /* 글자 — 흰 바탕 17.4:1 */
+
+  /* ── 원료: 머스터드 · 잎 ── 케첩 옆의 머스터드는 '기다림', 꼭지 잎은 '됐어요' */
+  --cu-mustard-400: #E9A10E;  /* 점 */
+  --cu-mustard-700: #8F5A00;  /* 글자 — 흰 바탕 5.78:1 */
+  --cu-mustard-50: #FFF6E0;
+  --cu-leaf-600: #2E7D3A;     /* 로고 꼭지 · 됐어요 — 흰 바탕 5.11:1 */
+  --cu-leaf-50: #EAF5EC;
+
+  /* ── 뜻: 바탕 ── */
+  --cu-bg-canvas: var(--cu-warm-25);      /* 앱 바탕 — 카드가 그 위에 떠요 */
+  --cu-bg-surface: var(--cu-warm-0);      /* 카드 · 입력창 · 팝오버 */
+  --cu-bg-sidebar: var(--cu-warm-50);
+  --cu-bg-soft: var(--cu-warm-100);       /* 근거 알약 · 미리보기 · 출처 동그라미 */
+  --cu-bg-soft-strong: var(--cu-warm-150);/* 고른 사이드바 줄 · 눌림 */
+  --cu-bg-inverse: var(--cu-warm-950);    /* 토스트 */
+
+  /* ── 뜻: 글자 ── */
+  --cu-fg: var(--cu-warm-950);
+  --cu-fg-2: var(--cu-warm-700);
+  --cu-fg-3: var(--cu-warm-500);
+  --cu-fg-on-inverse: var(--cu-warm-0);
+
+  /* ── 뜻: 선 ── 선은 두 가지뿐이에요 */
+  --cu-line: var(--cu-warm-100);
+  --cu-line-strong: var(--cu-warm-200);
+
+  /* ── 뜻: 강조 ── 케첩 빨강은 '누르면 되는 곳'에만 칠해요(추천 답 · 주 단추 · 지금 카드) */
+  --cu-accent: var(--cu-tomato-600);
+  --cu-accent-hover: var(--cu-tomato-700);
+  --cu-accent-text: var(--cu-tomato-700);
+  --cu-accent-soft: var(--cu-tomato-50);
+  --cu-accent-soft-strong: var(--cu-tomato-100);
+  --cu-on-accent: var(--cu-warm-0);
+  --cu-focus: 0 0 0 3px var(--cu-tomato-200);
+
+  /* ── 뜻: 상태 ── 점 하나와 한 마디로만 써요 */
+  --cu-wait: var(--cu-mustard-700);       /* 기한 · 누가 기다려요(글자) */
+  --cu-wait-dot: var(--cu-mustard-400);
+  --cu-ok: var(--cu-leaf-600);            /* 연결됨 · 끝났어요 */
+  --cu-ok-soft: var(--cu-leaf-50);
+  --cu-danger: var(--cu-tomato-800);      /* 위험 · 실패 — 반드시 경고 아이콘과 낱말을 함께 */
+  --cu-danger-soft: var(--cu-tomato-50);
+  --cu-diff-add: #E7F4E9;
+  --cu-diff-del: #FDECE7;
+
+  /* ── 모양: 완전히 둥글게 ── 누르는 것은 모두 끝이 반원이에요 */
+  --cu-r-full: 999px;     /* 단추 · 선택지 · 입력창 · 알약 · 키 · 출처 동그라미 · 사이드바 줄 */
+  --cu-r-card: 32px;      /* 결정 카드 · 시트 */
+  --cu-r-panel: 24px;     /* 카드 안 칸(미리보기 · 일정 비교) · 알림 */
+  --cu-r-inset: 16px;     /* 코드 · 작은 칸 */
+
+  /* ── 간격: 4 의 배수 ── */
+  --cu-s-1: 4px; --cu-s-2: 8px; --cu-s-3: 12px; --cu-s-4: 16px; --cu-s-5: 20px;
+  --cu-s-6: 24px; --cu-s-8: 32px; --cu-s-10: 40px; --cu-s-12: 48px;
+
+  /* ── 높이 ── */
+  --cu-h-sm: 32px;        /* 작은 단추 · 아이콘 단추 */
+  --cu-h-md: 40px;        /* 단추 · 사이드바 줄 */
+  --cu-h-lg: 52px;        /* 큰 단추 · 입력창 */
+  --cu-h-option: 64px;    /* 선택지(두 줄) */
+
+  /* ── 그림자: 글자색과 같은 거의 검정 그늘 ── */
+  --cu-shadow-card: 0 1px 2px rgb(28 26 24 / .05), 0 24px 48px -24px rgb(28 26 24 / .20);
+  --cu-shadow-pop: 0 1px 2px rgb(28 26 24 / .08), 0 12px 32px -8px rgb(28 26 24 / .22);
+  --cu-shadow-lift: 0 1px 2px rgb(28 26 24 / .06);
+
+  /* ── 글자 ── Pretendard 하나. 숫자는 늘 고정폭 숫자(tabular-nums) */
+  --cu-font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif;
+  --cu-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --cu-t-hero: 750 56px/64px var(--cu-font);      /* 소개 페이지 첫 제목(좁은 화면 36/44) */
+  --cu-t-section: 700 40px/50px var(--cu-font);   /* 소개 페이지 장 제목(좁은 화면 28/36) */
+  --cu-t-display: 700 32px/40px var(--cu-font);   /* 다 봤어요 · 처음 */
+  --cu-t-question: 700 24px/32px var(--cu-font);  /* 카드 질문 */
+  --cu-t-title: 700 18px/26px var(--cu-font);     /* 화면 제목 */
+  --cu-t-body-strong: 600 16px/24px var(--cu-font);
+  --cu-t-body: 400 16px/24px var(--cu-font);
+  --cu-t-label: 500 14px/20px var(--cu-font);
+  --cu-t-caption: 400 14px/20px var(--cu-font);
+  --cu-t-micro: 600 12px/16px var(--cu-font);     /* 키 · 숫자 배지. 12 아래는 쓰지 않아요 */
+  --cu-track-tight: -0.025em;                      /* 제목 */
+  --cu-track: -0.011em;                            /* 본문 */
+
+  /* ── 움직임 ── */
+  --cu-ease: cubic-bezier(.2, .8, .2, 1);
+  --cu-ease-spring: cubic-bezier(.3, 1.4, .5, 1);  /* 고른 선택지가 살짝 튀어요 */
+  --cu-dur-fast: 120ms;   /* 눌림 */
+  --cu-dur: 200ms;        /* 상태 바뀜 */
+  --cu-dur-card: 320ms;   /* 카드 넘김 */
+}
+
+/* 다크 모드 — 뜻 층만 바꿔요. 1차에서는 토큰만 정하고 화면은 그리지 않아요(plan.md). 원료 색을 직접 쓴 곳(--cu-warm-0 등)은 다크에서도 그대로예요. */
+:root[data-theme="dark"], [data-theme="dark"] {   /* 앱 전체 또는 한 부분만 */
+  --cu-bg-canvas: #171615;
+  --cu-bg-surface: #1F1D1C;
+  --cu-bg-sidebar: #1A1918;
+  --cu-bg-soft: #292725;
+  --cu-bg-soft-strong: #33302E;
+  --cu-bg-inverse: #F5F3F1;
+  --cu-fg: #F5F3F1;
+  --cu-fg-2: #C9C4BF;
+  --cu-fg-3: #A09A94;
+  --cu-fg-on-inverse: #1C1A18;
+  --cu-line: #2F2C2A;
+  --cu-line-strong: #403C39;
+  --cu-accent: #D9361C;        /* 흰 글자 4.67:1 */
+  --cu-accent-hover: #F2553A;
+  --cu-accent-text: #FF7A5C;   /* 카드 바탕 #1F1D1C 위 6.55:1 */
+  --cu-accent-soft: #3A1D16;
+  --cu-accent-soft-strong: #4A231A;
+  --cu-wait: #F0B43C;
+  --cu-wait-dot: #F0B43C;
+  --cu-ok: #5FBF6E;
+  --cu-ok-soft: #1C2B1E;
+  --cu-danger: #FF8A73;
+  --cu-danger-soft: #3A1D16;
+  --cu-diff-add: #1C2B1E;
+  --cu-diff-del: #3A1D16;
+  --cu-shadow-card: 0 1px 2px rgb(0 0 0 / .4), 0 24px 48px -24px rgb(0 0 0 / .6);
+  --cu-shadow-pop: 0 1px 2px rgb(0 0 0 / .4), 0 12px 32px -8px rgb(0 0 0 / .6);
+}

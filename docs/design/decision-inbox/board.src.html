@@ -1,0 +1,1353 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CatchUp — 화면 시안 v2 · 2026-11-21</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/*__BOARD_CSS__*/
+.bd-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 28px; align-items: start; }
+.bd-grid4 .bd-card { padding: 20px; }
+.bd-grid4 .bd-pc { grid-template-columns: 1fr; gap: 12px; }
+.bd-wire .card { margin: 0 auto; width: 78%; }
+.bd-wire .opt { height: 9px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--bd-line-strong); }
+.bd-wire .opt.k { background: var(--bd-ink-strong); box-shadow: none; opacity: .8; }
+.bd-solo-notes { grid-template-columns: 1fr !important; flex: 1; min-width: 0; margin-top: 4px !important; }
+.bd-have { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+</style>
+<style id="kit">
+/*
+  CatchUp 디자인 토큰 — v0.2 · 2026-11-21
+  정본은 이 파일이에요. 화면(웹 · 시안 보드)은 이 변수만 써요. iOS 앱은 같은 이름 · 값을 Swift 로 옮겨요.
+
+  층은 둘이에요.
+  1) 원료(--cu-tomato-*, --cu-warm-* …): 색 이름. 화면 코드에서 바로 쓰지 않아요.
+  2) 뜻(--cu-bg-*, --cu-fg-*, --cu-accent …): 화면 코드가 쓰는 이름. 다크 모드는 이 층만 바꿔요.
+
+  대비(WCAG, 흰 바탕 기준)는 README.md 의 색 표에 적었어요. 본문 글자는 모두 4.5:1 이상이에요.
+*/
+:root {
+  /* ── 원료: 토마토(케첩 빨강) ── */
+  --cu-tomato-50: #FFF3EF;
+  --cu-tomato-100: #FFE6DE;
+  --cu-tomato-200: #FFC9B9;
+  --cu-tomato-300: #FF9A86;   /* 캐릭터 볼 */
+  --cu-tomato-400: #F2553A;
+  --cu-tomato-500: #E5391F;   /* 로고 · 캐릭터 몸 */
+  --cu-tomato-600: #D12C14;   /* 강조 칠 — 흰 글자 5.15:1 */
+  --cu-tomato-700: #B8280F;   /* 강조 글자 · 눌림 — 흰 바탕 6.3:1 */
+  --cu-tomato-800: #8E1F0E;   /* 위험 · 실패 글자 — 흰 바탕 8.9:1 */
+  --cu-tomato-900: #5E160B;
+
+  /* ── 원료: 따뜻한 회색 — 거의 무채색, 아주 살짝 따뜻해요(채도 5~9%, 붉은 쪽이 아니라 노란 쪽). 빨간 느낌은 강조색에만 둬요 ── */
+  --cu-warm-0: #FFFFFF;
+  --cu-warm-25: #FAFAF9;
+  --cu-warm-50: #F5F5F3;
+  --cu-warm-100: #EEEDEB;
+  --cu-warm-150: #E6E4E1;
+  --cu-warm-200: #D8D5D1;
+  --cu-warm-300: #C2BEB9;
+  --cu-warm-500: #6D6863;     /* 셋째 글자 — 흰 바탕 5.5:1 */
+  --cu-warm-700: #4C4844;     /* 둘째 글자 — 흰 바탕 9.1:1 */
+  --cu-warm-950: #1C1A18;     /* 글자 — 흰 바탕 17.4:1 */
+
+  /* ── 원료: 머스터드 · 잎 ── 케첩 옆의 머스터드는 '기다림', 꼭지 잎은 '됐어요' */
+  --cu-mustard-400: #E9A10E;  /* 점 */
+  --cu-mustard-700: #8F5A00;  /* 글자 — 흰 바탕 5.78:1 */
+  --cu-mustard-50: #FFF6E0;
+  --cu-leaf-600: #2E7D3A;     /* 로고 꼭지 · 됐어요 — 흰 바탕 5.11:1 */
+  --cu-leaf-50: #EAF5EC;
+
+  /* ── 뜻: 바탕 ── */
+  --cu-bg-canvas: var(--cu-warm-25);      /* 앱 바탕 — 카드가 그 위에 떠요 */
+  --cu-bg-surface: var(--cu-warm-0);      /* 카드 · 입력창 · 팝오버 */
+  --cu-bg-sidebar: var(--cu-warm-50);
+  --cu-bg-soft: var(--cu-warm-100);       /* 근거 알약 · 미리보기 · 출처 동그라미 */
+  --cu-bg-soft-strong: var(--cu-warm-150);/* 고른 사이드바 줄 · 눌림 */
+  --cu-bg-inverse: var(--cu-warm-950);    /* 토스트 */
+
+  /* ── 뜻: 글자 ── */
+  --cu-fg: var(--cu-warm-950);
+  --cu-fg-2: var(--cu-warm-700);
+  --cu-fg-3: var(--cu-warm-500);
+  --cu-fg-on-inverse: var(--cu-warm-0);
+
+  /* ── 뜻: 선 ── 선은 두 가지뿐이에요 */
+  --cu-line: var(--cu-warm-100);
+  --cu-line-strong: var(--cu-warm-200);
+
+  /* ── 뜻: 강조 ── 케첩 빨강은 '누르면 되는 곳'에만 칠해요(추천 답 · 주 단추 · 지금 카드) */
+  --cu-accent: var(--cu-tomato-600);
+  --cu-accent-hover: var(--cu-tomato-700);
+  --cu-accent-text: var(--cu-tomato-700);
+  --cu-accent-soft: var(--cu-tomato-50);
+  --cu-accent-soft-strong: var(--cu-tomato-100);
+  --cu-on-accent: var(--cu-warm-0);
+  --cu-focus: 0 0 0 3px var(--cu-tomato-200);
+
+  /* ── 뜻: 상태 ── 점 하나와 한 마디로만 써요 */
+  --cu-wait: var(--cu-mustard-700);       /* 기한 · 누가 기다려요(글자) */
+  --cu-wait-dot: var(--cu-mustard-400);
+  --cu-ok: var(--cu-leaf-600);            /* 연결됨 · 끝났어요 */
+  --cu-ok-soft: var(--cu-leaf-50);
+  --cu-danger: var(--cu-tomato-800);      /* 위험 · 실패 — 반드시 경고 아이콘과 낱말을 함께 */
+  --cu-danger-soft: var(--cu-tomato-50);
+  --cu-diff-add: #E7F4E9;
+  --cu-diff-del: #FDECE7;
+
+  /* ── 모양: 완전히 둥글게 ── 누르는 것은 모두 끝이 반원이에요 */
+  --cu-r-full: 999px;     /* 단추 · 선택지 · 입력창 · 알약 · 키 · 출처 동그라미 · 사이드바 줄 */
+  --cu-r-card: 32px;      /* 결정 카드 · 시트 */
+  --cu-r-panel: 24px;     /* 카드 안 칸(미리보기 · 일정 비교) · 알림 */
+  --cu-r-inset: 16px;     /* 코드 · 작은 칸 */
+
+  /* ── 간격: 4 의 배수 ── */
+  --cu-s-1: 4px; --cu-s-2: 8px; --cu-s-3: 12px; --cu-s-4: 16px; --cu-s-5: 20px;
+  --cu-s-6: 24px; --cu-s-8: 32px; --cu-s-10: 40px; --cu-s-12: 48px;
+
+  /* ── 높이 ── */
+  --cu-h-sm: 32px;        /* 작은 단추 · 아이콘 단추 */
+  --cu-h-md: 40px;        /* 단추 · 사이드바 줄 */
+  --cu-h-lg: 52px;        /* 큰 단추 · 입력창 */
+  --cu-h-option: 64px;    /* 선택지(두 줄) */
+
+  /* ── 그림자: 글자색과 같은 거의 검정 그늘 ── */
+  --cu-shadow-card: 0 1px 2px rgb(28 26 24 / .05), 0 24px 48px -24px rgb(28 26 24 / .20);
+  --cu-shadow-pop: 0 1px 2px rgb(28 26 24 / .08), 0 12px 32px -8px rgb(28 26 24 / .22);
+  --cu-shadow-lift: 0 1px 2px rgb(28 26 24 / .06);
+
+  /* ── 글자 ── Pretendard 하나. 숫자는 늘 고정폭 숫자(tabular-nums) */
+  --cu-font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif;
+  --cu-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --cu-t-hero: 750 56px/64px var(--cu-font);      /* 소개 페이지 첫 제목(좁은 화면 36/44) */
+  --cu-t-section: 700 40px/50px var(--cu-font);   /* 소개 페이지 장 제목(좁은 화면 28/36) */
+  --cu-t-display: 700 32px/40px var(--cu-font);   /* 다 봤어요 · 처음 */
+  --cu-t-question: 700 24px/32px var(--cu-font);  /* 카드 질문 */
+  --cu-t-title: 700 18px/26px var(--cu-font);     /* 화면 제목 */
+  --cu-t-body-strong: 600 16px/24px var(--cu-font);
+  --cu-t-body: 400 16px/24px var(--cu-font);
+  --cu-t-label: 500 14px/20px var(--cu-font);
+  --cu-t-caption: 400 14px/20px var(--cu-font);
+  --cu-t-micro: 600 12px/16px var(--cu-font);     /* 키 · 숫자 배지. 12 아래는 쓰지 않아요 */
+  --cu-track-tight: -0.025em;                      /* 제목 */
+  --cu-track: -0.011em;                            /* 본문 */
+
+  /* ── 움직임 ── */
+  --cu-ease: cubic-bezier(.2, .8, .2, 1);
+  --cu-ease-spring: cubic-bezier(.3, 1.4, .5, 1);  /* 고른 선택지가 살짝 튀어요 */
+  --cu-dur-fast: 120ms;   /* 눌림 */
+  --cu-dur: 200ms;        /* 상태 바뀜 */
+  --cu-dur-card: 320ms;   /* 카드 넘김 */
+}
+
+/* 다크 모드 — 뜻 층만 바꿔요. 1차에서는 토큰만 정하고 화면은 그리지 않아요(plan.md). 원료 색을 직접 쓴 곳(--cu-warm-0 등)은 다크에서도 그대로예요. */
+:root[data-theme="dark"], [data-theme="dark"] {   /* 앱 전체 또는 한 부분만 */
+  --cu-bg-canvas: #171615;
+  --cu-bg-surface: #1F1D1C;
+  --cu-bg-sidebar: #1A1918;
+  --cu-bg-soft: #292725;
+  --cu-bg-soft-strong: #33302E;
+  --cu-bg-inverse: #F5F3F1;
+  --cu-fg: #F5F3F1;
+  --cu-fg-2: #C9C4BF;
+  --cu-fg-3: #A09A94;
+  --cu-fg-on-inverse: #1C1A18;
+  --cu-line: #2F2C2A;
+  --cu-line-strong: #403C39;
+  --cu-accent: #D9361C;        /* 흰 글자 4.67:1 */
+  --cu-accent-hover: #F2553A;
+  --cu-accent-text: #FF7A5C;   /* 카드 바탕 #1F1D1C 위 6.55:1 */
+  --cu-accent-soft: #3A1D16;
+  --cu-accent-soft-strong: #4A231A;
+  --cu-wait: #F0B43C;
+  --cu-wait-dot: #F0B43C;
+  --cu-ok: #5FBF6E;
+  --cu-ok-soft: #1C2B1E;
+  --cu-danger: #FF8A73;
+  --cu-danger-soft: #3A1D16;
+  --cu-diff-add: #1C2B1E;
+  --cu-diff-del: #3A1D16;
+  --cu-shadow-card: 0 1px 2px rgb(0 0 0 / .4), 0 24px 48px -24px rgb(0 0 0 / .6);
+  --cu-shadow-pop: 0 1px 2px rgb(0 0 0 / .4), 0 12px 32px -8px rgb(0 0 0 / .6);
+}
+
+/*
+  CatchUp 컴포넌트 — v0.4 · 2026-11-21 (화면 검수 반영: 단추 글자 · 초점 · 선택지 모서리 · 위험 표시 · 코드 줄바꿈)
+  값은 모두 tokens.css 의 변수예요. 여기서 새 색 · 크기 숫자를 지어내지 않아요(격자 안의 배치 값만 예외).
+  클래스 이름 = 만들 컴포넌트 이름이에요. 목록과 쓰임은 README.md 의 '컴포넌트' 표에 있어요.
+    .cu-card = <DecisionCard>   .cu-opt = <OptionRow>   .cu-composer = <Composer>   .cu-btn = <Button> …
+
+  디자인 언어 세 줄
+  1. 누르는 것은 끝이 반원이에요(--cu-r-full). 담는 것은 32 · 24 · 16 세 단계예요.
+  2. 케첩 빨강은 '누르면 되는 곳'에만 칠해요. 위험은 빨강 칠이 아니라 경고 아이콘 + 낱말이에요.
+  3. 거의 흰 바탕 위에 흰 카드가 떠요. 회색은 거의 무채색이고, 빨간 느낌은 강조색에만 있어요. 선보다 그늘로 나눠요.
+*/
+
+/* ── 바탕 ── */
+.cu-root {
+  font-family: var(--cu-font); font-size: 16px; line-height: 24px; letter-spacing: var(--cu-track);
+  color: var(--cu-fg); background: var(--cu-bg-canvas); -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss06"; word-break: keep-all; overflow-wrap: break-word;   /* 한글은 낱말 단위로 줄을 바꿔요 */
+}
+.cu-root svg { width: 18px; height: 18px; fill: currentColor; flex: none; display: block; }
+.cu-root b { font-weight: 600; }
+
+/* ── <StatusBar> (기기 틀 그림용) ── */
+.cu-status { height: 24px; padding: 0 20px; display: flex; align-items: center; gap: 8px; font: var(--cu-t-micro); font-variant-numeric: tabular-nums; }
+.cu-status .sp { flex: 1; }
+.cu-status svg { width: 15px; height: 15px; }
+.cu-status.side { background: linear-gradient(to right, var(--cu-bg-sidebar) 264px, var(--cu-bg-canvas) 264px); }
+.cu-app { display: flex; height: calc(100% - 24px); }
+
+/* ── <Logo> · <AppIcon> · <Mascot> ── */
+.cu-logo { width: 28px; height: 28px; display: grid; place-items: center; flex: none; }
+.cu-root .cu-logo svg { width: 28px; height: 28px; }
+.cu-appicon { width: 20px; height: 20px; border-radius: 6px; background: var(--cu-warm-0); box-shadow: inset 0 0 0 1px var(--cu-line); display: grid; place-items: center; flex: none; }
+.cu-root .cu-appicon svg { width: 16px; height: 16px; }
+.cu-mascot { display: block; flex: none; }
+.cu-root .cu-mascot svg { width: 100%; height: 100%; }
+.cu-mascot.lg { width: 112px; height: 112px; }
+.cu-mascot.md { width: 80px; height: 80px; }
+
+/* ── <Sidebar> ── */
+.cu-side { width: 264px; flex: none; background: var(--cu-bg-sidebar); display: flex; flex-direction: column; padding: 8px 12px 12px; }
+.cu-side > * { flex-shrink: 0; } /* 키가 모자라면 줄이 눌리지 않고 사이드바가 스크롤돼요 */
+.cu-side-head { height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 4px 0 10px; }
+.cu-side-head .name { font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); flex: 1; }
+.cu-ib { width: 36px; height: 36px; border-radius: var(--cu-r-full); display: grid; place-items: center; color: var(--cu-fg-2); flex: none; }
+.cu-root .cu-ib svg { width: 20px; height: 20px; }
+.cu-ib.off { color: var(--cu-warm-300); }
+/* <SidebarItem> — 고른 줄은 흰 알약이 떠요 */
+.cu-nav { height: var(--cu-h-md); display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: var(--cu-r-full); font: var(--cu-t-caption); color: var(--cu-fg); }
+.cu-nav svg { color: var(--cu-fg-2); }
+.cu-nav.on { background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift); font-weight: 600; }
+.cu-nav.on svg { color: var(--cu-fg); }
+.cu-nav .n { margin-left: auto; font: var(--cu-t-caption); color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
+.cu-nav.on .n { color: var(--cu-fg); font-weight: 600; }
+/* 빨강 배지는 '지금 여기'(캐치업에 남은 카드 수)에만 — 다른 화면의 수는 글자로 */
+.cu-nav .n.badge { min-width: 24px; height: 24px; padding: 0 8px; border-radius: var(--cu-r-full); background: var(--cu-accent); color: var(--cu-on-accent); font: var(--cu-t-micro); display: inline-grid; place-items: center; margin-right: -6px; }
+.cu-side-label { height: 28px; margin-top: 16px; padding: 0 14px; display: flex; align-items: center; font: var(--cu-t-caption); color: var(--cu-fg-3); }
+/* <RunItem> — 비서가 하는 일 한 줄 */
+.cu-run { display: grid; grid-template-columns: 18px 1fr; column-gap: 10px; padding: 6px 14px; }
+.cu-run .t { font: var(--cu-t-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-run .s { grid-column: 2; font: 400 12px/16px var(--cu-font); color: var(--cu-fg-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.cu-run .s.wait { color: var(--cu-wait); font-weight: 500; }
+.cu-run .s.wait::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--cu-wait-dot); }
+.cu-run svg { margin-top: 1px; color: var(--cu-fg-2); }
+/* <SourceRow> */
+.cu-src-row { height: 32px; display: flex; align-items: center; gap: 10px; padding: 0 14px; font: var(--cu-t-caption); }
+.cu-src-row svg { color: var(--cu-fg-2); }
+.cu-src-row .n { margin-left: auto; font: 400 12px/16px var(--cu-font); color: var(--cu-fg-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cu-src-row .n.warn { color: var(--cu-wait); }
+.cu-me { margin-top: auto; height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: var(--cu-r-full); font: var(--cu-t-caption); }
+/* <Avatar> */
+.cu-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--cu-bg-soft-strong); color: var(--cu-fg); font: var(--cu-t-micro); display: grid; place-items: center; flex: none; letter-spacing: 0; }
+.cu-me .sub { margin-left: auto; font: 400 12px/16px var(--cu-font); color: var(--cu-fg-3); }
+
+/* ── <TopBar> · <CardProgress> ── */
+.cu-main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--cu-bg-canvas); position: relative; }
+.cu-top { height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 28px; }
+.cu-top h1 { margin: 0; font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); }
+.cu-top .left { font: var(--cu-t-caption); color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
+.cu-top .sp { flex: 1; }
+.cu-steps { display: flex; gap: 6px; align-items: center; }
+.cu-step { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--cu-fg-3); background: var(--cu-bg-soft); }
+.cu-root .cu-step svg { width: 16px; height: 16px; }
+.cu-step.on { width: 44px; border-radius: var(--cu-r-full); background: var(--cu-accent); color: var(--cu-on-accent); }
+.cu-step.done { background: transparent; box-shadow: inset 0 0 0 1px var(--cu-line-strong); color: var(--cu-fg-3); }
+
+/* ── 카드 무대 · <CardDeck> ── */
+.cu-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 4px 0 0; }
+.cu-deck { position: relative; width: 680px; }
+.cu-peek { height: 12px; margin: -4px auto 0; border-radius: 0 0 var(--cu-r-card) var(--cu-r-card); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift); position: relative; }
+.cu-peek.p1 { width: 632px; z-index: 1; }
+.cu-peek.p2 { width: 584px; background: var(--cu-warm-50); z-index: 0; }
+
+/* ── <DecisionCard> ── */
+.cu-card { width: 680px; background: var(--cu-bg-surface); border-radius: var(--cu-r-card); box-shadow: var(--cu-shadow-card); padding: 28px 32px 24px; position: relative; z-index: 2; }
+.cu-card.flat { box-shadow: var(--cu-shadow-lift); }
+/* <CardSource> — 어디서 왔는지 한 줄 */
+.cu-from { display: flex; align-items: center; gap: 10px; min-height: 32px; }
+.cu-tile { width: 32px; height: 32px; border-radius: 50%; background: var(--cu-bg-soft); display: grid; place-items: center; color: var(--cu-fg); flex: none; }
+.cu-root .cu-tile svg { width: 16px; height: 16px; }
+.cu-from .who { font: 600 14px/20px var(--cu-font); white-space: nowrap; }
+.cu-from .meta { font: var(--cu-t-caption); color: var(--cu-fg-3); white-space: nowrap; }
+.cu-from .sp { flex: 1; }
+/* <DueTag> — 점 하나와 한 마디 */
+.cu-due { display: inline-flex; align-items: center; gap: 6px; font: var(--cu-t-label); color: var(--cu-wait); white-space: nowrap; }
+.cu-due::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cu-wait-dot); }
+.cu-due.calm { color: var(--cu-fg-3); font-weight: 400; }
+.cu-due.calm::before { display: none; }
+/* 위험 · 실패는 빨강 점이 아니라 경고 아이콘 + 낱말 — 케첩 빨강(누르면 되는 곳)과 섞이지 않게 */
+.cu-due.risk { color: var(--cu-danger); font-weight: 600; }
+.cu-due.risk::before { display: none; }
+.cu-root .cu-due.risk svg { width: 16px; height: 16px; }
+.cu-ask { margin: 16px 0 0; font: var(--cu-t-question); letter-spacing: var(--cu-track-tight); }
+/* <Summary> */
+.cu-sum { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font: var(--cu-t-body); color: var(--cu-fg); }
+.cu-sum li { position: relative; padding-left: 18px; }
+.cu-sum li::before { content: ""; position: absolute; left: 4px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--cu-warm-300); }
+.cu-sum .dim { color: var(--cu-fg-2); }
+/* <EvidenceChip> */
+.cu-ev { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.cu-chip { height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px 0 12px; border-radius: var(--cu-r-full); background: var(--cu-bg-soft); font: var(--cu-t-caption); color: var(--cu-fg-2); white-space: nowrap; }
+.cu-root .cu-chip svg { width: 15px; height: 15px; }
+.cu-chip.line { background: transparent; box-shadow: inset 0 0 0 1px var(--cu-line-strong); }
+
+/* ── <OptionRow> — 끝이 반원인 선택지 ── */
+.cu-opts { margin-top: 20px; display: grid; gap: 8px; }
+.cu-opt { min-height: var(--cu-h-option); display: grid; grid-template-columns: 36px 1fr auto; column-gap: 14px; align-items: center; padding: 8px 20px 8px 14px; border-radius: var(--cu-r-card); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); }
+/* 높이 64 에서 반지름 32 = 반원. 줄이 늘어도 32 에서 멈춰 타원이 되지 않아요 */
+.cu-opt .key { width: 36px; height: 36px; border-radius: 50%; background: var(--cu-bg-soft); display: grid; place-items: center; font: 600 14px/20px var(--cu-font); color: var(--cu-fg-2); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.cu-opt .l { font: var(--cu-t-body-strong); }
+.cu-opt .d { font: var(--cu-t-caption); color: var(--cu-fg-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cu-opt .l { display: block; }
+/* 위험한 선택지 — 경고 아이콘 + 낱말(자물쇠는 '잠김'으로 읽혀서 쓰지 않아요) */
+.cu-opt .r .risk { display: inline-flex; align-items: center; gap: 4px; color: var(--cu-danger); font: var(--cu-t-micro); }
+.cu-opt .r .risk svg { width: 14px; height: 14px; color: var(--cu-danger); }
+.cu-opt.confirm .d svg { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; margin-right: 4px; }
+.cu-opt .r { font: 400 12px/16px var(--cu-font); color: var(--cu-fg-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.cu-root .cu-opt .r svg { width: 16px; height: 16px; color: var(--cu-fg-3); }
+.cu-opt.rec { background: var(--cu-accent-soft); box-shadow: inset 0 0 0 2px var(--cu-accent); }
+.cu-opt.rec .key { background: var(--cu-accent); color: var(--cu-on-accent); }
+.cu-opt.picked { background: var(--cu-accent); color: var(--cu-on-accent); box-shadow: none; }
+.cu-opt.picked .d, .cu-opt.picked .r { color: rgb(255 255 255 / .82); }
+.cu-opt.picked .key { background: var(--cu-warm-0); color: var(--cu-accent-text); }
+.cu-opt.dimmed { opacity: .45; }
+.cu-opt .l, .cu-opt .d { width: fit-content; }
+/* <RecommendBadge> */
+.cu-rec { height: 24px; padding: 0 10px; border-radius: var(--cu-r-full); background: var(--cu-bg-surface); font: var(--cu-t-micro); line-height: 24px; color: var(--cu-accent-text); }
+/* <KeyHint> */
+.cu-kbd { min-width: 24px; height: 24px; padding: 0 7px; border-radius: var(--cu-r-full); box-shadow: inset 0 0 0 1px var(--cu-line-strong); display: inline-grid; place-items: center; font: 500 12px/1 var(--cu-font); color: var(--cu-fg-2); letter-spacing: 0; }
+.cu-opt.rec .cu-kbd { box-shadow: inset 0 0 0 1px var(--cu-tomato-200); color: var(--cu-accent-text); }
+.cu-kbd.inv { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .45); color: var(--cu-on-accent); }
+
+/* ── <EffectPreview> — 고르면 일어나는 일 ── */
+.cu-prev { margin-top: 12px; padding: 14px 20px 16px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); }
+.cu-prev .h { display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-root .cu-prev .h svg { width: 16px; height: 16px; }
+.cu-prev .h .sp { flex: 1; }
+.cu-prev .h a { color: var(--cu-fg); font-weight: 600; text-decoration: none; }
+.cu-prev p { margin: 6px 0 0; font: var(--cu-t-caption); color: var(--cu-fg); }
+/* <CodeDiff> */
+.cu-code { margin-top: 12px; border-radius: var(--cu-r-inset); box-shadow: inset 0 0 0 1px var(--cu-line-strong); overflow: hidden; font-family: var(--cu-mono); font-size: 12px; line-height: 20px; letter-spacing: 0; }
+.cu-code .fh { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: var(--cu-bg-soft); font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-root .cu-code .fh svg { width: 16px; height: 16px; }
+.cu-code .fh .sp { flex: 1; }
+.cu-code .fh .a { color: var(--cu-ok); font-weight: 600; } .cu-code .fh .m { color: var(--cu-danger); font-weight: 600; }
+.cu-code div.ln { padding: 0 14px 0 calc(14px + 2ch); text-indent: -2ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cu-code .fh .file { font-family: var(--cu-mono); font-size: 12px; color: var(--cu-fg-2); min-width: 0; overflow-wrap: anywhere; }
+.cu-code .fh .file::before { content: '· '; font-family: var(--cu-font); }
+.cu-code .fh .st { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.cu-code .fh + .ln { padding-top: 6px; } .cu-code .ln:last-child { padding-bottom: 6px; }
+.cu-code div.add { background: var(--cu-diff-add); } .cu-code div.del { background: var(--cu-diff-del); }
+/* <SlotCompare> — 겹친 일정 */
+.cu-slots { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cu-slot { padding: 14px 20px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); display: grid; gap: 2px; }
+.cu-slot .tm { font: var(--cu-t-caption); color: var(--cu-fg-2); font-variant-numeric: tabular-nums; }
+.cu-slot .nm { font: var(--cu-t-body-strong); }
+.cu-slot .wh { font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-slot.new { background: var(--cu-bg-surface); box-shadow: none; outline: 1px dashed var(--cu-warm-300); outline-offset: -1px; }
+
+/* ── <Composer> — 다르게 답하기 ── */
+.cu-composer { margin-top: 12px; height: var(--cu-h-lg); display: flex; align-items: center; gap: 6px; padding: 0 8px 0 22px; border-radius: var(--cu-r-full); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); font: var(--cu-t-body); color: var(--cu-fg-3); }
+.cu-composer .sp { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-composer.typed { color: var(--cu-fg); box-shadow: inset 0 0 0 2px var(--cu-fg); }
+.cu-send { width: 36px; height: 36px; border-radius: 50%; background: var(--cu-bg-soft); color: var(--cu-fg-3); display: grid; place-items: center; flex: none; }
+.cu-send.go { background: var(--cu-accent); color: var(--cu-on-accent); }
+.cu-root .cu-send svg { width: 18px; height: 18px; }
+
+/* ── <Button> ── 주 단추는 화면에 하나 */
+.cu-acts { width: 680px; margin-top: 20px; display: flex; align-items: center; gap: 4px; }
+.cu-acts .sp { flex: 1; }
+.cu-acts.in { width: auto; margin-top: 12px; }
+.cu-btn { height: var(--cu-h-md); display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: var(--cu-r-full); font: 600 14px/20px var(--cu-font); color: var(--cu-fg); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); white-space: nowrap; }
+.cu-root .cu-btn svg { width: 16px; height: 16px; color: var(--cu-fg-2); }
+.cu-btn.ghost { box-shadow: none; background: transparent; color: var(--cu-fg-2); font-weight: 500; }
+.cu-btn.primary { background: var(--cu-accent); color: var(--cu-on-accent); box-shadow: none; }
+.cu-btn.primary svg { color: var(--cu-on-accent); }
+.cu-btn.lg { height: var(--cu-h-lg); padding: 0 28px; font: var(--cu-t-body-strong); }
+
+/* ── 대화 조각 · <ChatBubble> ── */
+.cu-said { margin: 14px 0 0 auto; max-width: 460px; width: fit-content; padding: 12px 18px; border-radius: 24px 24px 8px 24px; background: var(--cu-bg-soft); font: var(--cu-t-body); }
+.cu-reply { margin-top: 12px; font: var(--cu-t-body); color: var(--cu-fg); }
+.cu-work { margin-top: 12px; display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-fg-3); }
+.cu-root .cu-work svg { width: 14px; height: 14px; }
+
+/* ── 목록 · <ListRow> · <SectionHeader> ── */
+.cu-page { flex: 1; min-height: 0; overflow: hidden; padding: 8px 40px 0; }
+.cu-page-in { width: 760px; margin: 0 auto; }
+.cu-h { display: flex; align-items: baseline; gap: 8px; margin: 20px 0 4px; font: var(--cu-t-caption); color: var(--cu-fg-3); }
+.cu-h b { color: var(--cu-fg); font: 700 16px/24px var(--cu-font); }
+.cu-h .sp { flex: 1; }
+.cu-row { min-height: 56px; display: grid; grid-template-columns: 32px 1fr auto; column-gap: 14px; align-items: center; padding: 8px 0; border-top: 1px solid var(--cu-line); }
+.cu-row .t { font: var(--cu-t-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-row .s { font: var(--cu-t-caption); color: var(--cu-fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-row .e { display: flex; align-items: center; gap: 12px; font: var(--cu-t-caption); color: var(--cu-fg-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cu-root .cu-row .e svg { width: 16px; height: 16px; }
+.cu-row .e.ok { color: var(--cu-ok); font-weight: 500; gap: 6px; }
+.cu-link { font: 600 14px/20px var(--cu-font); color: var(--cu-fg); white-space: nowrap; }
+.cu-fail { color: var(--cu-danger); font-weight: 600; }
+/* 목록이 카드 안에 들어갈 때 */
+.cu-fyi { margin-top: 12px; }
+.cu-fyi .cu-row:first-child, .cu-connect .cu-row:first-child { border-top: 0; }
+
+/* ── <Switch> ── 켜짐은 잎 색 */
+.cu-switch { width: 44px; height: 26px; border-radius: var(--cu-r-full); background: var(--cu-ok); position: relative; flex: none; }
+.cu-switch::after { content: ""; position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--cu-warm-0); box-shadow: var(--cu-shadow-lift); }
+.cu-switch.off { background: var(--cu-warm-200); }
+.cu-switch.off::after { right: auto; left: 3px; }
+
+/* ── <SegmentedControl> ── */
+.cu-seg { height: 40px; padding: 4px; border-radius: var(--cu-r-full); background: var(--cu-bg-soft); display: inline-flex; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-seg > span { padding: 0 16px; display: inline-flex; align-items: center; border-radius: var(--cu-r-full); white-space: nowrap; }
+.cu-seg .on { background: var(--cu-bg-surface); color: var(--cu-fg); font-weight: 600; box-shadow: var(--cu-shadow-lift); }
+/* 단추로 쓰는 탭 — 스페이스 · 엔터가 그대로 먹어요 */
+.cu-seg button { padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: var(--cu-r-full); background: transparent; font: inherit; color: inherit; white-space: nowrap; cursor: pointer; }
+.cu-seg button .n { color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
+.cu-seg button.on .n { color: var(--cu-fg-2); }
+@media (hover: hover) { .cu-seg button:not(.on):hover { color: var(--cu-fg); } }
+
+/* ── <Toast> — 되돌리기가 붙은 알림 ── */
+.cu-toast { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 8px 0 22px; border-radius: var(--cu-r-full); background: var(--cu-bg-inverse); color: var(--cu-fg-on-inverse); font: var(--cu-t-caption); white-space: nowrap; box-shadow: var(--cu-shadow-pop); z-index: 5; }
+.cu-toast .u { height: 32px; padding: 0 14px; border-radius: var(--cu-r-full); background: rgb(255 255 255 / .16); display: inline-flex; align-items: center; font-weight: 600; }
+
+/* ── 가운데 선 화면(처음 · 다 봤어요) · <EmptyState> ── */
+.cu-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.cu-big { font: var(--cu-t-display); letter-spacing: -.03em; margin: 0; }
+.cu-sub { margin: 8px 0 0; font: var(--cu-t-body); color: var(--cu-fg-2); }
+.cu-done-head { padding: 36px 0 12px; display: flex; align-items: center; gap: 24px; }
+.cu-connect { width: 560px; margin-top: 28px; padding: 4px 24px; border-radius: var(--cu-r-card); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift); text-align: left; }
+.cu-promise { width: 560px; margin: 16px 0 0; padding: 14px 20px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); display: flex; gap: 10px; text-align: left; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-promise svg { margin-top: 1px; color: var(--cu-ok); }
+
+/* ── 카드만 따로(보드용 칸) ── */
+.cu-solo { padding: 24px; background: var(--cu-bg-canvas); height: 100%; }
+.cu-foot { margin-top: 12px; display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-root .cu-foot svg { width: 16px; height: 16px; }
+
+/* ── 아이폰 ── */
+.cu-phone { height: 100%; display: flex; flex-direction: column; background: var(--cu-bg-canvas); }
+.cu-ptop { height: 52px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+.cu-ptop .ttl { font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); }
+.cu-ptop .cnt { font: var(--cu-t-caption); color: var(--cu-fg-3); }
+.cu-ptop .sp { flex: 1; }
+/* <CardProgress> 좁은 모양 — 지금 카드만 길어져요 */
+.cu-pbar { display: flex; gap: 4px; padding: 0 16px 12px; }
+.cu-pbar i { flex: 1; height: 6px; border-radius: var(--cu-r-full); background: var(--cu-bg-soft-strong); }
+.cu-pbar i.d { background: var(--cu-warm-300); } .cu-pbar i.on { flex: 3; background: var(--cu-accent); }
+.cu-card.p { width: auto; margin: 0 12px; padding: 20px 18px 18px; border-radius: 28px; }
+.cu-card.p .cu-ask { font: 700 20px/28px var(--cu-font); margin-top: 14px; }
+.cu-card.p .cu-opts { margin-top: 16px; }
+.cu-card.p .cu-opt { padding-left: 10px; padding-right: 14px; min-height: 60px; column-gap: 12px; grid-template-columns: 32px 1fr auto; }
+.cu-card.p .cu-opt .key { width: 32px; height: 32px; }
+.cu-slots.one { grid-template-columns: 1fr; margin-top: 14px; }
+.cu-slots.one .cu-slot { padding: 10px 18px; }
+.cu-pdock { margin-top: auto; padding: 8px 12px 28px; }
+.cu-pdock .cu-composer { margin-top: 0; }
+.cu-pacts { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 8px; font: var(--cu-t-label); color: var(--cu-fg-2); }
+.cu-pacts span { height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+.cu-root .cu-pacts svg { width: 16px; height: 16px; }
+/* 아이폰 선택지: 테두리를 ::after 로 — 줄 안 빈자리에 보드 핀을 둘 수 있게. 모양은 같아요 */
+.cu-card.p .cu-opt { box-shadow: none; position: relative; background: transparent; }
+.cu-card.p .cu-opt.rec { background: var(--cu-accent-soft); }
+.cu-card.p .cu-opt::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--cu-line-strong); pointer-events: none; }
+.cu-card.p .cu-opt.rec::after { box-shadow: inset 0 0 0 2px var(--cu-accent); }
+
+/* ── 잠금 화면 알림(iOS 가 그리는 부분은 시스템 모양을 따라요) ── */
+.cu-lock { height: 100%; background: linear-gradient(180deg, #2b2927, #121110); color: #fff; padding: 56px 12px 0; display: flex; flex-direction: column; align-items: center; }
+.cu-ldate { font: 500 18px/28px var(--cu-font); opacity: .85; }
+.cu-ltime { font: 700 84px/92px var(--cu-font); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.cu-noti { width: 100%; margin-top: 40px; padding: 14px 16px 16px; border-radius: var(--cu-r-panel); background: rgb(255 255 255 / .92); color: var(--cu-warm-950); }
+.cu-noti .h { display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-warm-700); }
+.cu-noti .h .sp { flex: 1; }
+.cu-noti .t { margin-top: 8px; font: var(--cu-t-body-strong); }
+.cu-noti .b { font: var(--cu-t-body); }
+.cu-nacts { width: 100%; margin-top: 8px; border-radius: var(--cu-r-panel); background: rgb(255 255 255 / .92); color: var(--cu-warm-950); overflow: hidden; }
+.cu-nacts div { height: 52px; display: flex; align-items: center; justify-content: center; font: 500 16px/24px var(--cu-font); border-top: 1px solid rgb(0 0 0 / .1); }
+.cu-nacts div:first-child { border-top: 0; font-weight: 600; }
+.cu-lhint { margin-top: 16px; font: var(--cu-t-caption); opacity: .7; }
+
+/* ── 앱에서 쓰는 상태(v0.3) ── */
+/* <OptionRow> 위험한 답의 '한 번 더 확인' — 빨강을 칠하지 않고 잉크 테두리 + 경고 낱말 */
+.cu-opt.confirm { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+.cu-opt.confirm .key { background: var(--cu-fg); color: var(--cu-fg-on-inverse); }
+.cu-opt.confirm .d { color: var(--cu-danger); font-weight: 600; }
+/* <OptionRow> 누를 수 있는 단추로 쓸 때 */
+button.cu-opt { width: 100%; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: box-shadow var(--cu-dur) var(--cu-ease), background var(--cu-dur) var(--cu-ease), transform var(--cu-dur-fast) var(--cu-ease); }
+button.cu-opt:active { transform: scale(.985); }
+/* 키보드 초점 — 잉크 고리 하나로 통일해요. 빨강 고리는 추천 답과 헷갈려서 쓰지 않아요 */
+.cu-root :focus-visible { outline: 2px solid var(--cu-fg); outline-offset: 2px; }
+.cu-root input:focus-visible, .cu-root textarea:focus-visible { outline: none; }
+@media (hover: hover) { button.cu-opt:not(.rec):not(.confirm):hover { box-shadow: inset 0 0 0 2px var(--cu-warm-300); } }
+/* <Composer> 실제 입력 */
+.cu-composer input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; color: var(--cu-fg); padding: 0; }
+.cu-composer input::placeholder { color: var(--cu-fg-3); }
+.cu-composer:focus-within { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+button.cu-send, button.cu-ib, button.cu-btn { border: 0; font-family: inherit; cursor: pointer; }
+/* 37 · 36 마우스를 올리면 · 글자 단추는 32 높이로 누르기 쉽게 */
+@media (hover: hover) { button.cu-btn:not(.ghost):not(.primary):hover, a.cu-btn:not(.ghost):not(.primary):hover { background: var(--cu-bg-soft); } button.cu-btn.primary:hover, a.cu-btn.primary:hover { background: var(--cu-accent-hover); } button.cu-link:not(:disabled):hover { background: var(--cu-bg-soft); } }
+button.cu-link { min-height: var(--cu-h-sm); padding: 0 10px; margin: 0 -10px; border: 0; background: transparent; border-radius: var(--cu-r-full); font: 600 14px/20px var(--cu-font); color: var(--cu-fg); cursor: pointer; }
+button.cu-link:disabled { color: var(--cu-fg-3); cursor: default; }
+button.cu-ib { background: transparent; }
+button.cu-btn.ghost:hover, button.cu-ib:hover { background: var(--cu-bg-soft); }
+button.cu-ib:disabled { color: var(--cu-warm-300); cursor: default; background: transparent; }
+a.cu-nav, button.cu-nav { color: inherit; text-decoration: none; border: 0; background: transparent; width: 100%; font: var(--cu-t-caption); cursor: pointer; text-align: left; }
+button.cu-nav.on { font-weight: 600; }
+button.cu-nav:not(.on):hover, a.cu-nav:not(.on):hover { background: var(--cu-bg-soft-strong); }
+/* <Toast> 되돌리기 단추가 없을 때 — 양옆 여백을 같게 · 긴 글은 두 줄까지 */
+.cu-toast:not(:has(.u)) { padding: 0 22px; }
+/* <EffectPreview> 초안 고치기 */
+.cu-prev .h button { border: 0; background: transparent; padding: 0; font: inherit; font-weight: 600; color: var(--cu-fg); cursor: pointer; }
+.cu-prev textarea { display: block; width: 100%; margin-top: 8px; padding: 10px 14px; border: 0; border-radius: var(--cu-r-inset); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-strong); font: var(--cu-t-caption); color: var(--cu-fg); resize: vertical; min-height: 64px; }
+.cu-prev textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--cu-fg); }
+/* <Composer> 받아쓰는 중 — 잉크로 칠해요(빨강은 고를 곳에만) */
+button.cu-ib.listening { background: var(--cu-fg); color: var(--cu-fg-on-inverse); }
+/* <SearchField> */
+.cu-search { height: var(--cu-h-md); display: flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: var(--cu-r-full); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-strong); color: var(--cu-fg-3); }
+.cu-search svg { width: 16px; height: 16px; }
+.cu-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: var(--cu-t-body); color: var(--cu-fg); }
+.cu-search input::placeholder { color: var(--cu-fg-3); }
+.cu-search:focus-within { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+
+/* 보드 전용 — 기기 틀 크기만 정해요. 화면 안의 모양은 모두 docs/design-system 에서 와요. */
+.bd-frame.pad { width: 1196px; border-radius: 28px; }
+.bd-frame.pad .bd-screen { width: 1194px; height: 834px; }
+.bd-frame.cardonly { border-radius: 56px; }   /* 안쪽 카드(32) + 여백(24) — 두 곡선이 나란해요 */
+
+</style>
+</head>
+<body>
+<!-- bd:icons --><!-- /bd:icons -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="cu-mark" viewBox="0 0 64 64"><defs><linearGradient id="cu-mark-g10" x1="0" y1="0" x2=".35" y2="1"><stop offset=".35" stop-color="#E5391F"/><stop offset="1" stop-color="#C92A12"/></linearGradient></defs>
+  <path d="M32.0 17.0c11.5-2.4 26.0 4.2 26.0 20.4C58.0 51.6 46.6 60.0 32.0 60.0S6.0 51.6 6.0 37.4C6.0 21.2 20.5 14.6 32.0 17.0z" fill="url(#cu-mark-g10)"/>
+  <path d="M14.0 35.0c0.6-5.4 3.6-9.2 8.0-11.0" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="3.4" stroke-linecap="round"/>
+  <rect x="30.2" y="9.0" width="3.6" height="10.0" rx="1.8" fill="#2E7D3A"/>
+  <path d="M32.0 19.5Q28.0 14.0 20.5 16.2Q25.7 22.0 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q25.3 18.3 21.4 25.1Q29.2 25.7 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q27.8 23.4 32.0 28.1Q36.2 23.4 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q34.8 25.7 42.6 25.1Q38.7 18.3 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q38.3 22.0 43.5 16.2Q36.0 14.0 32.0 19.5z" fill="#2E7D3A"/></symbol><symbol id="cu-mark-small" viewBox="0 0 64 64"><path d="M32.0 17.0c11.5-2.4 26.0 4.2 26.0 20.4C58.0 51.6 46.6 60.0 32.0 60.0S6.0 51.6 6.0 37.4C6.0 21.2 20.5 14.6 32.0 17.0z" fill="#E5391F"/>
+  <rect x="30.2" y="9.0" width="3.6" height="10.0" rx="1.8" fill="#2E7D3A"/>
+  <path d="M32.0 19.5Q27.1 13.4 19.2 17.2Q25.3 23.6 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q24.3 20.6 23.6 29.5Q32.2 27.3 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q31.8 27.3 40.4 29.5Q39.7 20.6 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q38.7 23.6 44.8 17.2Q36.9 13.4 32.0 19.5z" fill="#2E7D3A"/></symbol><symbol id="cu-mascot-basic" viewBox="0 0 160 160"><defs><linearGradient id="cu-mascot-basic-g25" x1="0" y1="0" x2=".35" y2="1"><stop offset=".35" stop-color="#E5391F"/><stop offset="1" stop-color="#C92A12"/></linearGradient></defs>
+  <path d="M80.0 42.5c28.8-6.0 65.0 10.5 65.0 51.0C145.0 129.0 116.5 150.0 80.0 150.0S15.0 129.0 15.0 93.5C15.0 53.0 51.2 36.5 80.0 42.5z" fill="url(#cu-mascot-basic-g25)"/>
+  <path d="M35.0 87.5c1.5-13.5 9.0-23.0 20.0-27.5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="8.5" stroke-linecap="round"/>
+  <rect x="75.5" y="22.5" width="9.0" height="25.0" rx="4.5" fill="#2E7D3A"/>
+  <path d="M80.0 48.8Q69.9 34.9 51.2 40.5Q64.1 55.1 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q63.2 45.8 53.5 62.8Q73.0 64.4 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q69.5 58.5 80.0 70.3Q90.5 58.5 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q87.0 64.4 106.5 62.8Q96.8 45.8 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q95.9 55.1 108.8 40.5Q90.1 34.9 80.0 48.8z" fill="#2E7D3A"/>
+  <ellipse cx="62" cy="96" rx="5.5" ry="7.5" fill="#1C1A18"/><ellipse cx="98" cy="96" rx="5.5" ry="7.5" fill="#1C1A18"/><path d="M72 111c4.5 5 11.5 5 16 0" fill="none" stroke="#1C1A18" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="45" cy="110" rx="9" ry="6" fill="#FF9A86" opacity=".8"/><ellipse cx="115" cy="110" rx="9" ry="6" fill="#FF9A86" opacity=".8"/></symbol><symbol id="cu-mascot-thinking" viewBox="0 0 160 160"><defs><linearGradient id="cu-mascot-thinking-g25" x1="0" y1="0" x2=".35" y2="1"><stop offset=".35" stop-color="#E5391F"/><stop offset="1" stop-color="#C92A12"/></linearGradient></defs>
+  <path d="M80.0 42.5c28.8-6.0 65.0 10.5 65.0 51.0C145.0 129.0 116.5 150.0 80.0 150.0S15.0 129.0 15.0 93.5C15.0 53.0 51.2 36.5 80.0 42.5z" fill="url(#cu-mascot-thinking-g25)"/>
+  <path d="M35.0 87.5c1.5-13.5 9.0-23.0 20.0-27.5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="8.5" stroke-linecap="round"/>
+  <rect x="75.5" y="22.5" width="9.0" height="25.0" rx="4.5" fill="#2E7D3A"/>
+  <path d="M80.0 48.8Q69.9 34.9 51.2 40.5Q64.1 55.1 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q63.2 45.8 53.5 62.8Q73.0 64.4 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q69.5 58.5 80.0 70.3Q90.5 58.5 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q87.0 64.4 106.5 62.8Q96.8 45.8 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q95.9 55.1 108.8 40.5Q90.1 34.9 80.0 48.8z" fill="#2E7D3A"/>
+  <ellipse cx="65" cy="92" rx="5.5" ry="7.5" fill="#1C1A18"/><ellipse cx="101" cy="92" rx="5.5" ry="7.5" fill="#1C1A18"/><path d="M75 113h10" fill="none" stroke="#1C1A18" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="45" cy="110" rx="9" ry="6" fill="#FF9A86" opacity=".8"/><ellipse cx="115" cy="110" rx="9" ry="6" fill="#FF9A86" opacity=".8"/></symbol><symbol id="cu-mascot-done" viewBox="0 0 160 160"><defs><linearGradient id="cu-mascot-done-g25" x1="0" y1="0" x2=".35" y2="1"><stop offset=".35" stop-color="#E5391F"/><stop offset="1" stop-color="#C92A12"/></linearGradient></defs>
+  <path d="M80.0 42.5c28.8-6.0 65.0 10.5 65.0 51.0C145.0 129.0 116.5 150.0 80.0 150.0S15.0 129.0 15.0 93.5C15.0 53.0 51.2 36.5 80.0 42.5z" fill="url(#cu-mascot-done-g25)"/>
+  <path d="M35.0 87.5c1.5-13.5 9.0-23.0 20.0-27.5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="8.5" stroke-linecap="round"/>
+  <rect x="75.5" y="22.5" width="9.0" height="25.0" rx="4.5" fill="#2E7D3A"/>
+  <path d="M80.0 48.8Q69.9 34.9 51.2 40.5Q64.1 55.1 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q63.2 45.8 53.5 62.8Q73.0 64.4 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q69.5 58.5 80.0 70.3Q90.5 58.5 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q87.0 64.4 106.5 62.8Q96.8 45.8 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q95.9 55.1 108.8 40.5Q90.1 34.9 80.0 48.8z" fill="#2E7D3A"/>
+  <path d="M55 97c3-6 11-6 14 0M91 97c3-6 11-6 14 0" fill="none" stroke="#1C1A18" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M69 108c5.5 9.5 16.5 9.5 22 0z" fill="#1C1A18"/><ellipse cx="45" cy="110" rx="9" ry="6" fill="#FF9A86" opacity=".8"/><ellipse cx="115" cy="110" rx="9" ry="6" fill="#FF9A86" opacity=".8"/></symbol><symbol id="cu-mascot-worried" viewBox="0 0 160 160"><defs><linearGradient id="cu-mascot-worried-g25" x1="0" y1="0" x2=".35" y2="1"><stop offset=".35" stop-color="#E5391F"/><stop offset="1" stop-color="#C92A12"/></linearGradient></defs>
+  <path d="M80.0 42.5c28.8-6.0 65.0 10.5 65.0 51.0C145.0 129.0 116.5 150.0 80.0 150.0S15.0 129.0 15.0 93.5C15.0 53.0 51.2 36.5 80.0 42.5z" fill="url(#cu-mascot-worried-g25)"/>
+  <path d="M35.0 87.5c1.5-13.5 9.0-23.0 20.0-27.5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="8.5" stroke-linecap="round"/>
+  <rect x="75.5" y="22.5" width="9.0" height="25.0" rx="4.5" fill="#2E7D3A"/>
+  <path d="M80.0 48.8Q69.9 34.9 51.2 40.5Q64.1 55.1 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q63.2 45.8 53.5 62.8Q73.0 64.4 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q69.5 58.5 80.0 70.3Q90.5 58.5 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q87.0 64.4 106.5 62.8Q96.8 45.8 80.0 48.8z" fill="#2E7D3A"/><path d="M80.0 48.8Q95.9 55.1 108.8 40.5Q90.1 34.9 80.0 48.8z" fill="#2E7D3A"/>
+  <ellipse cx="62" cy="98" rx="5" ry="6.5" fill="#1C1A18"/><ellipse cx="98" cy="98" rx="5" ry="6.5" fill="#1C1A18"/><path d="M54 85l12-4M106 85l-12-4" fill="none" stroke="#1C1A18" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M72 116c4.5-4.5 11.5-4.5 16 0" fill="none" stroke="#1C1A18" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="45" cy="110" rx="9" ry="6" fill="#FF9A86" opacity=".8"/><ellipse cx="115" cy="110" rx="9" ry="6" fill="#FF9A86" opacity=".8"/></symbol></svg>
+
+<nav class="bd-nav"><div class="bd-nav-inner"><b>CatchUp 시안</b>
+  <a href="#dirs">방향</a><a href="#start">출발점</a><a href="#flow">흐름</a><a href="#s-catchup">캐치업</a><a href="#s-code">코딩 에이전트</a><a href="#s-kinds">카드 종류</a><a href="#s-other">주관식</a><a href="#s-states">상태</a><a href="#s-log">기록</a><a href="#s-phone">아이폰</a><a href="#arch">구조</a><a href="#scope">1차 범위</a><a href="#spec">규격</a><a href="#rules">규칙</a><a href="#refs">레퍼런스</a><a href="#next">순서 · 질문</a>
+</div></nav>
+
+<main class="bd-wrap">
+
+<section class="bd-hero">
+  <div class="bd-kicker">CatchUp · 화면 시안 v2 · 2026-11-21 · 소유자 답 Q1~Q13 반영 · 화면은 <code>docs/design-system</code>으로 그렸어요</div>
+  <h1>들어오는 건 비서가 다 읽고, 나는 카드에 번호로 답만 해요</h1>
+  <p class="bd-lead">메일 · 메신저 · 일정 · 코딩 에이전트에서 오는 것을 클라우드의 비서가 먼저 읽고 갈라요. 알아서 할 수 있는 건 하고, 알려만 줄 건 모으고, <b>내 결정이 필요한 것만</b> 카드 한 장으로 올려요. Slack의 캐치업과 Claude Code · Codex의 객관식 질문을 한 화면으로 합친 모양이에요. <b>아직 구현 전</b>이고, 화면 속 이름 · 숫자는 예시예요. v2에서는 소유자 답에 맞춰 이름(CatchUp) · 디자인 시스템 · 구조(유저마다 개인 클라우드 서버) · 카카오톡 길을 고쳤어요. 전체 설계와 계획은 같은 폴더의 <code>design.md</code> · <code>plan.md</code>에 있어요.</p>
+  <div class="bd-legend">
+    <span><i style="width:8px;height:8px;border-radius:50%;background:#E9A10E;display:inline-block"></i>기한이 있거나 누가 기다려요</span>
+    <span><i style="width:16px;height:16px;border-radius:50%;background:#D12C14;display:inline-block"></i>추천 답 · ↵ 로 바로(고를 곳 하나)</span>
+    <span><b style="color:#8E1F0E">⚠ 위험 · 실패</b>는 칠하지 않고 아이콘과 낱말로</span>
+    <span class="bd-muted">급하지 않은 것은 점 없이 글자만</span>
+  </div>
+  <div class="bd-grid3" style="margin-top:48px">
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">카드 한 장이 결정 하나예요</h3><p class="bd-small bd-muted">어디서 왔든 같은 모양이에요. 질문 한 줄, 요약 세 줄, 선택지 2~4개, 고르면 일어나는 일. 메일도 일정도 코드 승인도 같은 손동작으로 끝나요.</p></div>
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">객관식이 기본이고, 주관식은 늘 열려 있어요</h3><p class="bd-small bd-muted">번호 키나 한 번 누르기로 답해요. 보기가 마음에 안 들면 카드 아래 입력창에 말하고, 비서가 선택지를 다시 만들어 와요.</p></div>
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">답할수록 카드가 줄어요</h3><p class="bd-small bd-muted">같은 답이 쌓이면 '앞으로 알아서 할까요?'를 물어요. 맡긴 일은 기록에 남고 되돌릴 수 있어요. 돈과 운영 데이터는 늘 물어봐요.</p></div>
+  </div>
+</section>
+
+<!-- ───── 00 방향 ───── -->
+<section class="bd-chapter" id="dirs">
+  <div class="bd-kicker">00 · 방향</div>
+  <h2>결정을 어디서, 몇 개씩 받을지가 갈림길이에요</h2>
+  <p class="bd-lead">한 사람이 아침과 틈날 때 5~15개쯤 정하는 쓰임새를 기준으로 넷을 그려 봤어요. <b>1차는 A를 추천해요.</b> A의 카드 안에 C의 대화를 넣고, D의 알림은 2차에 더해요. B는 A의 '목록으로 보기'로 남겨요.</p>
+  <div class="bd-grid4">
+    <div class="bd-card bd-dir pick">
+      <div class="bd-dir-head"><span class="bd-tag pick">A · 한 장씩</span><span class="bd-proposed">추천</span></div>
+      <h3>카드가 한 장씩 올라와요</h3>
+      <div class="bd-wire"><div class="s"><b class="card"></b><b class="on"></b><b></b><b></b><b></b></div><div class="m">
+        <div class="blk"><span>남은 카드 7개</span></div>
+        <div class="blk key card" style="height:148px"><span>결정 카드 한 장</span><div class="ln" style="width:70%"></div><div class="ln" style="width:90%"></div><div class="opt k"></div><div class="opt"></div><div class="opt"></div><div class="g-input"></div></div>
+        <div class="blk ghost card" style="min-height:14px;padding:0"></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 화면에 결정 하나만. 답하면 다음 장이 올라와요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>고를 것이 하나라 빨라요</li><li>끝이 보여요(7개 중 3번째)</li></ul></div><div><h4>대가</h4><ul><li>전체를 한눈에 못 봐요</li><li>순서를 비서가 정해요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Slack 캐치업</a> · <a href="#refs">Linear Triage</a></p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">B · 목록과 상세</span></div>
+      <h3>메일 앱처럼 골라서 열어요</h3>
+      <div class="bd-wire"><div class="s"><b class="card"></b><b class="on"></b><b></b><b></b><b></b></div><div class="m"><div class="cols" style="grid-template-columns:2fr 3fr">
+        <div class="blk key" style="height:220px"><span>카드 목록</span><div class="g-list"></div></div>
+        <div class="blk" style="height:220px"><span>고른 카드</span><div class="ln" style="width:80%"></div><div class="opt k"></div><div class="opt"></div><div class="opt"></div></div>
+      </div></div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 목록이 늘 보여요. 급한 것부터 골라 열어요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>전체와 순서를 내가 잡아요</li><li>아이패드 화면 나누기와 맞아요</li></ul></div><div><h4>대가</h4><ul><li>고르는 일이 하나 더 생겨요</li><li>읽지 않은 메일함처럼 쌓여요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Linear Inbox</a> · <a href="#refs">GitHub 알림</a> · <a href="#refs">Cursor 에이전트 받은함</a></p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">C · 대화 한 줄기</span></div>
+      <h3>비서와 채팅하며 정해요</h3>
+      <div class="bd-wire nosb"><div class="m">
+        <div class="blk ghost" style="width:60%"><span>비서 — 밤사이 요약</span></div>
+        <div class="blk key" style="height:92px"><span>대화 안의 질문과 선택지</span><div class="opt k"></div><div class="opt"></div><div class="opt"></div></div>
+        <div class="blk ghost" style="width:50%;margin-left:auto"><span>내 답</span></div>
+        <div class="blk"><span>입력창</span><div class="g-input"></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 질문이 대화 속에 섞여 와요. 되묻기가 가장 자연스러워요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>말로 더 묻기 쉬워요</li><li>ChatGPT · Claude에서 익숙해요</li></ul></div><div><h4>대가</h4><ul><li>안 정한 것이 위로 밀려 묻혀요</li><li>몇 개 남았는지 안 보여요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Claude Code 질문</a> · <a href="#refs">Poke</a> · AI1 '물어보기'</p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">D · 알림에서 바로</span></div>
+      <h3>앱을 열지 않고 답해요</h3>
+      <div class="bd-wire nosb"><div class="m">
+        <div class="blk ghost" style="height:56px"><span>잠금 화면</span></div>
+        <div class="blk key" style="height:104px"><span>알림과 선택지 단추</span><div class="ln" style="width:85%"></div><div class="opt k"></div><div class="opt"></div></div>
+        <div class="blk ghost"><span>자세한 것은 앱에서</span></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 알림을 길게 눌러 그 자리에서 고르면 끝이에요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>가장 빨라요</li><li>에이전트가 덜 기다려요</li></ul></div><div><h4>대가</h4><ul><li>요약과 근거를 볼 자리가 없어요</li><li>하루 종일 끊겨요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Cursor 모바일 알림</a> · <a href="#refs">Apple 우선 알림</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ───── 01 출발점 ───── -->
+<section class="bd-chapter" id="start">
+  <div class="bd-kicker">01 · 출발점</div>
+  <h2>객관식 질문과 '승인 뒤 실행'은 AI1에서 방식을 가져와요. 코드는 CatchUp에서 새로 만들어요</h2>
+  <p class="bd-lead">AI1 main(613eabb)의 코드를 읽어 확인했어요. 에이전트가 선택지 2~4개로 묻고, 사람이 승인한 것만 실행하고, 영수증으로 되돌리는 뼈대는 그대로 쓸 수 있어요. 반대로 메일 · 외부 캘린더 · 메신저 연결, 코딩 에이전트 세션 받기, '내 결정이 필요한가'를 가르는 단계, 클라우드 배포, 푸시 알림은 새로 만들어야 해요.</p>
+  <div class="bd-shots">
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/ai1-clarify.png" alt="AI1이 발표 일정을 잡기 전에 어느 발표인지 선택지 둘과 직접 적기로 묻는 화면"></div><figcaption class="bd-cap">AI1의 '물어보기' — 선택지에 번호 키가 붙고 '직접 적기'가 있어요. 결정 카드의 선택지 줄이 여기서 와요. (agent-v3 보드 때 하네스로 찍은 화면, 2026-11-10)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/ai1-inbox.png" alt="AI1의 들어온 것 화면. AI1이 폴더를 골라 두고 사람이 넣기를 누른다"></div><figcaption class="bd-cap">AI1의 '들어온 것' — 비서가 먼저 골라 두고, 사람이 누르기 전에는 아무것도 옮기지 않아요. 같은 약속을 밖에서 온 일에도 써요. (left-panel 보드 때 찍은 화면, 2026-11-05)</figcaption></figure>
+  </div>
+  <div class="bd-have">
+    <div class="bd-card"><h3>이미 있는 것</h3>
+      <table class="bd-table"><tr><th>뼈대</th><th>코드</th></tr>
+        <tr><td>선택지 2~4개로 묻고, 답이 다음 차례로 돌아와요</td><td><code>agent_loop.rs:132</code> <code>ask.tsx:766</code></td></tr>
+        <tr><td>제안 → 지문 확인한 승인 → 실행, 낡으면 충돌</td><td><code>agent.rs:4024</code> · migration 0029</td></tr>
+        <tr><td>실행 영수증과 되돌리기</td><td><code>agent_tools.rs:1627</code> · migration 0060</td></tr>
+        <tr><td>언제 / 확인 / 하기 규칙, 같은 승인이 쌓이면 '알아서' 제안</td><td><code>agent_watch.rs</code> <code>agent_routine.rs</code></td></tr>
+        <tr><td>연결 허브와 웹훅 받기(Slack 형식 포함), 중복 거르기</td><td><code>connections.rs</code> · <code>services/connectors</code></td></tr>
+        <tr><td>여러 공급자 · 도구 부르기 · 의도 가르기, 평가 도구</td><td><code>providers.rs</code> <code>agent_native.rs</code> · <code>tools/agent-eval</code></td></tr>
+        <tr><td>여러 곳의 일을 한 줄로 모아 우선순위를 매겨요</td><td><code>companion-hub.ts</code> · <code>incoming.tsx</code></td></tr>
+      </table></div>
+    <div class="bd-card"><h3>새로 필요한 것</h3>
+      <table class="bd-table"><tr><th>빈 곳</th><th>지금</th></tr>
+        <tr><td>Gmail · Google 캘린더 · Slack 개인 연결</td><td>내부 채널과 내부 캘린더만 있어요</td></tr>
+        <tr><td>Claude Code · Codex 세션 받기</td><td><code>codex.ts</code>는 Codex를 모델로만 써요. Claude Code 연동은 없어요</td></tr>
+        <tr><td>'내 결정이 필요한가' 가르기</td><td>홈 요약은 요약만 해요</td></tr>
+        <tr><td>거절과 그 이유 남기기</td><td><code>rejected</code> 상태는 있지만 쓰는 코드가 없어요</td></tr>
+        <tr><td>클라우드 배포와 푸시 알림</td><td>AI1은 이 Mac 안에서만 통신해요. CatchUp은 처음부터 클라우드예요(Q2)</td></tr>
+        <tr><td>파인튜닝한 모델</td><td>레포에는 평가 도구와 연구 문서만 있어요(<code>docs/agent-decision-reference/05</code>). 학습한 모델은 없어요</td></tr>
+        <tr><td>아이패드 · 아이폰 화면</td><td>Electron 데스크톱 앱만 있어요</td></tr>
+      </table></div>
+  </div>
+</section>
+
+<!-- ───── 02 흐름 ───── -->
+<section class="bd-chapter" id="flow">
+  <div class="bd-kicker">02 · 흐름</div>
+  <h2>비서가 셋으로 가르고, 그중 '물어봐요'만 카드가 돼요</h2>
+  <p class="bd-lead">들어온 것은 알아서 해요 · 알려만 드려요 · 물어봐요 셋 중 하나가 돼요. 카드에 답하면 비서가 실행하고 기록을 남겨요. 내 답은 다음 가르기의 기준이 돼요. 아래 화면 장은 이 흐름의 마디를 하나씩 키운 거예요.</p>
+  <figure class="bd-diagram"><img src="img/flow.png" alt="들어와요, 비서가 갈라요, 카드가 꽂혀요, 내가 답해요, 비서가 실행해요, 기록이 남아요 여섯 마디로 이어지는 흐름"></figure>
+</section>
+
+<!-- ───── 03 캐치업 ───── -->
+<section class="bd-chapter" id="s-catchup">
+  <div class="bd-kicker">03 · 흐름 ③ ④ — 캐치업</div>
+  <h2>질문 한 줄, 요약 세 줄, 선택지 셋이 화면의 전부예요</h2>
+  <p class="bd-lead">월요일 아침에 연 첫 화면이에요. 밤사이 140개가 들어왔고 그중 7개만 카드가 됐어요. 메일 원문을 읽지 않아도 정할 수 있게 비서가 숫자와 기준을 뽑아 두고, 고르면 무엇이 나가는지 미리 보여 줘요.</p>
+  <div class="bd-frame-wrap"><div class="bd-frame pad" id="f-catchup"><div class="bd-screen cu-root">
+<div class="cu-status side"><span>9:41</span><span>11월 23일 (월)</span><span class="sp"></span><svg><use href="#i-wifi-high"/></svg><span>100%</span><svg><use href="#i-battery-full"/></svg></div>
+<div class="cu-app">
+  <aside class="cu-side">
+<div class="cu-side-head"><span class="cu-logo"><svg><use href="#cu-mark"/></svg></span><span class="name">CatchUp</span><span class="cu-ib"><svg><use href="#i-magnifying-glass"/></svg></span><span class="cu-ib"><svg><use href="#i-sidebar-simple"/></svg></span></div>
+<div class="cu-nav on"><svg><use href="#i-cards"/></svg><span>캐치업</span><span class="n badge">7</span></div>
+<div class="cu-nav"><svg><use href="#i-list-checks"/></svg><span>알려만 드려요</span><span class="n">12</span></div>
+<div class="cu-nav"><svg><use href="#i-clock"/></svg><span>미뤄 둔 것</span><span class="n">2</span></div>
+<div class="cu-nav"><svg><use href="#i-receipt"/></svg><span>처리 기록</span></div>
+<div class="cu-side-label" data-pin="5" data-pin-at="right">비서가 하는 일</div>
+<div class="cu-run"><svg><use href="#i-terminal-window"/></svg><span class="t">결제 재시도 넣기</span><span class="s wait">Claude Code · 답을 기다려요</span></div>
+<div class="cu-run"><svg><use href="#i-code"/></svg><span class="t">주간 보고 초안 쓰기</span><span class="s">Codex · 6분째 하는 중</span></div>
+<div class="cu-run"><svg><use href="#i-envelope-simple"/></svg><span class="t">밤사이 메일 41통 정리</span><span class="s">8:55에 끝났어요</span></div>
+<div class="cu-side-label">들어오는 곳 · 밤사이</div>
+<div class="cu-src-row"><svg><use href="#i-envelope-simple"/></svg><span>Gmail</span><span class="n">41</span></div>
+<div class="cu-src-row"><svg><use href="#i-slack-logo"/></svg><span>Slack</span><span class="n">63</span></div>
+<div class="cu-src-row"><svg><use href="#i-chat-circle"/></svg><span>카카오톡 채널</span><span class="n">2</span></div>
+<div class="cu-src-row"><svg><use href="#i-calendar-blank"/></svg><span>캘린더</span><span class="n">5</span></div>
+<div class="cu-src-row"><svg><use href="#i-github-logo"/></svg><span>GitHub</span><span class="n">9</span></div>
+<div class="cu-src-row"><svg><use href="#i-terminal-window"/></svg><span>Claude Code</span><span class="n">2</span></div>
+<div class="cu-src-row"><svg><use href="#i-code"/></svg><span>Codex</span><span class="n">3</span></div>
+<div class="cu-me"><span class="cu-avatar">지우</span><span>한지우</span><span class="sub">설정</span></div>
+</aside>
+  <div class="cu-main">
+    <div class="cu-top">
+      <h1>캐치업</h1><span class="left">7개 중 첫 번째</span><span class="sp"></span>
+      <div class="cu-steps" data-pin="1" data-pin-at="bottom">
+        <span class="cu-step on"><svg><use href="#i-envelope-simple"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-terminal-window"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-calendar-blank"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-chat-circle"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-code"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-slack-logo"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-envelope-simple"/></svg></span>
+      </div>
+      <span class="sp"></span>
+      <span class="cu-ib off"><svg><use href="#i-arrow-u-up-left"/></svg></span><span class="cu-ib"><svg><use href="#i-rows"/></svg></span>
+    </div>
+    <div class="cu-stage">
+      <div class="cu-deck">
+        <div class="cu-card">
+          <div class="cu-from"><span class="cu-tile"><svg><use href="#i-envelope-simple"/></svg></span><span class="who">박서연</span><span class="meta">한빛 디자인 · Gmail · 오전 8:12</span><span class="sp"></span><span class="cu-due">오늘 18시까지 답해야 해요</span></div>
+          <h2 class="cu-ask" data-pin="2" data-pin-at="right">리브랜딩 견적, A안과 B안 중 어느 쪽으로 할까요?</h2>
+          <ul class="cu-sum">
+            <li><b>A안 1,480만 원 · 6주</b> — 로고와 상세 화면 5종, 수정 2번</li>
+            <li><b>B안 1,150만 원 · 4주</b> — 로고와 상세 화면 3종, 수정 1번</li>
+            <li class="dim">10월에 정한 예산은 1,300만 원이고, 출시는 1월 12일이에요.</li>
+          </ul>
+          <div class="cu-ev"><span class="cu-chip"><svg><use href="#i-envelope-simple"/></svg>메일 3통</span><span class="cu-chip"><svg><use href="#i-file-pdf"/></svg>견적서_한빛_v2.pdf</span><span class="cu-chip"><svg><use href="#i-file-text"/></svg>4분기 예산</span></div>
+          <div class="cu-opts">
+            <div class="cu-opt rec" data-pin="3" data-pin-at="right"><span class="key">1</span><div><div class="l">B안으로 진행해요</div><div class="d">예산 안에 들고, 출시까지 2주가 남아요</div></div><span class="r"><span class="cu-rec">추천</span><span class="cu-kbd">↵</span></span></div>
+            <div class="cu-opt"><span class="key">2</span><div><div class="l">A안으로 진행해요</div><div class="d">예산을 180만 원 넘어요</div></div><span class="r"></span></div>
+            <div class="cu-opt"><span class="key">3</span><div><div class="l">A안 범위를 1,300만 원에 맞출 수 있는지 되물어요</div><div class="d">답이 오면 다시 카드로 올려요</div></div><span class="r"></span></div>
+          </div>
+          <div class="cu-prev"><div class="h"><svg><use href="#i-paper-plane-tilt"/></svg><span>1번을 고르면 박서연 님께 이렇게 보내요</span><span class="sp"></span><a>고치기</a></div>
+            <p>서연 님, 검토해 보니 B안으로 진행하면 좋겠습니다. 계약서 초안을 보내 주시면 이번 주 안에 확인하겠습니다.</p></div>
+          <div class="cu-composer" data-pin="4" data-pin-at="right"><span class="sp">다르게 답하기 — 비서에게 말로 알려 주세요</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+        </div>
+        <div class="cu-peek p1"></div><div class="cu-peek p2"></div>
+      </div>
+      <div class="cu-acts"><span class="cu-btn ghost"><svg><use href="#i-clock"/></svg>미루기 <span class="cu-kbd">S</span></span><span class="cu-btn ghost"><svg><use href="#i-hand-tap"/></svg>내가 직접 할게요 <span class="cu-kbd">D</span></span><span class="sp"></span><span class="cu-btn ghost" data-pin="6" data-pin-at="left"><svg><use href="#i-lightning"/></svg>앞으로 이런 건 알아서</span></div>
+    </div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes">
+    <li><b>위쪽 동그라미가 남은 카드예요.</b> 어디서 온 카드인지 아이콘으로 보이고, 눌러서 건너뛸 수 있어요. 목록을 따로 두지 않아도 끝이 보여요. Slack 캐치업의 '남은 수'를 가져왔어요.</li>
+    <li><b>카드 제목은 늘 질문이에요.</b> '견적 메일이 왔어요'가 아니라 '어느 쪽으로 할까요?'로 써요. 그 아래 요약은 세 줄까지고, 근거는 알약으로 붙어 눌러서 원문을 봐요.</li>
+    <li><b>추천은 맨 위, 케첩 빨강 테두리 하나예요.</b> 왜 추천하는지 한 줄이 붙어요. 1~3 키로 고르고 ↵ 는 추천이에요. 선택지는 4개를 넘지 않아요(Claude Code의 2~4개 규칙).</li>
+    <li><b>주관식 입력창이 카드 안에 늘 있어요.</b> 보기가 마음에 안 들면 여기에 말해요. 마이크로 말해도 돼요. 카드를 떠나지 않고 이어져요.</li>
+    <li><b>'비서가 하는 일'은 사이드바에 있어요.</b> 돌아가는 코딩 에이전트와 정리 작업이 보여요. 사람을 기다리는 것만 머스터드 점과 글자예요.</li>
+    <li><b>'앞으로 이런 건 알아서'가 카드를 줄여요.</b> 누르면 방금 답을 규칙으로 만들지 물어요. 미루기 S, 내가 직접 D 는 왼쪽에 조용히 있어요.</li>
+  </ol>
+</section>
+
+<!-- ───── 04 코딩 에이전트 ───── -->
+<section class="bd-chapter" id="s-code">
+  <div class="bd-kicker">04 · 흐름 ③ ④ ⑤ — 코딩 에이전트 카드</div>
+  <h2>Claude Code가 묻는 것도 메일과 같은 카드로 와요</h2>
+  <p class="bd-lead">에이전트가 선택지를 들고 멈추면 그 질문이 그대로 카드가 돼요. 터미널을 열지 않고 아이패드에서 답하면 에이전트가 이어서 일해요. 방금 정한 메일 답장은 10초 동안 되돌릴 수 있게 아래에 떠 있어요.</p>
+  <div class="bd-frame-wrap"><div class="bd-frame pad" id="f-code"><div class="bd-screen cu-root">
+<div class="cu-status side"><span>9:41</span><span>11월 23일 (월)</span><span class="sp"></span><svg><use href="#i-wifi-high"/></svg><span>100%</span><svg><use href="#i-battery-full"/></svg></div>
+<div class="cu-app">
+  <aside class="cu-side">
+<div class="cu-side-head"><span class="cu-logo"><svg><use href="#cu-mark"/></svg></span><span class="name">CatchUp</span><span class="cu-ib"><svg><use href="#i-magnifying-glass"/></svg></span><span class="cu-ib"><svg><use href="#i-sidebar-simple"/></svg></span></div>
+<div class="cu-nav on"><svg><use href="#i-cards"/></svg><span>캐치업</span><span class="n badge">6</span></div>
+<div class="cu-nav"><svg><use href="#i-list-checks"/></svg><span>알려만 드려요</span><span class="n">12</span></div>
+<div class="cu-nav"><svg><use href="#i-clock"/></svg><span>미뤄 둔 것</span><span class="n">2</span></div>
+<div class="cu-nav"><svg><use href="#i-receipt"/></svg><span>처리 기록</span></div>
+<div class="cu-side-label">비서가 하는 일</div>
+<div class="cu-run"><svg><use href="#i-terminal-window"/></svg><span class="t">결제 재시도 넣기</span><span class="s wait">Claude Code · 답을 기다려요</span></div>
+<div class="cu-run"><svg><use href="#i-code"/></svg><span class="t">주간 보고 초안 쓰기</span><span class="s">Codex · 6분째 하는 중</span></div>
+<div class="cu-run"><svg><use href="#i-envelope-simple"/></svg><span class="t">밤사이 메일 41통 정리</span><span class="s">8:55에 끝났어요</span></div>
+<div class="cu-side-label">들어오는 곳 · 밤사이</div>
+<div class="cu-src-row"><svg><use href="#i-envelope-simple"/></svg><span>Gmail</span><span class="n">41</span></div>
+<div class="cu-src-row"><svg><use href="#i-slack-logo"/></svg><span>Slack</span><span class="n">63</span></div>
+<div class="cu-src-row"><svg><use href="#i-chat-circle"/></svg><span>카카오톡 채널</span><span class="n">2</span></div>
+<div class="cu-src-row"><svg><use href="#i-calendar-blank"/></svg><span>캘린더</span><span class="n">5</span></div>
+<div class="cu-src-row"><svg><use href="#i-github-logo"/></svg><span>GitHub</span><span class="n">9</span></div>
+<div class="cu-src-row"><svg><use href="#i-terminal-window"/></svg><span>Claude Code</span><span class="n">2</span></div>
+<div class="cu-src-row"><svg><use href="#i-code"/></svg><span>Codex</span><span class="n">3</span></div>
+<div class="cu-me"><span class="cu-avatar">지우</span><span>한지우</span><span class="sub">설정</span></div>
+</aside>
+  <div class="cu-main">
+    <div class="cu-top">
+      <h1>캐치업</h1><span class="left">7개 중 두 번째</span><span class="sp"></span>
+      <div class="cu-steps">
+        <span class="cu-step done"><svg><use href="#i-check"/></svg></span>
+        <span class="cu-step on"><svg><use href="#i-terminal-window"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-calendar-blank"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-chat-circle"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-code"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-slack-logo"/></svg></span>
+        <span class="cu-step"><svg><use href="#i-envelope-simple"/></svg></span>
+      </div>
+      <span class="sp"></span>
+      <span class="cu-ib"><svg><use href="#i-arrow-u-up-left"/></svg></span><span class="cu-ib"><svg><use href="#i-rows"/></svg></span>
+    </div>
+    <div class="cu-stage">
+      <div class="cu-deck">
+        <div class="cu-card">
+          <div class="cu-from"><span class="cu-tile"><svg><use href="#i-terminal-window"/></svg></span><span class="who">Claude Code</span><span class="meta">ai1 저장소 · 결제 재시도 넣기</span><span class="sp"></span><span class="cu-due" data-pin="1">12분째 멈춰 있어요</span></div>
+          <h2 class="cu-ask">결제 재시도를 어디에서 하게 할까요?</h2>
+          <ul class="cu-sum">
+            <li>결제가 실패하면 3번까지 다시 시도하게 만드는 중이에요.</li>
+            <li>지금은 주문 화면에만 있어서, 정기 결제는 실패하면 그대로 끝나요.</li>
+          </ul>
+          <div class="cu-ev" data-pin="2" data-pin-at="right"><span class="cu-chip"><svg><use href="#i-list-checks"/></svg>지금까지 한 일 6단계</span><span class="cu-chip"><svg><use href="#i-file-text"/></svg>읽은 파일 12개</span><span class="cu-chip"><svg><use href="#i-check-circle"/></svg>테스트 38개 통과</span></div>
+          <div class="cu-opts">
+            <div class="cu-opt rec" data-pin="3" data-pin-at="right"><span class="key">1</span><div><div class="l">결제 서버에서 다시 시도해요</div><div class="d">정기 결제까지 한 번에 해결돼요 · 파일 4개 · 10분쯤</div></div><span class="r"><span class="cu-rec">추천</span><span class="cu-kbd">↵</span></span></div>
+            <div class="cu-opt"><span class="key">2</span><div><div class="l">주문 화면에서만 다시 시도해요</div><div class="d">가장 작게 바꿔요 · 파일 1개 · 정기 결제는 그대로예요</div></div><span class="r"></span></div>
+            <div class="cu-opt"><span class="key">3</span><div><div class="l">여기서 멈추고 두 방법을 정리해 둬요</div><div class="d">코드는 바꾸지 않고, 내가 나중에 직접 봐요</div></div><span class="r"></span></div>
+          </div>
+          <div class="cu-code" data-pin="4" data-pin-at="right"><div class="fh"><svg><use href="#i-git-branch"/></svg><span>1번을 고르면 이렇게 바꿔요 · services/payments/retry.ts</span><span class="sp"></span><span class="a">+18</span><span class="m">−2</span><span>파일 4개</span></div>
+<div class="ln del">- return charge(order)</div>
+<div class="ln add">+ return withRetry(() => charge(order), { times: 3, onlyWhen: isTemporaryFailure })</div></div>
+          <div class="cu-composer"><span class="sp">다르게 답하기 — 비서에게 말로 알려 주세요</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+        </div>
+        <div class="cu-peek p1"></div><div class="cu-peek p2"></div>
+      </div>
+      <div class="cu-acts"><span class="cu-btn ghost"><svg><use href="#i-clock"/></svg>미루기 <span class="cu-kbd">S</span></span><span class="cu-btn ghost"><svg><use href="#i-hand-tap"/></svg>내가 직접 할게요 <span class="cu-kbd">D</span></span><span class="sp"></span><span class="cu-btn ghost"><svg><use href="#i-lightning"/></svg>앞으로 이런 건 알아서</span></div>
+    </div>
+    <div class="cu-toast" data-pin="5"><span>박서연 님께 8초 뒤에 답장을 보내요</span><span class="u">되돌리기</span></div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes">
+    <li><b>누가, 어떤 일을 하다, 얼마나 멈췄는지가 첫 줄이에요.</b> 에이전트가 기다리는 시간은 곧 비용이라 머스터드 점으로 알려요. 저장소와 작업 이름은 사람이 붙인 말로 써요.</li>
+    <li><b>에이전트가 한 일은 알약 세 개로 접어 둬요.</b> 단계 · 읽은 파일 · 테스트 결과예요. 눌러야 펼쳐져요. AI1의 '한 일은 접힌 한 줄' 약속을 따라요.</li>
+    <li><b>선택지마다 값이 붙어요.</b> 바뀔 파일 수와 걸릴 시간이에요. 코드 결정은 범위가 기준이라 설명 줄에 넣었어요.</li>
+    <li><b>고르면 생길 변경을 미리 보여 줘요.</b> 메일 카드의 '이렇게 보내요'와 같은 자리, 같은 역할이에요. Claude Code의 선택지 미리보기(<code>preview</code>)를 그대로 받아요.</li>
+    <li><b>실행은 10초 뒤에 나가요.</b> 그동안 '되돌리기'가 떠 있고, 다음 카드를 보는 데는 방해가 안 돼요. 밖으로 나가는 일(답장 · 초대)에만 써요.</li>
+  </ol>
+</section>
+
+<!-- ───── 05 카드 종류 ───── -->
+<section class="bd-chapter" id="s-kinds">
+  <div class="bd-kicker">05 · 흐름 ③ — 카드 종류</div>
+  <h2>가운데 한 칸만 바뀌고 나머지는 같아요</h2>
+  <p class="bd-lead">출처 줄 · 질문 · 선택지 · 입력창은 모든 카드가 같아요. 일정이면 겹친 시간, 승인이면 실행할 명령, 알려만 드리는 묶음이면 줄 목록이 가운데에 들어가요. 새 연결이 생겨도 카드 틀은 새로 만들지 않아요.</p>
+  <h3 class="bd-sub">일정 — 겹친 둘을 나란히</h3>
+  <div class="bd-row"><div class="bd-cell"><div class="bd-frame cardonly" style="width:730px" id="f-cal"><div class="bd-screen cu-root" style="width:728px;height:auto">
+<div class="cu-solo">
+  <div class="cu-card flat">
+    <div class="cu-from"><span class="cu-tile"><svg><use href="#i-calendar-blank"/></svg></span><span class="who">캘린더</span><span class="meta">김태호 님의 초대 · 오전 7:50</span><span class="sp"></span><span class="cu-due">목요일 일정이에요</span></div>
+    <h2 class="cu-ask">목요일 3시에 일정 둘이 겹쳐요. 어느 쪽을 옮길까요?</h2>
+    <div class="cu-slots" data-pin="1" data-pin-at="right">
+      <div class="cu-slot new"><span class="tm">15:00 – 16:00</span><span class="nm">블루포인트 투자 미팅</span><span class="wh">새 초대 · 김태호 외 2명</span></div>
+      <div class="cu-slot"><span class="tm">15:00 – 15:30</span><span class="nm">제품 주간 회의</span><span class="wh">매주 · 6명</span></div>
+    </div>
+    <div class="cu-opts">
+      <div class="cu-opt rec" data-pin="2" data-pin-at="right"><span class="key">1</span><div><div class="l">주간 회의를 4시 30분으로 옮겨요</div><div class="d">6명 모두 그 시간에 비어 있어요</div></div><span class="r"><span class="cu-rec">추천</span><span class="cu-kbd">↵</span></span></div>
+      <div class="cu-opt"><span class="key">2</span><div><div class="l">투자 미팅을 금요일 10시로 되물어요</div><div class="d">김태호 님 답이 오면 다시 알려 드려요</div></div><span class="r"></span></div>
+      <div class="cu-opt"><span class="key">3</span><div><div class="l">주간 회의는 이번 주만 빠져요</div><div class="d">이도현 님께 진행을 부탁해요</div></div><span class="r"></span></div>
+    </div>
+    <div class="cu-composer"><span class="sp">다르게 답하기 — 비서에게 말로 알려 주세요</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes bd-solo-notes">
+    <li><b>겹친 일정 둘이 같은 크기로 나란히 서요.</b> 새로 들어온 쪽만 테두리로 구분해요. 시간 · 이름 · 사람 수 세 줄이면 비교가 끝나요.</li>
+    <li><b>추천에는 비서가 미리 확인한 사실이 붙어요.</b> '6명 모두 비어 있어요'처럼요. AI1의 빈 시간 찾기(<code>free_busy</code>)를 써요.</li>
+  </ol></div>
+  <h3 class="bd-sub">승인 — 위험한 것은 한 번 더</h3>
+  <div class="bd-row"><div class="bd-cell"><div class="bd-frame cardonly" style="width:730px" id="f-codex"><div class="bd-screen cu-root" style="width:728px;height:auto">
+<div class="cu-solo">
+  <div class="cu-card flat">
+    <div class="cu-from"><span class="cu-tile"><svg><use href="#i-code"/></svg></span><span class="who">Codex</span><span class="meta">ai1 저장소 · 주문 표에 칸 추가</span><span class="sp"></span><span class="cu-due risk" data-pin="1"><svg><use href="#i-warning"/></svg>운영 데이터가 바뀌어요</span></div>
+    <h2 class="cu-ask">운영 DB에 이 명령을 실행해도 될까요?</h2>
+    <div class="cu-code"><div class="fh"><svg><use href="#i-terminal-window"/></svg><span>실행하려는 명령</span></div>
+<div class="ln">$ pnpm db:migrate --env production</div></div>
+    <ul class="cu-sum">
+      <li>주문 표에 '다시 시도한 횟수' 칸을 더해요. 지우는 것은 없어요.</li>
+      <li class="dim">되돌리는 스크립트가 같이 들어 있고, 스테이징에는 아직 안 돌렸어요.</li>
+    </ul>
+    <div class="cu-opts">
+      <div class="cu-opt rec" data-pin="2" data-pin-at="right"><span class="key">1</span><div><div class="l">스테이징에서 먼저 돌려요</div><div class="d">잘 되면 운영은 다시 물어봐요</div></div><span class="r"><span class="cu-rec">추천</span><span class="cu-kbd">↵</span></span></div>
+      <div class="cu-opt"><span class="key">2</span><div><div class="l">이번 한 번만 허용해요</div><div class="d">운영에 바로 실행해요 · 한 번 더 확인해요</div></div><span class="r"><span class="risk"><svg><use href="#i-warning"/></svg>위험</span></span></div>
+      <div class="cu-opt"><span class="key">3</span><div><div class="l">거절해요</div><div class="d">Codex는 이 단계를 건너뛰고 나머지를 이어서 해요</div></div><span class="r"></span></div>
+    </div>
+    <div class="cu-composer"><span class="sp">거절하는 이유나 다른 방법을 말해 주세요</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+    <div class="cu-foot" data-pin="3" data-pin-at="right"><svg><use href="#i-shield-check"/></svg><span>이런 카드는 밀어서 넘길 수 없고, 시간이 지나도 저절로 정해지지 않아요.</span></div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes bd-solo-notes">
+    <li><b>위험은 빨간 점과 한 마디로 알려요.</b> 운영 데이터 · 돈 · 되돌릴 수 없는 일에만 써요. 카드 전체를 빨갛게 칠하지 않아요.</li>
+    <li><b>추천이 '더 안전한 길'이에요.</b> 허용 / 거절 둘만 주지 않고 비서가 중간 길을 찾아 와요. '이번 한 번만'에는 자물쇠가 붙고, 누르면 한 번 더 확인해요. Codex의 수락 / 이번 동안 수락 / 거절에 대응해요.</li>
+    <li><b>위험한 카드는 밀어서 넘길 수 없어요.</b> 시간이 지나도 저절로 정해지지 않아요. 아래 한 줄이 그 약속을 말해요.</li>
+  </ol></div>
+  <h3 class="bd-sub">알려만 드려요 — 묶음 한 장</h3>
+  <div class="bd-row"><div class="bd-cell"><div class="bd-frame cardonly" style="width:730px" id="f-fyi"><div class="bd-screen cu-root" style="width:728px;height:auto">
+<div class="cu-solo">
+  <div class="cu-card flat">
+    <div class="cu-from"><span class="cu-tile"><svg><use href="#i-list-checks"/></svg></span><span class="who">알려만 드려요</span><span class="meta">밤사이 12개</span><span class="sp"></span><span class="cu-due calm">정할 것은 없어요</span></div>
+    <h2 class="cu-ask" data-pin="1">밤사이 이런 일이 있었어요</h2>
+    <div class="cu-fyi">
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-slack-logo"/></svg></span><div><div class="t">#제품 — 12월 출시 일정이 12월 9일로 확정됐어요</div><div class="s">이도현 외 4명 · 글 23개를 줄였어요</div></div><span class="cu-link" data-pin="2" data-pin-at="right">카드로</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-github-logo"/></svg></span><div><div class="t">PR 3개가 합쳐졌고, 밤 배포는 문제없이 끝났어요</div><div class="s">ai1 · 검토는 정유나 님이 했어요</div></div><span class="cu-link">카드로</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-envelope-simple"/></svg></span><div><div class="t">AWS 11월 청구 예상액은 412,000원이에요</div><div class="s">지난달보다 8% 늘었어요 · 정해 둔 한도 안이에요</div></div><span class="cu-link">카드로</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-chat-circle"/></svg></span><div><div class="t">대학 동기 방 — 12월 송년회 날짜를 투표 중이에요</div><div class="s">올려 주신 대화 내보내기에서 · 아직 내 표가 없어요</div></div><span class="cu-link">카드로</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-calendar-blank"/></svg></span><div><div class="t">수요일 치과 예약이 오후 2시에서 3시로 바뀌었어요</div><div class="s">그 시간에 다른 일정은 없어요</div></div><span class="cu-link">카드로</span></div>
+    </div>
+    <div class="cu-acts in"><span class="cu-btn ghost">나머지 7개 더 보기</span><span class="sp"></span><span class="cu-btn primary" data-pin="3">다 봤어요 <span class="cu-kbd inv">↵</span></span></div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes bd-solo-notes">
+    <li><b>정할 것이 없는 일은 한 장에 모아요.</b> 한 줄이 대화 하나예요. 글 23개를 한 줄로 줄였다는 사실을 아래에 적어 믿을 수 있게 해요.</li>
+    <li><b>비서가 잘못 갈랐으면 '카드로'를 눌러요.</b> 그 줄이 결정 카드로 올라오고, 이 고침이 다음 가르기의 기준이 돼요.</li>
+    <li><b>'다 봤어요' 하나로 닫아요.</b> 줄마다 읽음 표시를 누르게 하지 않아요.</li>
+  </ol></div>
+</section>
+
+<!-- ───── 06 주관식 ───── -->
+<section class="bd-chapter" id="s-other">
+  <div class="bd-kicker">06 · 흐름 ④ — 말로 다르게 답하기</div>
+  <h2>말로 답하면 비서가 선택지를 다시 만들어 와요</h2>
+  <p class="bd-lead">보기 셋이 다 맞지 않을 때예요. 입력창에 사정을 말하면 비서가 캘린더를 확인하고 새 선택지를 같은 카드 안에 이어 붙여요. 대화는 카드 안에서만 자라고, 끝은 다시 번호 하나예요.</p>
+  <div class="bd-row"><div class="bd-cell"><div class="bd-frame cardonly" style="width:730px" id="f-other"><div class="bd-screen cu-root" style="width:728px;height:auto">
+<div class="cu-solo">
+  <div class="cu-card flat">
+    <div class="cu-from"><span class="cu-tile"><svg><use href="#i-chat-circle"/></svg></span><span class="who">엄마</span><span class="meta">카카오톡 채널로 보내 주신 대화 · 어제 오후 9:40</span><span class="sp"></span><span class="cu-due calm">급하지 않아요</span></div>
+    <h2 class="cu-ask">토요일 가족 식사, 몇 시로 답할까요?</h2>
+    <div class="cu-work" data-pin="1" data-pin-at="right"><svg><use href="#i-caret-right"/></svg><span>처음 선택지 3개 — 점심 12시 · 저녁 6시 · 이번엔 못 가요</span></div>
+    <div class="cu-said" data-pin="2" data-pin-at="left">토요일은 결혼식이 있어. 일요일 점심으로 바꿀 수 있는지 여쭤봐 줘</div>
+    <div class="cu-work"><svg><use href="#i-calendar-check"/></svg><span>캘린더에서 11월 29일을 확인했어요</span></div>
+    <p class="cu-reply" data-pin="3" data-pin-at="right">일요일은 낮 12시부터 비어 있어요. 이렇게 다시 골라 봤어요.</p>
+    <div class="cu-opts">
+      <div class="cu-opt rec"><span class="key">1</span><div><div class="l">일요일 12시 30분이 어떤지 여쭤봐요</div><div class="d">엄마가 좋다고 하시면 캘린더에 넣어요</div></div><span class="r"><span class="cu-rec">추천</span><span class="cu-kbd">↵</span></span></div>
+      <div class="cu-opt"><span class="key">2</span><div><div class="l">일요일 저녁 6시가 어떤지 여쭤봐요</div><div class="d">월요일 아침 회의 전날이에요</div></div><span class="r"></span></div>
+      <div class="cu-opt"><span class="key">3</span><div><div class="l">토요일 저녁에 늦게 간다고 답해요</div><div class="d">결혼식은 오후 4시쯤 끝나요</div></div><span class="r"></span></div>
+    </div>
+    <div class="cu-prev"><div class="h"><svg><use href="#i-copy"/></svg><span>1번을 고르면 이 답장을 복사해 드려요 — 카카오톡은 대신 보낼 수 없어요</span><span class="sp"></span><a>고치기</a></div>
+      <p>엄마, 토요일은 결혼식이 있어서요. 일요일 점심 12시 반은 어떠세요?</p></div>
+    <div class="cu-composer" data-pin="4" data-pin-at="right"><span class="sp">더 말하기</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes bd-solo-notes">
+    <li><b>처음 선택지는 한 줄로 접혀요.</b> 지우지 않아요. 눌러 펼치면 다시 고를 수 있어요.</li>
+    <li><b>내 말은 오른쪽 말풍선 하나예요.</b> ChatGPT처럼 오른쪽에 붙고, 끝이 둥근 말풍선이에요. 길게 쓰지 않아도 되게, 비서가 모자란 사실은 스스로 찾아요.</li>
+    <li><b>비서는 한 줄로 답하고 바로 선택지를 내요.</b> 무엇을 확인했는지는 접힌 한 줄이에요. 긴 설명 대신 고를 것을 줘요.</li>
+    <li><b>입력창은 계속 열려 있어요.</b> 새 선택지도 맞지 않으면 또 말해요. 주고받기가 세 번을 넘으면 '내가 직접 할게요'를 권해요.</li>
+  </ol></div>
+</section>
+
+<!-- ───── 07 상태 ───── -->
+<section class="bd-chapter" id="s-states">
+  <div class="bd-kicker">07 · 상태들</div>
+  <h2>처음에는 다 물어보고, 끝에는 비서가 한 일을 보여 줘요</h2>
+  <p class="bd-lead">처음 화면은 맡길 곳을 고르는 자리예요. 비서가 무엇을 읽는지와 '처음엔 알아서 하지 않는다'는 약속을 먼저 말해요. 다 본 뒤에는 그동안 비서가 처리한 일을 되돌리기와 함께 보여 줘서 맡겨도 되는지 판단하게 해요.</p>
+  <h3 class="bd-sub">처음 — 무엇을 맡길지 고르기</h3>
+  <div class="bd-frame-wrap"><div class="bd-frame pad" id="f-first"><div class="bd-screen cu-root">
+<div class="cu-status"><span>9:41</span><span>11월 23일 (월)</span><span class="sp"></span><svg><use href="#i-wifi-high"/></svg><span>100%</span><svg><use href="#i-battery-full"/></svg></div>
+<div class="cu-app"><div class="cu-main">
+  <div class="cu-center">
+    <span class="cu-mascot lg"><svg><use href="#cu-mascot-basic"/></svg></span>
+    <p class="cu-big" style="margin-top:20px">무엇을 대신 봐 드릴까요?</p>
+    <p class="cu-sub">연결한 곳에 들어오는 것을 비서가 먼저 읽고, 정할 일만 카드로 올려요.</p>
+    <div class="cu-connect" data-pin="1" data-pin-at="right">
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-envelope-simple"/></svg></span><div><div class="t">Gmail</div><div class="s">jiwoo@hanbit.studio</div></div><span class="e ok"><svg><use href="#i-check"/></svg>연결했어요</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-calendar-blank"/></svg></span><div><div class="t">Google 캘린더</div><div class="s">캘린더 3개</div></div><span class="e ok"><svg><use href="#i-check"/></svg>연결했어요</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-slack-logo"/></svg></span><div><div class="t">Slack</div><div class="s">나를 부른 글과 개인 메시지만 읽어요</div></div><span class="cu-btn">연결</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-terminal-window"/></svg></span><div><div class="t">Claude Code · Codex</div><div class="s">내 칸에서 돌리고, 물어볼 때와 승인이 필요할 때 카드로 올려요</div></div><span class="cu-btn">연결</span></div>
+      <div class="cu-row" data-pin="2" data-pin-at="right"><span class="cu-tile"><svg><use href="#i-chat-circle"/></svg></span><div><div class="t">카카오톡</div><div class="s">대화는 읽을 수 없어요. 채널을 추가하면 카드를 카톡으로 받아요</div></div><span class="cu-btn">채널 추가</span></div>
+    </div>
+    <p class="cu-promise" data-pin="3" data-pin-at="right"><svg><use href="#i-shield-check"/></svg><span>처음에는 아무것도 알아서 하지 않아요. 전부 물어보고, 같은 답이 쌓이면 맡길지 여쭤볼게요.</span></p>
+    <span class="cu-btn primary lg" style="margin-top:24px">캐치업 시작하기</span>
+  </div>
+</div></div>
+  </div></div></div>
+  <ol class="bd-notes">
+    <li><b>연결할 곳마다 '무엇을 읽는지'를 한 줄로 말해요.</b> Slack은 나를 부른 글과 개인 메시지만 읽어요. 범위가 좁을수록 맡기기 쉬워요.</li>
+    <li><b>카카오톡은 '대화를 읽을 수는 없다'를 미리 말해요.</b> 카카오의 공식 API는 보내기만 있고, PC 카톡 원격 조작 같은 길은 운영정책이 막아요. 대신 CatchUp 채널을 추가하면 카드가 카톡으로 오고, 대화를 채널에 붙여 넣어 카드로 만들 수 있어요.</li>
+    <li><b>'처음에는 알아서 하지 않아요'가 시작 단추 바로 위에 있어요.</b> 비서를 믿을 근거가 없는 첫날의 걱정에 먼저 답해요.</li>
+  </ol>
+  <h3 class="bd-sub">다 봤어요 — 끝과 그동안 한 일</h3>
+  <div class="bd-frame-wrap"><div class="bd-frame pad" id="f-done"><div class="bd-screen cu-root">
+<div class="cu-status side"><span>9:41</span><span>11월 23일 (월)</span><span class="sp"></span><svg><use href="#i-wifi-high"/></svg><span>100%</span><svg><use href="#i-battery-full"/></svg></div>
+<div class="cu-app">
+  <aside class="cu-side">
+<div class="cu-side-head"><span class="cu-logo"><svg><use href="#cu-mark"/></svg></span><span class="name">CatchUp</span><span class="cu-ib"><svg><use href="#i-magnifying-glass"/></svg></span><span class="cu-ib"><svg><use href="#i-sidebar-simple"/></svg></span></div>
+<div class="cu-nav on"><svg><use href="#i-cards"/></svg><span>캐치업</span></div>
+<div class="cu-nav"><svg><use href="#i-list-checks"/></svg><span>알려만 드려요</span><span class="n">12</span></div>
+<div class="cu-nav"><svg><use href="#i-clock"/></svg><span>미뤄 둔 것</span><span class="n">3</span></div>
+<div class="cu-nav"><svg><use href="#i-receipt"/></svg><span>처리 기록</span></div>
+<div class="cu-side-label">비서가 하는 일</div>
+<div class="cu-run"><svg><use href="#i-terminal-window"/></svg><span class="t">결제 재시도 넣기</span><span class="s">Claude Code · 이어서 하는 중</span></div>
+<div class="cu-run"><svg><use href="#i-code"/></svg><span class="t">주간 보고 초안 쓰기</span><span class="s">Codex · 9분째 하는 중</span></div>
+<div class="cu-run"><svg><use href="#i-envelope-simple"/></svg><span class="t">밤사이 메일 41통 정리</span><span class="s">8:55에 끝났어요</span></div>
+<div class="cu-side-label">들어오는 곳 · 밤사이</div>
+<div class="cu-src-row"><svg><use href="#i-envelope-simple"/></svg><span>Gmail</span><span class="n">41</span></div>
+<div class="cu-src-row"><svg><use href="#i-slack-logo"/></svg><span>Slack</span><span class="n">63</span></div>
+<div class="cu-src-row"><svg><use href="#i-chat-circle"/></svg><span>카카오톡 채널</span><span class="n">2</span></div>
+<div class="cu-src-row"><svg><use href="#i-calendar-blank"/></svg><span>캘린더</span><span class="n">5</span></div>
+<div class="cu-src-row"><svg><use href="#i-github-logo"/></svg><span>GitHub</span><span class="n">9</span></div>
+<div class="cu-src-row"><svg><use href="#i-terminal-window"/></svg><span>Claude Code</span><span class="n">2</span></div>
+<div class="cu-src-row"><svg><use href="#i-code"/></svg><span>Codex</span><span class="n">3</span></div>
+<div class="cu-me"><span class="cu-avatar">지우</span><span>한지우</span><span class="sub">설정</span></div>
+</aside>
+  <div class="cu-main">
+    <div class="cu-top">
+      <h1>캐치업</h1><span class="left">7개를 모두 정했어요</span><span class="sp"></span>
+      <div class="cu-steps">
+        <span class="cu-step done"><svg><use href="#i-check"/></svg></span><span class="cu-step done"><svg><use href="#i-check"/></svg></span><span class="cu-step done"><svg><use href="#i-check"/></svg></span><span class="cu-step done"><svg><use href="#i-check"/></svg></span><span class="cu-step done"><svg><use href="#i-check"/></svg></span><span class="cu-step done"><svg><use href="#i-clock"/></svg></span><span class="cu-step done"><svg><use href="#i-check"/></svg></span>
+      </div>
+      <span class="sp"></span>
+      <span class="cu-ib"><svg><use href="#i-arrow-u-up-left"/></svg></span><span class="cu-ib"><svg><use href="#i-rows"/></svg></span>
+    </div>
+    <div class="cu-page"><div class="cu-page-in" style="width:640px">
+      <div class="cu-done-head">
+        <span class="cu-mascot md"><svg><use href="#cu-mascot-done"/></svg></span>
+        <div><p class="cu-big" data-pin="1" data-pin-at="right">다 봤어요</p>
+        <p class="cu-sub">결정 6개를 4분 10초 만에 끝냈고, 1개는 미뤄 뒀어요.<br>새로 정할 일이 생기면 알림으로 알려 드릴게요.</p></div>
+      </div>
+      <div class="cu-h"><b data-pin="2">그동안 비서가 알아서 한 일</b><span>23개</span><span class="sp"></span><span class="cu-link">모두 보기</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-archive"/></svg></span><div><div class="t">뉴스레터와 광고 메일 19통을 보관했어요</div><div class="s">규칙 · 뉴스레터는 읽지 않고 보관해요</div></div><span class="cu-link">되돌리기</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-calendar-check"/></svg></span><div><div class="t">팀 정기 회의 초대 2개를 수락했어요</div><div class="s">규칙 · 지난 5번 모두 수락하셨어요</div></div><span class="cu-link">되돌리기</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-receipt"/></svg></span><div><div class="t">영수증 2장을 '11월 지출'에 정리했어요</div><div class="s">쿠팡 38,900원 · 카카오 T 12,400원</div></div><span class="cu-link">되돌리기</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-package"/></svg></span><div><div class="t">택배 알림 4개를 '배송'으로 모았어요</div><div class="s">오늘 도착 2개 · 내일 도착 2개</div></div><span class="cu-link">되돌리기</span></div>
+      <div class="cu-h"><b>남은 것</b></div>
+      <div class="cu-row" data-pin="3" data-pin-at="right"><span class="cu-tile"><svg><use href="#i-list-checks"/></svg></span><div><div class="t">알려만 드릴 일 12개</div><div class="s">출시 일정 확정 · 밤 배포 결과 · AWS 청구 예상액 …</div></div><span class="cu-btn">훑어보기</span></div>
+      <div class="cu-row" data-pin="4" data-pin-at="right"><span class="cu-tile"><svg><use href="#i-clock"/></svg></span><div><div class="t">미뤄 둔 것 3개</div><div class="s">출시 공지 문구 확인은 오후 2시에 다시 올려요</div></div><span class="cu-btn">지금 보기</span></div>
+    </div></div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes">
+    <li><b>끝을 분명히 말해요.</b> 몇 개를 얼마 만에 끝냈는지 한 줄이에요. 새 카드는 알림으로 온다고 알려서 앱을 닫아도 되게 해요.</li>
+    <li><b>비서가 알아서 한 일을 숨기지 않아요.</b> 어떤 규칙으로 했는지와 '되돌리기'가 줄마다 있어요. 맡긴 범위가 맞는지 여기서 확인해요.</li>
+    <li><b>알려만 드릴 일은 여기서 한 번에 훑어요.</b> 결정 카드 사이에 끼우지 않아요.</li>
+    <li><b>미룬 카드는 언제 다시 오는지 적혀 있어요.</b> 미루기는 잊는 것이 아니라 시간을 정하는 거예요.</li>
+  </ol>
+  <h3 class="bd-sub">실패 — 실행이 안 되면 다시 카드로</h3>
+  <div class="bd-row"><div class="bd-cell"><div class="bd-frame cardonly" style="width:730px" id="f-fail"><div class="bd-screen cu-root" style="width:728px;height:auto">
+<div class="cu-solo">
+  <div class="cu-card flat">
+    <div class="cu-from"><span class="cu-tile"><svg><use href="#i-envelope-simple"/></svg></span><span class="who">세무법인 다온</span><span class="meta">Gmail · 내가 9:47에 정했어요</span><span class="sp"></span><span class="cu-due risk" data-pin="1"><svg><use href="#i-warning"/></svg>보내지 못했어요</span></div>
+    <h2 class="cu-ask">부가세 자료를 보내지 못했어요. 어떻게 할까요?</h2>
+    <ul class="cu-sum">
+      <li>첨부 5개가 모두 31MB라서 Gmail 한도 25MB를 넘었어요.</li>
+      <li class="dim">답장은 아직 나가지 않았고, 수요일까지 내야 해요.</li>
+    </ul>
+    <div class="cu-opts">
+      <div class="cu-opt rec" data-pin="2" data-pin-at="right"><span class="key">1</span><div><div class="l">Google 드라이브 링크로 바꿔서 보내요</div><div class="d">다온 담당자만 열 수 있게 해요</div></div><span class="r"><span class="cu-rec">추천</span><span class="cu-kbd">↵</span></span></div>
+      <div class="cu-opt"><span class="key">2</span><div><div class="l">메일 두 통으로 나눠 보내요</div><div class="d">매출 3개 · 매입 2개</div></div><span class="r"></span></div>
+      <div class="cu-opt"><span class="key">3</span><div><div class="l">내가 직접 보낼게요</div><div class="d">초안과 첨부는 Gmail 임시 보관함에 둬요</div></div><span class="r"></span></div>
+    </div>
+    <div class="cu-composer"><span class="sp">다르게 답하기 — 비서에게 말로 알려 주세요</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes bd-solo-notes">
+    <li><b>실패도 질문으로 돌아와요.</b> 오류 문구를 보여 주고 끝내지 않아요. 무엇이 안 됐고 지금 상태가 어떤지(답장은 아직 안 나감) 두 줄로 말해요.</li>
+    <li><b>고칠 방법이 선택지예요.</b> 비서가 할 수 있는 길 둘과 '내가 직접' 하나예요. 직접 하는 길도 초안은 남겨 둬요.</li>
+  </ol></div>
+</section>
+
+<!-- ───── 08 기록 ───── -->
+<section class="bd-chapter" id="s-log">
+  <div class="bd-kicker">08 · 흐름 ⑥ — 처리 기록</div>
+  <h2>내가 정한 것과 비서가 알아서 한 것이 한 줄에 서요</h2>
+  <p class="bd-lead">끝난 일은 모두 여기 남아요. 누가 정했는지, 추천대로였는지, 지금 어떻게 됐는지가 둘째 줄에 있어요. 아래에는 비서가 묻지 않고 해도 되는 범위가 있고, 켜고 끌 수 있어요.</p>
+  <div class="bd-frame-wrap"><div class="bd-frame pad" id="f-log"><div class="bd-screen cu-root">
+<div class="cu-status side"><span>9:41</span><span>11월 23일 (월)</span><span class="sp"></span><svg><use href="#i-wifi-high"/></svg><span>100%</span><svg><use href="#i-battery-full"/></svg></div>
+<div class="cu-app">
+  <aside class="cu-side">
+<div class="cu-side-head"><span class="cu-logo"><svg><use href="#cu-mark"/></svg></span><span class="name">CatchUp</span><span class="cu-ib"><svg><use href="#i-magnifying-glass"/></svg></span><span class="cu-ib"><svg><use href="#i-sidebar-simple"/></svg></span></div>
+<div class="cu-nav"><svg><use href="#i-cards"/></svg><span>캐치업</span><span class="n badge">1</span></div>
+<div class="cu-nav"><svg><use href="#i-list-checks"/></svg><span>알려만 드려요</span><span class="n">12</span></div>
+<div class="cu-nav"><svg><use href="#i-clock"/></svg><span>미뤄 둔 것</span><span class="n">3</span></div>
+<div class="cu-nav on"><svg><use href="#i-receipt"/></svg><span>처리 기록</span></div>
+<div class="cu-side-label">비서가 하는 일</div>
+<div class="cu-run"><svg><use href="#i-terminal-window"/></svg><span class="t">결제 재시도 넣기</span><span class="s">Claude Code · 이어서 하는 중</span></div>
+<div class="cu-run"><svg><use href="#i-code"/></svg><span class="t">주간 보고 초안 쓰기</span><span class="s">Codex · 9분째 하는 중</span></div>
+<div class="cu-run"><svg><use href="#i-envelope-simple"/></svg><span class="t">밤사이 메일 41통 정리</span><span class="s">8:55에 끝났어요</span></div>
+<div class="cu-side-label">들어오는 곳 · 밤사이</div>
+<div class="cu-src-row"><svg><use href="#i-envelope-simple"/></svg><span>Gmail</span><span class="n">41</span></div>
+<div class="cu-src-row"><svg><use href="#i-slack-logo"/></svg><span>Slack</span><span class="n">63</span></div>
+<div class="cu-src-row"><svg><use href="#i-chat-circle"/></svg><span>카카오톡 채널</span><span class="n">2</span></div>
+<div class="cu-src-row"><svg><use href="#i-calendar-blank"/></svg><span>캘린더</span><span class="n">5</span></div>
+<div class="cu-src-row"><svg><use href="#i-github-logo"/></svg><span>GitHub</span><span class="n">9</span></div>
+<div class="cu-src-row"><svg><use href="#i-terminal-window"/></svg><span>Claude Code</span><span class="n">2</span></div>
+<div class="cu-src-row"><svg><use href="#i-code"/></svg><span>Codex</span><span class="n">3</span></div>
+<div class="cu-me"><span class="cu-avatar">지우</span><span>한지우</span><span class="sub">설정</span></div>
+</aside>
+  <div class="cu-main">
+    <div class="cu-top"><h1>처리 기록</h1><span class="left">오늘 29개</span><span class="sp"></span>
+      <span class="cu-seg" data-pin="1" data-pin-at="bottom"><span class="on">모두</span><span>내가 정한 것 6</span><span>비서가 알아서 한 것 23</span></span>
+      <span class="cu-ib"><svg><use href="#i-magnifying-glass"/></svg></span></div>
+    <div class="cu-page"><div class="cu-page-in">
+      <div class="cu-h"><b>오늘</b><span>11월 23일 월요일</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-envelope-simple"/></svg></span><div><div class="t">세무법인 다온에 부가세 자료를 보내려 했어요</div><div class="s"><span class="cu-fail">보내지 못했어요</span> · 첨부가 25MB를 넘어요</div></div><span class="e"><span>9:47</span><span class="cu-btn" data-pin="2" data-pin-at="top">다시 정하기</span></span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-calendar-blank"/></svg></span><div><div class="t">제품 주간 회의를 목요일 4시 30분으로 옮겼어요</div><div class="s">내가 정했어요 · 추천대로 · 6명에게 바뀐 초대를 보냈어요</div></div><span class="e"><span>9:44</span><span class="cu-link" data-pin="3">되돌리기</span></span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-chat-circle"/></svg></span><div><div class="t">엄마께 보낼 답장을 복사해 드렸어요</div><div class="s">내가 정했어요 · 말로 다르게 답했어요 · 카카오톡에 붙여 넣으면 돼요</div></div><span class="e"><span>9:44</span></span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-terminal-window"/></svg></span><div><div class="t">Claude Code에게 결제 서버에서 다시 시도하라고 했어요</div><div class="s">내가 정했어요 · 추천대로 · 이어서 하는 중이에요</div></div><span class="e"><span>9:43</span></span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-envelope-simple"/></svg></span><div><div class="t">박서연 님께 B안으로 진행한다고 답장했어요</div><div class="s">내가 정했어요 · 추천대로 · 초안을 한 번 고쳤어요</div></div><span class="e"><span>9:42</span></span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-archive"/></svg></span><div><div class="t">뉴스레터와 광고 메일 19통을 보관했어요</div><div class="s">비서가 알아서 했어요 · 규칙 '뉴스레터는 읽지 않고 보관해요'</div></div><span class="e"><span>8:55</span><span class="cu-link">되돌리기</span></span></div>
+      <div class="cu-h" style="margin-top:28px"><b data-pin="4">알아서 해도 되는 범위</b><span>내 답에서 배운 것 3개 · 내가 정한 것 1개</span><span class="sp"></span><span class="cu-link">모두 보기</span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-calendar-check"/></svg></span><div><div class="t">팀 정기 회의 초대는 수락해요</div><div class="s">같은 답을 5번 하셔서 물어보고 켰어요 · 이번 달 8번 썼어요</div></div><span class="cu-switch"></span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-terminal-window"/></svg></span><div><div class="t">코딩 에이전트의 테스트 실행은 허용해요</div><div class="s">Claude Code · Codex · 이번 달 41번 썼어요</div></div><span class="cu-switch"></span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-archive"/></svg></span><div><div class="t">뉴스레터는 읽지 않고 보관해요</div><div class="s">같은 답을 5번 하셔서 물어보고 켰어요 · 이번 달 212통</div></div><span class="cu-switch"></span></div>
+      <div class="cu-row"><span class="cu-tile"><svg><use href="#i-currency-krw"/></svg></span><div><div class="t">돈이 나가는 일은 금액과 상관없이 늘 물어봐요</div><div class="s">내가 정했어요 · 끌 수 없어요</div></div><span class="e" data-pin="5" data-pin-at="left"><svg><use href="#i-lock-simple"/></svg></span></div>
+    </div></div>
+  </div>
+</div>
+  </div></div></div>
+  <ol class="bd-notes">
+    <li><b>세 칸으로 걸러 봐요.</b> 모두 · 내가 정한 것 · 비서가 알아서 한 것이에요. 숫자가 붙어 비서가 얼마나 대신했는지 보여요.</li>
+    <li><b>실패한 줄에서 바로 다시 정해요.</b> 빨간 글자는 이 줄 하나뿐이에요. 누르면 07장의 실패 카드가 열려요.</li>
+    <li><b>되돌릴 수 있는 일에만 '되돌리기'가 있어요.</b> 이미 답이 온 메일처럼 되돌릴 수 없는 일에는 단추가 없어요. AI1의 실행 영수증을 그대로 써요.</li>
+    <li><b>알아서 하는 범위가 기록 옆에 있어요.</b> 왜 켜졌는지(같은 답 5번)와 이번 달에 몇 번 썼는지가 보여요. 틀리면 여기서 꺼요.</li>
+    <li><b>끌 수 없는 규칙도 있어요.</b> 돈이 나가는 일은 늘 물어봐요. 자물쇠로 표시해요.</li>
+  </ol>
+</section>
+
+<!-- ───── 09 아이폰 ───── -->
+<section class="bd-chapter" id="s-phone">
+  <div class="bd-kicker">09 · 좁은 화면과 알림</div>
+  <h2>아이폰에서는 카드가 화면이고, 급한 것은 잠금 화면에서 끝나요</h2>
+  <p class="bd-lead">좁은 화면에서는 사이드바가 사라지고 카드 한 장이 화면을 채워요. 입력창과 미루기는 엄지가 닿는 아래에 붙어요. 누가 기다리는 카드만 알림으로 오고, 알림을 길게 눌러 그 자리에서 고를 수 있어요(방향 D, 2차).</p>
+  <div class="bd-row">
+    <div class="bd-cell"><div class="bd-frame-wrap" style="margin-top:0"><div class="bd-frame phone" id="f-pcard"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div><div class="bd-screen cu-root" style="height:800px">
+<div class="cu-phone">
+  <div class="cu-ptop"><span class="cu-ib"><svg><use href="#i-list"/></svg></span><span class="ttl">캐치업</span><span class="cnt" data-pin="1" data-pin-at="right">7개 중 세 번째</span><span class="sp"></span><span class="cu-ib"><svg><use href="#i-arrow-u-up-left"/></svg></span></div>
+  <div class="cu-pbar"><i class="d"></i><i class="d"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+  <div class="cu-card flat p">
+    <div class="cu-from"><span class="cu-tile"><svg><use href="#i-calendar-blank"/></svg></span><span class="who">캘린더</span><span class="meta">김태호 님의 초대</span></div>
+    <h2 class="cu-ask">목요일 3시에 일정 둘이 겹쳐요. 어느 쪽을 옮길까요?</h2>
+    <div class="cu-slots one">
+      <div class="cu-slot new"><span class="tm">15:00 – 16:00 · 새 초대</span><span class="nm">블루포인트 투자 미팅</span></div>
+      <div class="cu-slot"><span class="tm">15:00 – 15:30 · 매주 · 6명</span><span class="nm">제품 주간 회의</span></div>
+    </div>
+    <div class="cu-opts">
+      <div class="cu-opt rec"><span class="key">1</span><div><div class="l">주간 회의를 4시 30분으로</div><div class="d">6명 모두 비어 있어요</div></div><span class="r"><span class="cu-rec">추천</span></span></div>
+      <div class="cu-opt"><span class="key">2</span><div><div class="l">투자 미팅을 금요일 10시로</div><div class="d">김태호 님께 되물어요</div></div><span class="r"></span></div>
+      <div class="cu-opt"><span class="key">3</span><div><div class="l" data-pin="2" data-pin-at="right">주간 회의는 이번 주만 빠져요</div><div class="d">이도현 님께 진행을 부탁해요</div></div><span class="r"></span></div>
+    </div>
+  </div>
+  <div class="cu-pdock" data-pin="3">
+    <div class="cu-composer"><span class="sp">다르게 답하기</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+    <div class="cu-pacts"><span><svg><use href="#i-clock"/></svg>미루기</span><span><svg><use href="#i-hand-tap"/></svg>내가 직접</span><span><svg><use href="#i-lightning"/></svg>앞으로 알아서</span></div>
+  </div>
+</div>
+    </div></div></div>
+    <ol class="bd-notes">
+      <li><b>남은 카드는 가는 막대 일곱 칸이에요.</b> 아이패드의 동그라미와 같은 정보예요. 자리가 좁아 아이콘은 뺐어요.</li>
+      <li><b>선택지는 한 줄로 줄여 써요.</b> 굵은 줄에 할 일, 흐린 줄에 이유예요. 미리보기는 고른 뒤에 보여 줘요.</li>
+      <li><b>입력창과 세 단추가 아래에 붙어 있어요.</b> 왼쪽으로 밀면 미루기예요. 위험한 카드는 밀리지 않아요.</li>
+    </ol></div>
+    <div class="bd-cell"><div class="bd-frame-wrap" style="margin-top:0"><div class="bd-frame phone" id="f-plock"><div class="bd-status" style="background:#2a2a2a;color:#fff"><span>9:41</span><span class="island" style="background:#000"></span><span class="bat" style="box-shadow:inset 0 0 0 1.5px #fff"></span></div><div class="bd-screen cu-root" style="height:800px">
+<div class="cu-lock">
+  <div class="cu-ldate">11월 23일 월요일</div>
+  <div class="cu-ltime">9:41</div>
+  <div class="cu-noti" data-pin="1">
+    <div class="h"><span class="cu-appicon"><svg><use href="#cu-mark-small"/></svg></span><span class="app">CatchUp</span><span class="sp"></span><span class="when">지금</span></div>
+    <div class="t">Claude Code가 12분째 답을 기다려요</div>
+    <div class="b">결제 재시도를 어디에서 하게 할까요? 결제 서버에 두면 정기 결제까지 한 번에 해결돼요.</div>
+  </div>
+  <div class="cu-nacts">
+    <div><span data-pin="2" data-pin-at="right">결제 서버에서 (추천)</span></div>
+    <div><span>주문 화면에서만</span></div>
+    <div><span data-pin="3" data-pin-at="right">열어서 보기</span></div>
+  </div>
+  <div class="cu-lhint">그 밖에 정할 일 5개</div>
+</div>
+    </div></div></div>
+    <ol class="bd-notes">
+      <li><b>알림 제목이 '누가 얼마나 기다리는지'예요.</b> 본문은 질문과 추천 이유 한 줄이에요. 알림은 누가 기다리거나 기한이 오늘인 카드에만 보내요.</li>
+      <li><b>단추는 선택지 둘까지예요.</b> 추천이 맨 위예요. iOS 알림 단추는 글이 짧아야 해서 선택지 이름을 줄여 써요.</li>
+      <li><b>위험한 카드는 '열어서 보기'만 있어요.</b> 운영 데이터나 돈이 걸린 일은 잠금 화면에서 정하지 못해요.</li>
+    </ol></div>
+  </div>
+</section>
+
+<!-- ───── 10 구조 ───── -->
+<section class="bd-chapter" id="arch">
+  <div class="bd-kicker">10 · 구조와 데이터 초안</div>
+  <h2>사람마다 클라우드에 '내 칸'이 있고, 그 안에서 가르기 · 카드 · 실행 · 에이전트가 돌아요</h2>
+  <p class="bd-lead">소유자 답대로 처음부터 모든 로직이 클라우드에서 돌아요. 공용 앞단은 로그인 · 웹훅 · 푸시만 맡고, 나머지는 사람마다 따로인 '내 칸'(개인 서버 한 대 같은 경계)에서 돌아요. 코딩 에이전트도 내 칸의 샌드박스에서 돌아요. 화면은 카드만 받아 그리고, 답만 돌려보내요. 자세한 것은 <code>design.md</code> 3 · 5장에 있어요.</p>
+  <figure class="bd-diagram"><img src="img/architecture.png" alt="들어오는 곳, CatchUp 클라우드(공용 앞단과 내 칸), 내 기기 세 묶음과 그 사이의 결정 카드와 내 답의 흐름"><figcaption>카드는 내 칸이 만들고, 기기는 그리기만 해요. 그래서 웹 · 아이패드 · 아이폰 · 알림 · 카카오톡 채널이 같은 카드를 보여 줘요. 한 사람의 칸이 고장 나도 다른 사람은 그대로예요.</figcaption></figure>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>화면이 필요로 하는 값</h3>
+      <table class="bd-table"><tr><th>값</th><th>지금</th></tr>
+        <tr><td>결정 카드 — 질문 · 요약 · 근거 · 선택지(이름 · 설명 · 미리보기 · 위험) · 추천 · 기한</td><td>새로 필요 <code>decision_cards</code>. 선택지 모양은 <code>RunQuestion</code>에서 넓혀요</td></tr>
+        <tr><td>내 답 — 고른 번호 또는 말, 고친 초안, 어디서 답했는지</td><td>새로 필요 <code>card_answers</code> <code>card_turns</code></td></tr>
+        <tr><td>실행 결과와 되돌리기</td><td>있음 <code>agent_action_receipts</code></td></tr>
+        <tr><td>알아서 하는 범위와 쌓인 횟수</td><td>있음 <code>agent_watches</code>(scope · streak)</td></tr>
+        <tr><td>들어온 것과 가른 결과</td><td><code>received_items</code>를 넓히고, 가른 결과는 새로 필요</td></tr>
+        <tr><td>에이전트 세션 — 어디서 도는지, 기다리는지</td><td>새로 필요 <code>agent_sessions</code></td></tr>
+      </table></div>
+    <div class="bd-card"><h3>API 초안</h3>
+      <table class="bd-table"><tr><th>길</th><th>하는 일</th></tr>
+        <tr><td><code>GET /v1/me/cards</code></td><td>열린 카드 · 미룬 카드 · 알려만 묶음</td></tr>
+        <tr><td><code>GET /v1/me/cards/stream</code></td><td>새 카드와 상태 변화를 흘려 줘요(SSE)</td></tr>
+        <tr><td><code>POST …/cards/{id}/answer</code></td><td>번호로 답하기. 10초 뒤 실행</td></tr>
+        <tr><td><code>POST …/cards/{id}/turns</code></td><td>말로 답하기. 새 선택지가 돌아와요</td></tr>
+        <tr><td><code>POST …/cards/{id}/snooze</code> · <code>/handoff</code></td><td>미루기 · 내가 직접</td></tr>
+        <tr><td><code>POST …/cards/{id}/undo</code></td><td>되돌리기(영수증이 있을 때)</td></tr>
+        <tr><td><code>GET /v1/me/activity</code> · <code>/routines</code></td><td>있음 — 처리 기록과 알아서 하는 범위</td></tr>
+      </table></div>
+  </div>
+</section>
+
+<!-- ───── 11 1차 범위 ───── -->
+<section class="bd-chapter" id="scope">
+  <div class="bd-kicker">11 · 1차 범위</div>
+  <h2>코딩 에이전트 카드부터 만들어요. 질문이 이미 객관식이라서요</h2>
+  <p class="bd-lead">Claude Code와 Codex의 질문은 선택지가 붙어 와요. 비서가 카드를 지어낼 필요가 없어서 화면과 답 돌려보내기만 만들면 매일 쓸 수 있어요. 메일은 '가르기'와 '카드 만들기'의 품질이 필요해 그다음이에요.</p>
+  <div class="bd-scope">
+    <div class="bd-card"><h4>1차에 넣을 것</h4><ul>
+      <li>카드 덱 화면(아이패드 가로 · 웹)<span>방향 A. 번호 키 · 주관식 · 미루기 · 되돌리기까지</span></li>
+      <li>Codex 질문과 승인을 카드로<span>내 칸의 샌드박스에서 돌려요. 임시로 Codex 로그인(AI1 방식). Claude Code는 그다음</span></li>
+      <li>클라우드 뼈대와 카드 API<span>공용 앞단 + 내 칸. AI1의 질문 · 승인 · 영수증 방식을 따라요</span></li>
+      <li>Gmail · Google 캘린더 연결과 가르기<span>평가 세트를 먼저 만들고, 처음엔 전부 물어봐요</span></li>
+      <li>처리 기록<span>맡길 근거가 여기서 생겨요</span></li>
+    </ul></div>
+    <div class="bd-card"><h4>미룰 것</h4><ul>
+      <li>알아서 하기<span>답이 쌓여야 켤 수 있어요. 2차에 '같은 답 5번이면 제안'부터</span></li>
+      <li>잠금 화면에서 답하기 · SwiftUI 앱<span>웹으로 쓰임새를 확인한 뒤 2차에</span></li>
+      <li>내 PC에서 돌던 세션에 붙기<span>훅 설정을 넣어야 하는 길이라 보조로 남겨요</span></li>
+      <li>Slack · 카카오톡 · 커넥터 넓히기<span>Slack 다음 카카오톡(채널 챗봇부터), 그다음 Outlook · Telegram · Notion 등</span></li>
+      <li>파인튜닝<span>내 답 수백 개가 쌓인 뒤에 가르기 모델부터</span></li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ───── 12 시각 규격 ───── -->
+<section class="bd-chapter" id="spec">
+  <div class="bd-kicker">12 · 시각 규격</div>
+  <h2>CatchUp 디자인 시스템으로만 그렸어요. 누르는 것은 끝이 둥글고, 빨강은 고를 곳 하나예요</h2>
+  <p class="bd-lead">v1은 OpenAI가 공개한 토큰 값(<code>@openai/apps-sdk-ui</code>)을 빌려 그렸어요. v2의 화면은 모두 <code>docs/design-system/tokens.css</code> · <code>components.css</code>를 그대로 읽어 그려요(이 보드의 키트가 그 파일이에요). 값의 전체 표 · 대비 · 로고 · 캐릭터 · 전후 비교는 <code>docs/design-system/catchup-design-system.html</code>에 있어요.</p>
+  <div class="bd-grid3">
+    <div class="bd-card"><h3>색</h3>
+      <div class="bd-sw"><i style="background:#FAFAF9"></i><span>앱 바탕 <code>--cu-bg-canvas</code></span><code>#FAFAF9</code></div>
+      <div class="bd-sw"><i style="background:#ffffff"></i><span>카드 · 입력창 <code>--cu-bg-surface</code></span><code>#FFFFFF</code></div>
+      <div class="bd-sw"><i style="background:#F5F5F3"></i><span>사이드바 <code>--cu-bg-sidebar</code></span><code>#F5F5F3</code></div>
+      <div class="bd-sw"><i style="background:#1C1A18"></i><span>글자 <code>--cu-fg</code></span><code>#1C1A18</code></div>
+      <div class="bd-sw"><i style="background:#D12C14"></i><span>추천 · 주 단추 <code>--cu-accent</code></span><code>#D12C14</code></div>
+      <div class="bd-sw"><i style="background:#E9A10E"></i><span>기한 · 기다림(점) <code>--cu-wait-dot</code></span><code>#E9A10E</code></div>
+      <div class="bd-sw"><i style="background:#2E7D3A"></i><span>켜짐 · 연결됨 <code>--cu-ok</code></span><code>#2E7D3A</code></div>
+      <div class="bd-sw"><i style="background:#8E1F0E"></i><span>위험 · 실패(글자 + 아이콘) <code>--cu-danger</code></span><code>#8E1F0E</code></div>
+      <p class="bd-mini bd-muted" style="margin-top:8px">본문 글자는 모두 4.5 : 1 이상이에요. v1의 셋째 글자 <code>#8f8f8f</code>(3.3 : 1)를 <code>#6D6863</code>(5.45 : 1)로 고쳤어요.</p></div>
+    <div class="bd-card"><h3>글자</h3>
+      <div class="bd-ts"><span>다 봤어요 · 처음</span><span class="v">32/40 · 700</span></div>
+      <div class="bd-ts"><span>카드 질문</span><span class="v">24/32 · 700</span></div>
+      <div class="bd-ts"><span>화면 제목</span><span class="v">18/26 · 700</span></div>
+      <div class="bd-ts"><span>요약 · 선택지 이름</span><span class="v">16/24 · 400 · 600</span></div>
+      <div class="bd-ts"><span>설명 · 출처 · 단추</span><span class="v">14/20 · 400 · 500</span></div>
+      <div class="bd-ts"><span>키 표시 · 숫자 배지</span><span class="v">12/16 · 600</span></div>
+      <p class="bd-mini bd-muted" style="margin-top:8px">Pretendard 하나. 한글은 낱말 단위로 줄을 바꿔요(<code>keep-all</code>).</p></div>
+    <div class="bd-card"><h3>격자 · 모서리</h3>
+      <table class="bd-table"><tr><th>칸</th><th>값</th></tr>
+        <tr><td>아이패드 가로</td><td>1194 × 834 · 사이드바 264 · 카드 680</td></tr>
+        <tr><td>카드</td><td>모서리 32 · 안쪽 28/32 · 그늘 한 단</td></tr>
+        <tr><td>선택지 줄</td><td>높이 64 · 끝이 반원 · 번호 동그라미 36</td></tr>
+        <tr><td>카드 안 칸 · 코드</td><td>모서리 24 · 16</td></tr>
+        <tr><td>입력창 · 단추 · 사이드바 줄</td><td>높이 52 · 40 · 40, 모두 끝이 반원</td></tr>
+        <tr><td>움직임</td><td>상태 200ms · 카드 넘김 320ms</td></tr>
+      </table></div>
+  </div>
+</section>
+
+<!-- ───── 13 설계 규칙 ───── -->
+<section class="bd-chapter" id="rules">
+  <div class="bd-kicker">13 · 설계 규칙</div>
+  <h2>구현할 때 지킬 것</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>화면 말 대응표</h3><p class="bd-small bd-muted">내부 이름은 화면에 쓰지 않아요.</p>
+      <table class="bd-table"><tr><th>내부 말</th><th>화면</th></tr>
+        <tr><td>decision card</td><td>카드</td></tr>
+        <tr><td>triage: auto / fyi / ask</td><td>알아서 해요 / 알려만 드려요 / 물어봐요</td></tr>
+        <tr><td>recommended option</td><td>추천</td></tr>
+        <tr><td>free-text turn</td><td>다르게 답하기 · 더 말하기</td></tr>
+        <tr><td>snooze / handoff</td><td>미루기 / 내가 직접 할게요</td></tr>
+        <tr><td>routine · watch (scope auto)</td><td>알아서 해도 되는 범위</td></tr>
+        <tr><td>action receipt · undo</td><td>처리 기록 · 되돌리기</td></tr>
+        <tr><td>agent session (waiting)</td><td>비서가 하는 일 · 답을 기다려요</td></tr>
+        <tr><td>connector · source</td><td>들어오는 곳 · 연결</td></tr>
+      </table></div>
+    <div class="bd-card"><h3>규칙</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>카드 제목은 질문이에요.</b> 소식이 아니라 정할 것을 써요. 질문으로 못 쓰면 카드가 아니라 '알려만 드려요'예요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>선택지는 2~4개, 추천은 맨 위 하나예요.</b> 선택지마다 한 줄 설명을 붙여요. Claude Code 질문 규칙과 같아요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>주관식 입력창을 빼지 않아요.</b> 어떤 카드에도 있어요. Claude Code의 'Other', Codex의 <code>isOther</code>와 같은 자리예요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>고르면 일어나는 일을 먼저 보여 줘요.</b> 나갈 글 · 바뀔 일정 · 바뀔 코드예요. 초안만 쓰고 보내지 않는 Fyxer보다 한 걸음 더 가는 대신, 10초 되돌리기를 둬요.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>위험한 카드는 저절로 정해지지 않아요.</b> 밀기 · 알림 단추 · 시간 초과로 넘어가지 않아요. Claude Code도 승인에는 시간 초과를 쓰지 않아요.</div></div>
+      <div class="bd-rule"><span class="no">6</span><div><b>'알아서'는 코드가 정해요.</b> 모델이 스스로 범위를 넓히지 않아요. AI1의 <code>auto_fire</code>처럼 조건과 하루 한도를 코드에 둬요.</div></div>
+      <div class="bd-rule"><span class="no">7</span><div><b>밖에서 온 글은 지시가 아니에요.</b> 메일 속 '이 링크로 송금해 주세요'는 요약할 내용이지 따를 명령이 아니에요. AI1이 연결 요약에서 고친 것(<code>docs/performance/22</code>)과 같은 원칙이에요.</div></div>
+      <div class="bd-rule"><span class="no">8</span><div><b>빨강은 고를 곳 하나, 상태는 점 하나와 한 마디예요.</b> 케첩 빨강은 추천 답에만 칠해요. 기다림 · 기한은 머스터드 점, 위험 · 실패는 경고 아이콘과 검붉은 낱말이에요. 카드에 색 띠나 색 배경을 깔지 않아요.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── 14 레퍼런스 ───── -->
+<section class="bd-chapter" id="refs">
+  <div class="bd-kicker">14 · 레퍼런스</div>
+  <h2>참고한 제품과 문서</h2>
+  <p class="bd-lead">공식 문서를 직접 읽은 것만 적었어요. 다른 사람이 정리한 글에서 본 것은 (2차)로 표시했어요.</p>
+  <div class="bd-grid2 bd-refs">
+    <div class="bd-card"><h3>한 장씩 넘기기</h3><ul>
+      <li><a href="https://slack.com/help/articles/226410907-View-all-your-unread-messages">Slack — 읽지 않은 메시지 모두 보기(캐치업)</a> — <span class="bd-muted">대화마다 카드 한 장, 남은 수, 되돌리기를 가져왔어요. Slack은 오른쪽 밀기가 읽음, 왼쪽이 그대로 두기예요. 밀기를 '결정'에 쓰지는 않았어요.</span></li>
+      <li><a href="https://linear.app/docs/triage">Linear — Triage</a> — <span class="bd-muted">1 수락 · 2 거절 · H 미루기처럼 답마다 키 하나를 가져왔어요. 수락과 거절에 한마디를 붙이는 것도요.</span></li>
+      <li><a href="https://alternativeto.net/news/2024/1/slack-launches-catch-up-feature-for-tinder-like-unread-notifications-management">AlternativeTo — Slack 캐치업 출시(2024-01) (2차)</a> — <span class="bd-muted">2024년 1월에 모바일로 나왔다는 것. 아이패드 지원과 AI 요약 계획은 여기서만 봤어요.</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>에이전트의 객관식 질문</h3><ul>
+      <li><a href="https://code.claude.com/docs/en/agent-sdk/user-input">Claude Agent SDK — 사용자 입력 받기</a> — <span class="bd-muted">질문 1~4개, 선택지 2~4개, 이름과 설명, 미리보기, 여러 개 고르기. 주관식은 받는 쪽 화면이 직접 붙여야 해요. 카드 틀의 바탕이에요.</span></li>
+      <li><a href="https://code.claude.com/docs/en/hooks">Claude Code — 훅</a> — <span class="bd-muted">세션이 승인을 기다릴 때 밖에서 허용 · 거절을 돌려줄 수 있어요. 오래 기다릴 때는 미뤘다가 이어 가는 길이 있어요.</span></li>
+      <li><a href="https://learn.chatgpt.com/docs/agent-approvals-security">Codex — 승인과 보안</a> — <span class="bd-muted">수락 / 이번 동안 수락 / 거절 / 취소. 승인 카드의 선택지가 여기에 대응해요.</span></li>
+      <li><a href="https://github.com/langchain-ai/agent-inbox">LangChain — Agent Inbox</a> — <span class="bd-muted">수락 · 고치기 · 답하기 · 무시 네 가지 응답을 출처와 상관없이 같은 모양으로 받는 생각을 가져왔어요.</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>받은함과 알림</h3><ul>
+      <li><a href="https://linear.app/docs/inbox">Linear — Inbox</a> — <span class="bd-muted">목록과 상세, J/K 이동, H 미루기. 방향 B의 선례이고 '목록으로 보기'에 써요.</span></li>
+      <li><a href="https://docs.github.com/en/subscriptions-and-notifications/how-tos/viewing-and-triaging-notifications/managing-notifications-from-your-inbox">GitHub — 알림 받은함</a> — <span class="bd-muted">끝냄 · 저장 · 구독 끊기. '구독 끊기'가 '앞으로 이런 건 알아서'의 선례예요.</span></li>
+      <li><a href="https://cursor.com/docs/cloud-agents/mobile">Cursor — 모바일의 클라우드 에이전트</a> — <span class="bd-muted">에이전트 받은함, 차례가 끝나면 알림, 이어서 지시하기. 방향 D와 사이드바 '비서가 하는 일'의 선례예요.</span></li>
+      <li><a href="https://support.apple.com/guide/ipad/ipadf7f78ec1/ipados">Apple — 알림 요약과 우선 알림</a> — <span class="bd-muted">급한 것만 위로 올리는 것. 알림을 '누가 기다리는 카드'로만 좁힌 근거예요.</span></li>
+      <li><a href="https://intercom.help/fyxerai-helpcenter/en/articles/10429854-how-does-fyxer-categorise-emails-and-how-can-i-retrain-it-if-needed">Fyxer — 메일 가르기 (2차로 확인)</a> — <span class="bd-muted">답할 것 / 알려만 / 광고로 가르고 초안을 써 두지만 보내지 않아요. 우리는 고른 뒤 보내고, 10초 되돌리기를 둬요.</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>모양과 아이패드 관례</h3><ul>
+      <li><a href="https://github.com/openai/apps-sdk-ui">OpenAI — apps-sdk-ui 토큰</a> — <span class="bd-muted">v1의 값이 여기서 왔어요. v2는 CatchUp 디자인 시스템으로 바꿨고, 입력창 모서리 · 글자 단계의 생각만 남겼어요.</span></li>
+      <li><a href="https://developers.openai.com/apps-sdk/concepts/ui-guidelines">OpenAI — Apps SDK UI 지침</a> — <span class="bd-muted">카드 안 주 행동은 하나, 카드 안에서 스크롤하지 않기, 아이콘은 한 색 선.</span></li>
+      <li><a href="https://developer.apple.com/design/human-interface-guidelines/split-views">Apple HIG — 화면 나누기</a> · <a href="https://developer.apple.com/design/human-interface-guidelines/sidebars">사이드바</a> — <span class="bd-muted">사이드바는 두 단계까지, 좁아지면 한 줄기로 접기. 09장의 아이폰 화면이 이 규칙이에요.</span></li>
+      <li><a href="https://developer.apple.com/design/human-interface-guidelines/keyboards">Apple HIG — 키보드</a> — <span class="bd-muted">자주 쓰는 명령에만 단축키. 번호 · ↵ · S · D 넷으로 줄였어요.</span></li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ───── 15 순서와 질문 ───── -->
+<section class="bd-chapter" id="next">
+  <div class="bd-kicker">15 · 나눠 만들 순서와 질문</div>
+  <h2>화면부터 손에 쥐고, 클라우드 뼈대 위에 코딩 에이전트 카드를 먼저 받아요</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>나눠 만들 순서</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>화면 프로토타입</b> — 이 보드의 화면을 예시 카드로 웹에 만들어 아이패드 · 아이폰 Safari에서 직접 써 봐요. 디자인 시스템을 앱 토큰으로 옮겨요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>클라우드 뼈대와 카드 API</b> — 공용 앞단 + 내 칸, 카드 · 답 · 미루기 · 되돌리기, 웹 푸시. 한 칸이 죽어도 다른 칸은 그대로인지 시험해요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>코딩 에이전트 카드</b> — 칸마다 Codex 로그인(임시)과 LLM 창구를 두고, 내 칸의 샌드박스에서 Codex를 돌려 묻거나 승인을 기다리면 카드로 올려요. Claude Code는 그다음.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>Gmail · Google 캘린더와 가르기</b> — 평가 세트를 먼저 만들고, 전부 물어보는 모드로 시작해요. LLM은 3단계의 Codex 창구로 불러요.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>Slack</b> — 실시간 이벤트로 받고, 마켓플레이스 등록을 목표로 해요.</div></div>
+      <div class="bd-rule"><span class="no">6</span><div><b>카카오톡</b> — 채널 챗봇 + 나에게 보내기 → 대화 내보내기 올리기 → 카카오 협력 문의. 안드로이드 동반 앱은 보류.</div></div>
+      <div class="bd-rule"><span class="no">7</span><div><b>커넥터 넓히기</b> — Outlook · Telegram · GitHub · Notion · 네이버 메일 …</div></div>
+      <div class="bd-rule"><span class="no">8</span><div><b>알아서 하기와 그다음</b> — 같은 답이 쌓이면 맡기기, 잠금 화면 답하기, SwiftUI 앱, 가르기 모델 학습.</div></div>
+      <p class="bd-small bd-muted" style="margin-top:12px">단계마다 끝났다고 볼 기준과 위험, 지금 시작할 신청은 <code>plan.md</code>에 있어요.</p>
+    </div>
+    <div class="bd-card"><h3>정해진 것 · 남은 질문</h3>
+      <div class="bd-rule"><span class="no">✓</span><div><b>Q1~Q9</b> — CatchUp 폴더에서 새로 · 처음부터 클라우드(웹 → 앱) · 유저마다 개인 서버 · 시안 순서로 연결, 커넥터는 최대한 많이 · 카카오톡은 최대한 · 메일을 클라우드 모델에 보내도 돼요 · 왼쪽 밀기 = 미루기 · CatchUp 디자인 시스템 · 이름 CatchUp.</div></div>
+      <div class="bd-rule"><span class="no">✓</span><div><b>Q10 · 계정</b> — 임시로 AI1처럼 Codex(ChatGPT) 로그인 + Codex CLI로 LLM을 불러요. 칸마다 app-server 하나, 웹에서 기기 코드로 로그인해요. 호스팅 서비스에는 허용되지 않는 길이라, 다른 사람에게 열기 전에 API 키 · SIWC로 바꿔요.</div></div>
+      <div class="bd-rule"><span class="no">✓</span><div><b>Q11 · 신청</b> — 모두 보류. 코딩 에이전트부터.</div></div>
+      <div class="bd-rule"><span class="no">✓</span><div><b>Q12 · 내 칸 · 언어</b> — 공용 일꾼 + 격리로 시작해요. 화면 문구는 한국어 · 영어 두 가지예요. 개발 언어는 Rust 서버(axum · sqlx · Postgres) + TypeScript 화면(React · Vite), AI1과 같은 조합이에요.</div></div>
+      <div class="bd-rule"><span class="no">✓</span><div><b>Q13 · 카카오톡</b> — Slack 다음. 안드로이드 동반 앱은 보류.</div></div>
+      <div class="bd-rule q"><div><b>Q12 남은 것 · 클라우드</b> — 어느 클라우드에 올릴지예요. 2단계(클라우드 뼈대) 전에 정하면 돼요.</div></div>
+      <div class="bd-rule q"><div><b>Q14 · Claude Code 인증</b> — Codex 로그인으로는 돌릴 수 없어요. 코딩 에이전트는 Codex부터라 급하지 않아요.</div></div>
+      <p class="bd-small bd-muted" style="margin-top:12px">전체 질문은 <code>design.md</code> 15장, 디자인 시스템 질문은 <code>docs/design-system/README.md</code>에 있어요.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="bd-foot">CatchUp 화면 시안 v2 · 2026-11-21. 화면 속 이름 · 숫자는 예시예요. 설계는 <code>design.md</code>, 계획은 <code>plan.md</code>, 디자인 시스템은 <code>docs/design-system/</code>. AI1 코드 위치는 main 613eabb 기준이에요.</footer>
+</main>
+</body></html>

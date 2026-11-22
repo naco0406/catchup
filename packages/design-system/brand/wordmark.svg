@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" width="260" height="64">
+  <title>CatchUp</title>
+  <defs><linearGradient id="g10" x1="0" y1="0" x2=".35" y2="1"><stop offset=".35" stop-color="#E5391F"/><stop offset="1" stop-color="#C92A12"/></linearGradient></defs>
+  <path d="M32.0 17.0c11.5-2.4 26.0 4.2 26.0 20.4C58.0 51.6 46.6 60.0 32.0 60.0S6.0 51.6 6.0 37.4C6.0 21.2 20.5 14.6 32.0 17.0z" fill="url(#g10)"/>
+  <path d="M14.0 35.0c0.6-5.4 3.6-9.2 8.0-11.0" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="3.4" stroke-linecap="round"/>
+  <rect x="30.2" y="9.0" width="3.6" height="10.0" rx="1.8" fill="#2E7D3A"/>
+  <path d="M32.0 19.5Q28.0 14.0 20.5 16.2Q25.7 22.0 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q25.3 18.3 21.4 25.1Q29.2 25.7 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q27.8 23.4 32.0 28.1Q36.2 23.4 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q34.8 25.7 42.6 25.1Q38.7 18.3 32.0 19.5z" fill="#2E7D3A"/><path d="M32.0 19.5Q38.3 22.0 43.5 16.2Q36.0 14.0 32.0 19.5z" fill="#2E7D3A"/>
+  <text x="74" y="45" font-family="Pretendard Variable, Pretendard, -apple-system, sans-serif" font-size="34" font-weight="750" letter-spacing="-1.2" fill="#1C1A18">CatchUp</text>
+</svg>

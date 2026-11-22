@@ -1,0 +1,197 @@
+/* 앱 배치 — 색 · 글자 · 모서리 · 그늘은 디자인 시스템 토큰만 써요. 여기는 자리와 반응형만 정해요.
+   넓음(≥1024): 사이드바 + 본문 · 중간(600–1023): 사이드바는 서랍 · 좁음(<600): 아이폰 모양(카드가 화면, 입력창과 단추는 아래에 붙어요) */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; overflow: hidden; }
+h1, h2, h3, p { text-wrap: pretty; }
+.cu-ask { text-wrap: balance; }
+
+.shell { display: flex; height: 100%; height: 100dvh; }
+.shell > .cu-side { height: 100%; overflow-y: auto; overscroll-behavior: contain; }
+.shell > .cu-main { height: 100%; overflow: hidden; }
+
+/* 사이드바 아래쪽 — 프로토타입 상자 · 언어 */
+.side-foot { margin-top: auto; padding-top: 16px; display: grid; gap: 8px; }
+.proto { padding: 12px 14px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); font: var(--cu-t-caption); color: var(--cu-fg-2); display: grid; gap: 8px; }
+.proto b { font: var(--cu-t-micro); color: var(--cu-fg-3); letter-spacing: .02em; text-transform: uppercase; }
+.proto .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.proto .cu-btn { height: var(--cu-h-sm); padding: 0 12px; }
+.seg-lang { display: flex; }
+.seg-lang .cu-seg { width: 100%; height: 36px; }
+.seg-lang .cu-seg button { flex: 1; justify-content: center; padding: 0; }
+.cu-side .cu-me { margin-top: 0; }
+
+/* 서랍(중간 · 좁음) */
+.drawer-bg { position: fixed; inset: 0; background: rgb(28 26 24 / .32); z-index: 40; animation: fade var(--cu-dur) var(--cu-ease); }
+.drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 41; box-shadow: var(--cu-shadow-pop); animation: slide var(--cu-dur) var(--cu-ease); }
+.drawer.cu-side { height: 100%; overflow-y: auto; width: min(300px, 86vw); }
+@keyframes fade { from { opacity: 0; } }
+@keyframes slide { from { transform: translateX(-24px); opacity: 0; } }
+
+/* 위 막대 */
+.cu-top { min-width: 0; }
+.cu-top .menu { display: none; margin-left: -12px; }
+.cu-steps { min-width: 0; overflow: hidden; }
+/* 캐치업 위 막대 — 진행 동그라미(또는 토스트)를 화면 가운데에 둬요 */
+.deck-top { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.deck-top .ttl { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.deck-top .ttl .left { white-space: nowrap; }
+.deck-top h1 { white-space: nowrap; }
+.deck-top .tools { display: flex; align-items: center; gap: 4px; justify-self: end; }
+/* 목록 화면의 위 막대 — 목록 칸(760)과 같은 폭 */
+.cu-top.page-top { display: block; padding: 0 40px; }
+.page-top .in { height: 100%; width: 100%; max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.page-top h1 { white-space: nowrap; }
+.cu-steps .more { font: var(--cu-t-caption); color: var(--cu-fg-3); padding: 0 4px; white-space: nowrap; }
+
+/* 본문 스크롤 */
+.scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.cu-stage { padding: 4px 24px 32px; }
+/* 키 큰 화면(아이패드 세로 · 큰 모니터)에선 카드를 가운데로 */
+@media (min-width: 600px) and (min-height: 1000px) { .scroll > .cu-stage { min-height: 100%; justify-content: center; padding-bottom: 72px; } }
+.cu-deck, .cu-acts { width: 100%; max-width: 680px; }
+.cu-card { width: 100%; }
+.cu-card .cu-opts { margin-top: 20px; }
+.cu-card .cu-said + .cu-work { margin-top: 12px; }
+.cu-work.first { margin-top: 14px; }
+.cu-prev p { text-wrap: wrap; }
+.cu-opt .key { transition: background var(--cu-dur) var(--cu-ease); }
+.card-enter { animation: rise var(--cu-dur-card) var(--cu-ease); }
+@keyframes rise { from { transform: translateY(14px) scale(.985); opacity: 0; } }
+.swipe { touch-action: pan-y; }
+.swipe.dragging { transition: none; }
+.swipe.settle { transition: transform var(--cu-dur) var(--cu-ease), opacity var(--cu-dur) var(--cu-ease); }
+.card-slot { position: relative; }
+.card-slot > .cu-card { position: relative; z-index: 1; }
+/* 밀 때 카드 뒤로 보이는 안내 */
+.swipe-under { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-right: 28px; border-radius: var(--cu-r-card); background: var(--cu-bg-soft); font: var(--cu-t-label); color: var(--cu-wait); pointer-events: none; }
+.swipe-under svg { width: 20px; height: 20px; }
+
+/* 토스트 — 본문 아래 가운데 */
+.toasts { position: fixed; left: 0; right: 0; bottom: calc(20px + env(safe-area-inset-bottom)); display: flex; justify-content: center; pointer-events: none; z-index: 30; }
+.toasts .cu-toast { position: static; transform: none; pointer-events: auto; animation: rise var(--cu-dur) var(--cu-ease); max-width: calc(100vw - 32px); }
+.toasts .cu-toast .u { border: 0; color: inherit; font: inherit; font-weight: 600; cursor: pointer; flex: none; }
+.toasts .cu-toast > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 1024px) { .toasts { left: 264px; } }
+/* 캐치업에선 넓은 화면의 토스트가 위 막대 가운데(진행 동그라미 자리)에 서요 */
+.top-toast { display: flex; justify-content: center; min-width: 0; }
+.top-toast .cu-toast { position: static; transform: none; animation: rise var(--cu-dur) var(--cu-ease); max-width: 100%; height: 36px; padding: 0 4px 0 16px; box-shadow: var(--cu-shadow-lift); }
+.top-toast .cu-toast:not(:has(.u)) { padding: 0 16px; }
+.top-toast .cu-toast .u { height: 28px; border: 0; color: inherit; font: inherit; font-weight: 600; cursor: pointer; flex: none; }
+.top-toast .cu-toast > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 600px) { .toasts.on-deck { display: none; } }
+@media (max-width: 599px) { .top-toast { display: none; } }
+
+/* 목록 보기(캐치업 ≡) */
+.list-search { margin: 16px 0 4px; }
+button.list-row { width: 100%; border: 0; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 0; }
+button.list-row > span:nth-child(2) { min-width: 0; }
+button.list-row .t, button.list-row .s { display: block; }
+@media (hover: hover) { button.list-row:hover .t { text-decoration: underline; text-underline-offset: 3px; } }
+button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); border-radius: var(--cu-r-inset); }
+
+/* 목록 화면 */
+.cu-page { overflow-y: auto; padding-bottom: 96px; }
+.cu-page-in { width: 100%; max-width: 760px; }
+.cu-row > div { min-width: 0; }
+.cu-row .acts { display: flex; align-items: center; gap: 12px; }
+.cu-row button.cu-link:disabled { color: var(--cu-fg-3); cursor: default; }
+.empty { padding: 40px 0 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; font: var(--cu-t-body); color: var(--cu-fg-3); }
+.empty p { margin: 0; }
+.cu-pacts.two { grid-template-columns: repeat(2, 1fr); }
+/* 처음 화면의 연결 줄 — 설명은 두 줄까지 */
+.cu-connect .cu-row .s { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cu-switch { border: 0; padding: 0; cursor: pointer; }
+.cu-switch:disabled { cursor: default; }
+
+/* 처음 · 다 봤어요 */
+.center-page { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px; }
+.center-page .cu-sub { max-width: 560px; }
+.cu-connect .cu-row .e.ok svg { width: 16px; height: 16px; }
+.cu-connect, .cu-promise { max-width: 100%; }
+.done-wrap { width: 100%; max-width: 640px; margin: 0 auto; padding: 8px 24px 96px; }
+.cu-done-head .cu-sub { margin-top: 8px; }
+
+/* 중간 폭 — 사이드바를 서랍으로 */
+@media (max-width: 1023px) {
+  .shell > .cu-side:not(.drawer) { display: none; }
+  .cu-top .menu { display: grid; }
+  .cu-top { padding-left: 20px; }
+  .cu-top.page-top { padding: 0 40px; }
+}
+
+/* 좁음 — 아이폰 모양 */
+.phone-dock { display: none; }
+@media (max-width: 599px) {
+  .cu-top { height: 52px; padding: 0 8px 0 12px; gap: 6px; }
+  .cu-top .menu { margin-left: 0; }
+  .cu-top h1 { font: var(--cu-t-title); }
+  .cu-top .cu-steps { display: none; }
+  .deck-top { display: flex; }
+  .deck-top .ttl { flex: 1; gap: 8px; }
+  .deck-top .ttl .left { overflow: hidden; text-overflow: ellipsis; }
+  .deck-desktop-only { display: none !important; }
+  .cu-pbar { display: flex; }
+  .cu-stage { padding: 0 12px 16px; }
+  .cu-peek { display: none; }
+  .cu-card { padding: 20px 18px 18px; border-radius: 28px; box-shadow: var(--cu-shadow-lift); }
+  .cu-card .cu-ask { font: 700 20px/28px var(--cu-font); margin-top: 14px; }
+  .cu-card .cu-opts { margin-top: 16px; }
+  .cu-opt { min-height: 60px; padding: 8px 14px 8px 10px; column-gap: 12px; grid-template-columns: 32px minmax(0, 1fr) auto; border-radius: 30px; }
+  .cu-opt .r .cu-rec { display: none; }
+  .cu-opt .key { width: 32px; height: 32px; }
+  .cu-opt .r .cu-kbd { display: none; }
+  /* 보낸 곳 — 이름과 기한이 한 줄, 자세한 곳은 다음 줄 */
+  .cu-from { flex-wrap: wrap; row-gap: 0; }
+  .cu-from .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .cu-from .meta { order: 5; flex-basis: 100%; padding-left: 42px; margin-top: -4px; white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+  .swipe-under { border-radius: 28px; }
+  .cu-slots { grid-template-columns: minmax(0, 1fr); }
+  /* 바뀔 코드는 좁은 화면에서 줄을 바꿔 보여 줘요(가로로 잘리지 않게) */
+  /* 바뀔 코드의 머리 — 첫 줄은 설명과 +/−, 둘째 줄은 파일 */
+  .cu-code .fh { height: auto; min-height: 36px; padding: 8px 14px; flex-wrap: wrap; row-gap: 2px; line-height: 20px; }
+  .cu-code .fh .lb { flex: 1; min-width: 0; }
+  .cu-code .fh .sp { display: none; }
+  .cu-code .fh > svg { display: none; }
+  .cu-code .fh .file { order: 5; flex-basis: 100%; }
+  .cu-code .fh .file::before { content: none; }
+  .cu-card .cu-composer, .cu-acts { display: none; }
+  .phone-dock { display: block; flex: none; position: relative; padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); background: var(--cu-bg-canvas); }
+  /* 카드가 입력창 밑으로 들어갈 때 끊기지 않게 살짝 흐려요 */
+  .phone-dock::before { content: ''; position: absolute; left: 0; right: 0; top: -20px; height: 20px; background: linear-gradient(to bottom, rgb(250 250 249 / 0), var(--cu-bg-canvas)); pointer-events: none; }
+  .phone-dock .cu-composer { margin-top: 0; }
+  .phone-dock .cu-pacts button { height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; border: 0; background: transparent; font: inherit; color: inherit; cursor: pointer; border-radius: var(--cu-r-full); }
+  .phone-dock .cu-pacts button:disabled { opacity: .4; cursor: default; }
+  .toasts.on-deck { bottom: calc(132px + env(safe-area-inset-bottom)); } /* 아래 입력창 · 단추 줄 위 */
+  /* 좁은 화면의 토스트는 두 줄까지 접혀요 */
+  .toasts .cu-toast { height: auto; min-height: 48px; padding: 8px 8px 8px 20px; border-radius: 24px; white-space: normal; }
+  .toasts .cu-toast:not(:has(.u)) { padding: 12px 20px; }
+  .toasts .cu-toast > span:first-child { overflow: visible; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .cu-page { padding: 4px 16px 96px; }
+  /* 줄 — 제목은 두 줄까지. 시간 · 되돌리기 · 단추는 다음 줄로, 스위치 · 자물쇠는 오른쪽에 그대로 */
+  .cu-row { grid-template-columns: 32px minmax(0, 1fr) auto; row-gap: 6px; align-items: start; }
+  .cu-row > .cu-tile { margin-top: 2px; }
+  .cu-row .t { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .cu-row .e:not(.lockd), .cu-row .acts { grid-column: 2 / 4; justify-content: flex-start; }
+  .cu-row > .cu-btn { grid-column: 2 / 4; justify-self: start; }
+  .cu-row > .cu-switch, .cu-row > .e.lockd { align-self: center; }
+  button.list-row .e { grid-column: 3 !important; align-self: center; }
+  /* 목록 화면의 위 막대 — 탭은 다음 줄로 */
+  .cu-top.page-top { height: auto; min-height: 52px; padding: 0 16px 0 12px; }
+  .page-top .in { flex-wrap: wrap; row-gap: 4px; padding: 8px 0; min-height: 52px; }
+  .page-top .left { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .page-top .cu-seg { order: 5; flex-basis: 100%; height: 36px; }
+  .page-top .cu-seg button { flex: 1; justify-content: center; padding: 0 10px; }
+  .cu-h { flex-wrap: wrap; }
+  .cu-seg { max-width: 100%; overflow-x: auto; }
+  .center-page { padding: 32px 16px; }
+  .cu-connect { padding: 4px 16px; }
+  .cu-done-head { flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 16px; }
+  .done-wrap { padding: 8px 16px 96px; }
+}
+.cu-pbar { display: none; padding: 0 12px 12px; }
+@media (max-width: 599px) { .cu-pbar { display: flex; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* 소개 페이지 안(?embed=1) — 스크롤을 바깥으로 넘겨요 */
+.embed .scroll, .embed .cu-page, .embed .shell > .cu-side { overscroll-behavior: auto; }

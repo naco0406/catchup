@@ -1,0 +1,9 @@
+{
+  // CatchUp 소개 페이지 — 정적 파일 한 장(dist/index.html)을 catchup.naco.im 에 올려요.
+  // 배포: zsh landing/build.sh && (cd landing && wrangler deploy)
+  "name": "catchup-landing",
+  "routes": [{ "pattern": "catchup.naco.im", "custom_domain": true }],
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist", "not_found_handling": "404-page" },
+  "observability": { "enabled": true }
+}

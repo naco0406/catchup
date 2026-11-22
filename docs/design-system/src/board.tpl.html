@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CatchUp 디자인 시스템 v0.2 · 2026-11-21</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/*__BOARD_CSS__*/
+/* 이 보드에서만 쓰는 배치 — 보드 틀 쪽이에요. 안에 놓인 부품의 모양은 모두 디자인 시스템에서 와요. */
+.ds-panel { border-radius: 24px; padding: 28px; border: 1px solid var(--bd-line); }
+.ds-panel.cu-root { background: var(--cu-bg-canvas); }
+.ds-stack { display: grid; gap: 12px; }
+.ds-line { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ds-cap { font-size: 12px; line-height: 18px; color: var(--bd-ink-subtle); margin: 18px 0 8px; font-weight: 600; }
+.ds-cap:first-child { margin-top: 0; }
+.ds-sw { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 6px 0; font-size: 13px; line-height: 18px; }
+.ds-sw i { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .08); }
+.ds-sw code { font-size: 12px; }
+.ds-sw .r { font-size: 12px; color: var(--bd-ink-subtle); font-variant-numeric: tabular-nums; text-align: right; }
+.ds-ramp { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; margin-top: 8px; }
+.ds-ramp div { height: 56px; border-radius: 999px; display: grid; place-items: end center; padding-bottom: 6px; font-size: 12px; font-weight: 600; }
+.ds-type { display: grid; grid-template-columns: 200px 1fr; gap: 16px; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--bd-line); }
+.ds-type:first-of-type { border-top: 0; }
+.ds-type .meta { font-size: 12px; line-height: 18px; color: var(--bd-ink-subtle); }
+.ds-type .meta code { font-size: 12px; }
+.ds-radius { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: end; }
+.ds-radius .box { height: 96px; background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift), inset 0 0 0 1px var(--cu-line-strong); }
+.ds-radius p { font-size: 13px; line-height: 18px; margin: 10px 0 0; }
+.ds-radius p span { display: block; color: var(--bd-ink-subtle); font-size: 12px; }
+.ds-brand { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; margin-top: 28px; }
+.ds-marks { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+.ds-marks svg { display: block; }
+.ds-faces { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.ds-faces figure { margin: 0; text-align: center; }
+.ds-faces svg { width: 112px; height: 112px; margin: 0 auto; display: block; }
+.ds-faces figcaption { font-size: 13px; line-height: 18px; margin-top: 6px; font-weight: 600; }
+.ds-faces figcaption span { display: block; font-weight: 400; color: var(--bd-ink-subtle); font-size: 12px; }
+.ds-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 28px; }
+.ds-pair .ds-panel { padding: 24px; }
+.ds-shot { width: 100%; display: block; border-radius: 20px; border: 1px solid var(--bd-line); }
+.ds-anat { display: flex; gap: 40px; align-items: flex-start; margin-top: 32px; flex-wrap: wrap; }
+.ds-anat > .bd-frame { flex: none; }
+.bd-frame.cardonly { border-radius: 36px; }
+.ds-anat > .bd-notes { flex: 1; min-width: 360px; grid-template-columns: 1fr; margin-top: 4px; }
+.ds-comp td:first-child { white-space: nowrap; }
+</style>
+<style id="kit">
+/*@kit*/
+</style>
+</head>
+<body>
+<!-- bd:icons --><!-- /bd:icons -->
+<!--@sprite-->
+
+<nav class="bd-nav"><div class="bd-nav-inner"><b>CatchUp 디자인 시스템</b>
+  <a href="#compare">전 · 후</a><a href="#lang">디자인 언어</a><a href="#anat">카드 해부</a><a href="#color">색</a><a href="#type">글자</a><a href="#shape">모양</a><a href="#comp">컴포넌트</a><a href="#brand">로고 · 캐릭터</a><a href="#dark">다크</a><a href="#rules">규칙</a><a href="#next">질문</a>
+</div></nav>
+
+<main class="bd-wrap">
+
+<section class="bd-hero">
+  <div class="bd-kicker">CatchUp 디자인 시스템 v0.2 · 2026-11-21 · 회색의 붉은 기를 뺐어요 · 정본: <code>docs/design-system/tokens.css</code> · <code>components.css</code></div>
+  <h1>누르는 것은 끝이 둥글고, 케첩 빨강은 누를 곳에만 칠해요</h1>
+  <p class="bd-lead">앞선 시안은 OpenAI가 공개한 토큰 값을 빌려 그렸어요. 그래서 카드 모서리는 24, 선택지 모서리는 16이라 '완전히 둥근' 느낌이 나지 않았고, 색이 검정 하나라 CatchUp만의 얼굴이 없었어요. 이번에 CatchUp만의 토큰 · 컴포넌트 · 로고 · 비서 캐릭터를 만들었어요. 결정함 보드의 화면 12장은 이제 <b>이 디자인 시스템에서만</b> 그려요(<code>components.css</code>를 그대로 읽어요). 구현 전이고, 화면 속 이름 · 숫자는 예시예요.</p>
+  <div class="bd-grid3" style="margin-top:40px">
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">끝이 반원이에요</h3><p class="bd-small bd-muted">단추 · 선택지 · 입력창 · 알약 · 번호 키 · 사이드바 줄까지 누르는 것은 모두 높이의 반만큼 둥글어요. 담는 것(카드 · 칸)은 32 · 24 · 16 세 단계만 써요.</p></div>
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">빨강은 '여기를 누르면 돼요'예요</h3><p class="bd-small bd-muted">추천 답 · 주 단추 · 지금 카드에만 케첩 빨강을 칠해요. 그래서 위험은 빨강 칠이 아니라 경고 아이콘과 낱말로 말해요. 기다림은 머스터드, 켜짐 · 끝남은 꼭지 잎 초록이에요.</p></div>
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">빨간 느낌은 강조색에만 있어요</h3><p class="bd-small bd-muted">바탕 · 회색 · 그늘은 거의 무채색이고, 아주 살짝만 따뜻해요. 붉은 기는 빼서 케첩 빨강이 놓인 곳만 눈에 띄어요. 선 대신 그늘로 나눠요.</p></div>
+  </div>
+</section>
+
+<!-- ───── 01 전 · 후 ───── -->
+<section class="bd-chapter" id="compare">
+  <div class="bd-kicker">01 · 지금 시안 ↔ CatchUp 디자인 시스템</div>
+  <h2>같은 화면 · 같은 글인데, 둥근 정도와 빨강 하나로 다른 제품이 돼요</h2>
+  <p class="bd-lead">왼쪽은 앞선 보드의 그림이고(OpenAI 토큰 값), 오른쪽은 같은 화면 조각을 이 디자인 시스템으로 다시 구운 거예요. 글과 배치는 그대로 두고 토큰 · 컴포넌트만 바꿨어요. 결정함 보드의 열두 장 모두 같은 방식으로 바뀌었어요.</p>
+  <div class="bd-compare">
+    <figure><figcaption>지금 <span>OpenAI 토큰 · 모서리 24/16 · 검정 강조</span></figcaption><img class="ds-shot" src="shots/before/f-catchup.png" alt="앞선 시안의 캐치업 화면"></figure>
+    <figure><figcaption>CatchUp DS <span>모서리 32/반원 · 케첩 빨강 · 거의 무채색 회색</span></figcaption><img class="ds-shot" src="shots/after/f-catchup.png" alt="새 디자인 시스템으로 그린 캐치업 화면"></figure>
+  </div>
+  <div class="bd-compare">
+    <figure><figcaption>지금 <span>위험 카드 — 빨강 점</span></figcaption><img class="ds-shot" src="shots/before/f-codex.png" alt="앞선 시안의 승인 카드"></figure>
+    <figure><figcaption>CatchUp DS <span>위험은 경고 아이콘 + 낱말</span></figcaption><img class="ds-shot" src="shots/after/f-codex.png" alt="새 디자인 시스템의 승인 카드"></figure>
+  </div>
+  <div class="bd-compare" style="grid-template-columns:repeat(4,1fr)">
+    <figure><figcaption>지금 <span>아이폰</span></figcaption><img class="ds-shot" src="shots/before/f-pcard.png" alt="앞선 시안의 아이폰 카드"></figure>
+    <figure><figcaption>CatchUp DS <span>아이폰</span></figcaption><img class="ds-shot" src="shots/after/f-pcard.png" alt="새 디자인 시스템의 아이폰 카드"></figure>
+    <figure><figcaption>지금 <span>처음 화면</span></figcaption><img class="ds-shot" src="shots/before/f-first.png" alt="앞선 시안의 처음 화면" style="margin-top:0"></figure>
+    <figure><figcaption>CatchUp DS <span>처음 화면 · 캐릭터</span></figcaption><img class="ds-shot" src="shots/after/f-first.png" alt="새 디자인 시스템의 처음 화면"></figure>
+  </div>
+</section>
+
+<!-- ───── 02 디자인 언어 ───── -->
+<section class="bd-chapter" id="lang">
+  <div class="bd-kicker">02 · 디자인 언어</div>
+  <h2>'케챱'처럼 말랑하고 둥글게, 그래도 결정하는 화면이라 조용하게</h2>
+  <p class="bd-lead">CatchUp은 하루에 몇십 번 여는 결정 화면이에요. 귀여움은 이름 · 로고 · 캐릭터 · 둥근 모양에서 오고, 카드 안은 조용해야 10초 안에 정할 수 있어요. 그래서 '말랑한 껍데기, 조용한 속'을 원칙으로 잡았어요.</p>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>네 가지 원칙</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>둥근 것은 누를 수 있어요.</b> 끝이 반원이면 누르는 것, 모서리 32 · 24 · 16이면 담는 것이에요. 모양만 보고 누를지 알 수 있어요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>고를 곳의 빨강은 한 화면에 하나예요.</b> 지금 카드의 추천 답, 또는 추천이 없는 화면의 주 단추예요. 그 밖의 빨강은 '지금 여기' 표시(진행 막대의 지금 칸, 사이드바의 남은 수)뿐이에요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>케첩 옆엔 머스터드와 잎.</b> 기다림 · 기한은 머스터드 점, 켜짐 · 연결됨 · 끝남은 토마토 꼭지의 초록이에요. 색은 점 하나와 한 마디로만 써요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>캐릭터는 정할 것이 없을 때만 나와요.</b> 처음 화면, 다 봤어요, 연결이 끊겼을 때예요. 결정 카드 위에는 나오지 않아요.</div></div>
+    </div>
+    <div class="ds-panel cu-root">
+      <div class="ds-cap">누르는 것 — 끝이 반원</div>
+      <div class="ds-line"><span class="cu-btn primary">B안으로 보내기</span><span class="cu-btn">초안 고치기</span><span class="cu-btn ghost"><svg><use href="#i-clock"/></svg>미루기 <span class="cu-kbd">S</span></span><span class="cu-chip"><svg><use href="#i-file-pdf"/></svg>견적서_v2.pdf</span></div>
+      <div class="ds-cap">담는 것 — 32 · 24 · 16</div>
+      <div class="ds-line" style="align-items:stretch">
+        <div style="flex:1.4;background:var(--cu-bg-surface);border-radius:var(--cu-r-card);box-shadow:var(--cu-shadow-lift);padding:16px 20px;font:var(--cu-t-caption)"><b>카드 32</b><br><span style="color:var(--cu-fg-3)">결정 카드 · 시트</span></div>
+        <div style="flex:1;background:var(--cu-bg-soft);border-radius:var(--cu-r-panel);padding:16px 20px;font:var(--cu-t-caption)"><b>칸 24</b><br><span style="color:var(--cu-fg-3)">미리보기 · 일정</span></div>
+        <div style="flex:.8;box-shadow:inset 0 0 0 1px var(--cu-line-strong);border-radius:var(--cu-r-inset);padding:16px 20px;font:var(--cu-t-caption)"><b>코드 16</b><br><span style="color:var(--cu-fg-3)">바뀔 코드</span></div>
+      </div>
+      <div class="ds-cap">상태 — 점 하나와 한 마디</div>
+      <div class="ds-line" style="gap:20px"><span class="cu-due">오늘 18시까지 답해야 해요</span><span class="cu-due risk"><svg><use href="#i-warning"/></svg>운영 데이터가 바뀌어요</span><span class="cu-row" style="border:0;min-height:0;padding:0;display:inline-flex"><span class="e ok"><svg><use href="#i-check"/></svg>연결했어요</span></span><span class="cu-due calm">급하지 않아요</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── 03 카드 해부 ───── -->
+<section class="bd-chapter" id="anat">
+  <div class="bd-kicker">03 · 카드 한 장 해부</div>
+  <h2>카드 한 장에 디자인 시스템의 결정이 다 들어 있어요</h2>
+  <p class="bd-lead">가장 많이 보는 화면이라 여기서 규칙을 정했어요. 아래 카드는 그림이 아니라 <code>components.css</code>로 그린 실제 부품이에요.</p>
+  <div class="ds-anat">
+    <div class="bd-frame cardonly" style="width:730px" id="f-anat"><div class="bd-screen cu-root" style="width:728px;height:auto"><div class="cu-solo" style="padding:28px 24px 32px">
+      <div class="cu-card">
+        <div class="cu-from"><span class="cu-tile"><svg><use href="#i-calendar-blank"/></svg></span><span class="who">캘린더</span><span class="meta">김태호 님의 초대 · 오전 7:50</span><span class="sp"></span><span class="cu-due" data-pin="1" data-pin-at="bottom">목요일 일정이에요</span></div>
+        <h2 class="cu-ask">목요일 3시에 일정 둘이 겹쳐요. 어느 쪽을 옮길까요?</h2>
+        <div class="cu-slots" data-pin="2" data-pin-at="right">
+          <div class="cu-slot new"><span class="tm">15:00 – 16:00</span><span class="nm">블루포인트 투자 미팅</span><span class="wh">새 초대 · 김태호 외 2명</span></div>
+          <div class="cu-slot"><span class="tm">15:00 – 15:30</span><span class="nm">제품 주간 회의</span><span class="wh">매주 · 6명</span></div>
+        </div>
+        <div class="cu-opts">
+          <div class="cu-opt rec" data-pin="3" data-pin-at="right"><span class="key">1</span><div><div class="l">주간 회의를 4시 30분으로 옮겨요</div><div class="d">6명 모두 그 시간에 비어 있어요</div></div><span class="r"><span class="cu-rec">추천</span><span class="cu-kbd">↵</span></span></div>
+          <div class="cu-opt"><span class="key">2</span><div><div class="l">투자 미팅을 금요일 10시로 되물어요</div><div class="d">김태호 님 답이 오면 다시 알려 드려요</div></div><span class="r"></span></div>
+          <div class="cu-opt"><span class="key">3</span><div><div class="l">주간 회의는 이번 주만 빠져요</div><div class="d">이도현 님께 진행을 부탁해요</div></div><span class="r"></span></div>
+        </div>
+        <div class="cu-composer" data-pin="4" data-pin-at="right"><span class="sp">다르게 답하기 — 비서에게 말로 알려 주세요</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+      </div>
+      <div class="cu-peek p1"></div><div class="cu-peek p2" data-pin="5" data-pin-at="right"></div>
+    </div></div></div>
+    <ol class="bd-notes">
+      <li><b>상태는 점 하나와 한 마디예요.</b> 기한이 있으면 머스터드 점, 위험이면 경고 아이콘과 진한 빨강 낱말, 급하지 않으면 점 없이 회색 글자예요. 카드에 색 띠나 색 배경을 깔지 않아요.</li>
+      <li><b>카드 안 칸은 모서리 24예요.</b> 카드(32)보다 한 단계 작아서 '카드 안에 든 것'으로 읽혀요. 새로 생기는 것(새 초대)만 흰 바탕에 선을 둘러 구별해요.</li>
+      <li><b>추천 답이 이 화면의 유일한 빨강이에요.</b> 끝이 반원인 줄에 2px 빨강 테두리, 번호 동그라미를 빨강으로 채워요. ↵ 한 번이면 이 답이에요. 고른 순간에는 줄 전체가 빨강으로 차요(<code>.cu-opt.picked</code>).</li>
+      <li><b>입력창도 끝이 반원이에요.</b> 높이 52, 보내기 동그라미 36. 글을 쓰면 테두리가 진해지고 보내기가 빨강으로 바뀌어요. ChatGPT 입력창과 같은 모양이라 처음 써도 익숙해요.</li>
+      <li><b>남은 카드는 아래로 겹쳐 보여요.</b> 카드와 같은 반지름으로 두 장이 비쳐요. 둘째는 흰색, 셋째는 바탕에 가까운 색이라 깊이가 생겨요.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ───── 04 색 ───── -->
+<section class="bd-chapter" id="color">
+  <div class="bd-kicker">04 · 색</div>
+  <h2>토마토 하나와 거의 무채색인 회색, 그리고 케첩 옆의 머스터드와 잎</h2>
+  <p class="bd-lead">원료 색(이름)과 뜻 색(쓰임)을 나눴어요. 화면 코드는 뜻 색만 써요. 숫자는 흰 바탕에서 잰 대비예요(WCAG). 본문 글자는 모두 4.5 : 1을 넘어요. 앞선 시안의 셋째 글자 <code>#8f8f8f</code>는 3.3 : 1이라 기준에 못 미쳤는데, 이번에 <code>--cu-fg-3</code> 5.5 : 1로 고쳤어요. v0.2(2026-11-21 피드백)에서 회색 단계의 붉은 기를 뺐어요. 채도를 약 1/3로 줄이고, 색조를 빨강(20°)에서 아주 옅은 노랑(30~60°) 쪽으로 옮겼어요.</p>
+  <div class="ds-cap" style="margin-top:28px">토마토 — <code>--cu-tomato-50 … 900</code></div>
+  <div class="ds-ramp">
+    <div style="background:#FFF3EF;color:#8E1F0E">50</div><div style="background:#FFE6DE;color:#8E1F0E">100</div><div style="background:#FFC9B9;color:#8E1F0E">200</div><div style="background:#FF9A86;color:#5E160B">300</div><div style="background:#F2553A;color:#fff">400</div><div style="background:#E5391F;color:#fff">500</div><div style="background:#D12C14;color:#fff">600</div><div style="background:#B8280F;color:#fff">700</div><div style="background:#8E1F0E;color:#fff">800</div><div style="background:#5E160B;color:#fff">900</div>
+  </div>
+  <div class="ds-cap">회색 — <code>--cu-warm-0 … 950</code> (거의 무채색, 아주 살짝 따뜻하게)</div>
+  <div class="ds-ramp">
+    <div style="background:#FFFFFF;color:#4C4844;box-shadow:inset 0 0 0 1px #EEEDEB">0</div><div style="background:#FAFAF9;color:#4C4844">25</div><div style="background:#F5F5F3;color:#4C4844">50</div><div style="background:#EEEDEB;color:#4C4844">100</div><div style="background:#E6E4E1;color:#4C4844">150</div><div style="background:#D8D5D1;color:#1C1A18">200</div><div style="background:#C2BEB9;color:#1C1A18">300</div><div style="background:#6D6863;color:#fff">500</div><div style="background:#4C4844;color:#fff">700</div><div style="background:#1C1A18;color:#fff">950</div>
+  </div>
+  <div class="bd-grid3" style="margin-top:28px">
+    <div class="bd-card"><h3>바탕 · 글자 · 선</h3>
+      <div class="ds-sw"><i style="background:#FAFAF9"></i><span>앱 바탕 <code>--cu-bg-canvas</code></span><span class="r">warm-25</span></div>
+      <div class="ds-sw"><i style="background:#FFFFFF"></i><span>카드 · 입력창 <code>--cu-bg-surface</code></span><span class="r">warm-0</span></div>
+      <div class="ds-sw"><i style="background:#F5F5F3"></i><span>사이드바 <code>--cu-bg-sidebar</code></span><span class="r">warm-50</span></div>
+      <div class="ds-sw"><i style="background:#EEEDEB"></i><span>근거 알약 · 미리보기 <code>--cu-bg-soft</code></span><span class="r">warm-100</span></div>
+      <div class="ds-sw"><i style="background:#1C1A18"></i><span>글자 <code>--cu-fg</code></span><span class="r">17.4 : 1</span></div>
+      <div class="ds-sw"><i style="background:#4C4844"></i><span>둘째 글자 <code>--cu-fg-2</code></span><span class="r">9.1 : 1</span></div>
+      <div class="ds-sw"><i style="background:#6D6863"></i><span>셋째 글자 <code>--cu-fg-3</code></span><span class="r">5.5 : 1</span></div>
+      <div class="ds-sw"><i style="background:#D8D5D1"></i><span>선(진한) <code>--cu-line-strong</code></span><span class="r">warm-200</span></div></div>
+    <div class="bd-card"><h3>강조 — 누를 곳</h3>
+      <div class="ds-sw"><i style="background:#D12C14"></i><span>칠 <code>--cu-accent</code></span><span class="r">흰 글자 5.15 : 1</span></div>
+      <div class="ds-sw"><i style="background:#B8280F"></i><span>빨강 글자 · 눌림 <code>--cu-accent-text</code></span><span class="r">6.3 : 1</span></div>
+      <div class="ds-sw"><i style="background:#FFF3EF"></i><span>추천 줄 바탕 <code>--cu-accent-soft</code></span><span class="r">tomato-50</span></div>
+      <div class="ds-sw"><i style="background:#FFC9B9"></i><span>초점 고리 <code>--cu-focus</code></span><span class="r">3px</span></div>
+      <div class="ds-sw"><i style="background:#E5391F"></i><span>로고 · 캐릭터만 <code>--cu-tomato-500</code></span><span class="r">글자에 안 써요</span></div>
+      <p class="bd-mini bd-muted" style="margin-top:8px">로고의 토마토 500은 흰 글자 대비가 4.25 : 1이라 단추에는 한 단계 진한 600을 써요.</p></div>
+    <div class="bd-card"><h3>상태 — 점 하나와 한 마디</h3>
+      <div class="ds-sw"><i style="background:#E9A10E"></i><span>기다림 점 <code>--cu-wait-dot</code></span><span class="r">점만</span></div>
+      <div class="ds-sw"><i style="background:#8F5A00"></i><span>기다림 글자 <code>--cu-wait</code></span><span class="r">5.78 : 1</span></div>
+      <div class="ds-sw"><i style="background:#2E7D3A"></i><span>켜짐 · 연결됨 <code>--cu-ok</code></span><span class="r">5.11 : 1</span></div>
+      <div class="ds-sw"><i style="background:#8E1F0E"></i><span>위험 · 실패 글자 <code>--cu-danger</code></span><span class="r">8.9 : 1</span></div>
+      <div class="ds-sw"><i style="background:#E7F4E9"></i><span>코드 더한 줄 <code>--cu-diff-add</code></span><span class="r"></span></div>
+      <div class="ds-sw"><i style="background:#FDECE7"></i><span>코드 지운 줄 <code>--cu-diff-del</code></span><span class="r"></span></div>
+      <p class="bd-mini bd-muted" style="margin-top:8px">위험은 토마토 800(검붉은 색) 글자 + 경고 아이콘이에요. 칠하지 않아서 '누를 곳' 빨강과 헷갈리지 않아요. 색을 못 구별해도 아이콘과 낱말로 읽혀요.</p></div>
+  </div>
+</section>
+
+<!-- ───── 05 글자 ───── -->
+<section class="bd-chapter" id="type">
+  <div class="bd-kicker">05 · 글자</div>
+  <h2>Pretendard 하나, 굵기로 위계를 만들고 한글은 낱말 단위로 줄을 바꿔요</h2>
+  <p class="bd-lead">크기는 12 · 14 · 16 · 18 · 20 · 24 · 32 일곱 단계예요. 제목은 700, 이름 · 선택지는 600, 본문은 400이에요. 한글이 낱말 중간에서 끊기지 않게 <code>word-break: keep-all</code>을 바탕에 두었어요. 숫자는 늘 고정폭 숫자예요.</p>
+  <div class="ds-panel cu-root" style="margin-top:28px;background:var(--cu-bg-surface)">
+    <div class="ds-type"><div class="meta">다 봤어요 · 처음<br><code>--cu-t-display</code> 32/40 · 700</div><div style="font:var(--cu-t-display);letter-spacing:-.03em">다 봤어요</div></div>
+    <div class="ds-type"><div class="meta">카드 질문<br><code>--cu-t-question</code> 24/32 · 700</div><div style="font:var(--cu-t-question);letter-spacing:var(--cu-track-tight)">리브랜딩 견적, A안과 B안 중 어느 쪽으로 할까요?</div></div>
+    <div class="ds-type"><div class="meta">아이폰 카드 질문<br>20/28 · 700</div><div style="font:700 20px/28px var(--cu-font);letter-spacing:var(--cu-track-tight)">목요일 3시에 일정 둘이 겹쳐요. 어느 쪽을 옮길까요?</div></div>
+    <div class="ds-type"><div class="meta">화면 제목 · 로고 글자<br><code>--cu-t-title</code> 18/26 · 700</div><div style="font:var(--cu-t-title)">캐치업 <span style="font:var(--cu-t-caption);color:var(--cu-fg-3)">7개 중 첫 번째</span></div></div>
+    <div class="ds-type"><div class="meta">선택지 이름 · 요약 굵게<br><code>--cu-t-body-strong</code> 16/24 · 600</div><div style="font:var(--cu-t-body-strong)">B안으로 진행해요</div></div>
+    <div class="ds-type"><div class="meta">요약 · 입력창<br><code>--cu-t-body</code> 16/24 · 400</div><div style="font:var(--cu-t-body)">10월에 정한 예산은 1,300만 원이고, 출시는 1월 12일이에요.</div></div>
+    <div class="ds-type"><div class="meta">설명 · 출처 · 단추<br><code>--cu-t-caption</code> · <code>--cu-t-label</code> 14/20 · 400 · 500</div><div style="font:var(--cu-t-caption);color:var(--cu-fg-2)">예산 안에 들고, 출시까지 2주가 남아요</div></div>
+    <div class="ds-type"><div class="meta">번호 키 · 숫자 배지 · 추천<br><code>--cu-t-micro</code> 12/16 · 600</div><div class="ds-line"><span class="cu-rec" style="box-shadow:inset 0 0 0 1px var(--cu-tomato-200)">추천</span><span class="cu-kbd">↵</span><span class="cu-kbd">S</span><span class="cu-kbd">D</span></div></div>
+  </div>
+</section>
+
+<!-- ───── 06 모양 ───── -->
+<section class="bd-chapter" id="shape">
+  <div class="bd-kicker">06 · 모양 · 높이 · 그늘</div>
+  <h2>모서리 값은 넷뿐이에요. 반원 · 32 · 24 · 16</h2>
+  <p class="bd-lead">앞선 시안은 8 · 12 · 16 · 24 · 알약까지 다섯 값이 섞여서 선택지 줄(16)이 각져 보였어요. 이번에는 누르는 것을 모두 반원으로 모으고, 담는 것만 세 단계로 남겼어요. 높이도 32 · 40 · 52 · 64 넷이에요.</p>
+  <div class="ds-panel cu-root" style="margin-top:28px">
+    <div class="ds-radius">
+      <div><div class="box" style="border-radius:999px;height:64px"></div><p><code>--cu-r-full</code><span>단추 · 선택지 · 입력창 · 알약 · 키 · 사이드바 줄 · 출처 동그라미</span></p></div>
+      <div><div class="box" style="border-radius:32px"></div><p><code>--cu-r-card</code> 32<span>결정 카드 · 시트 · 연결 목록 상자 (아이폰 카드 28)</span></p></div>
+      <div><div class="box" style="border-radius:24px"></div><p><code>--cu-r-panel</code> 24<span>미리보기 · 일정 비교 · 약속 상자 · 알림</span></p></div>
+      <div><div class="box" style="border-radius:16px"></div><p><code>--cu-r-inset</code> 16<span>바뀔 코드 · 작은 칸</span></p></div>
+    </div>
+  </div>
+  <div class="bd-grid3">
+    <div class="bd-card"><h3>높이</h3>
+      <table class="bd-table"><tr><th>토큰</th><th>값</th><th>쓰는 곳</th></tr>
+        <tr><td><code>--cu-h-sm</code></td><td>32</td><td>출처 동그라미 · 근거 알약 · 진행 칸</td></tr>
+        <tr><td><code>--cu-h-md</code></td><td>40</td><td>단추 · 사이드바 줄 · 나눔 단추</td></tr>
+        <tr><td><code>--cu-h-lg</code></td><td>52</td><td>입력창 · 큰 단추</td></tr>
+        <tr><td><code>--cu-h-option</code></td><td>64</td><td>선택지(이름 + 설명 두 줄)</td></tr>
+      </table><p class="bd-mini bd-muted" style="margin-top:8px">손가락으로 누르는 것은 40 이상이에요. 아이폰 아래 단추 줄은 44예요(Apple HIG 최소 44pt).</p></div>
+    <div class="bd-card"><h3>그늘</h3>
+      <table class="bd-table"><tr><th>토큰</th><th>쓰는 곳</th></tr>
+        <tr><td><code>--cu-shadow-card</code></td><td>지금 카드 하나 — 화면에서 가장 높이 떠요</td></tr>
+        <tr><td><code>--cu-shadow-pop</code></td><td>토스트 · 팝오버</td></tr>
+        <tr><td><code>--cu-shadow-lift</code></td><td>고른 사이드바 줄 · 나눔 단추 · 겹친 카드</td></tr>
+      </table><p class="bd-mini bd-muted" style="margin-top:8px">그늘 색은 글자색과 같은 거의 검정 <code>rgb(28 26 24)</code>이에요. 바탕과 같은 색조라 따로 놀지 않아요.</p></div>
+    <div class="bd-card"><h3>간격 · 움직임</h3>
+      <table class="bd-table"><tr><th>토큰</th><th>값</th></tr>
+        <tr><td>간격 <code>--cu-s-1 … 12</code></td><td>4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48</td></tr>
+        <tr><td><code>--cu-dur-fast</code></td><td>120ms — 눌림(살짝 작아져요 .98)</td></tr>
+        <tr><td><code>--cu-dur</code></td><td>200ms — 상태 바뀜</td></tr>
+        <tr><td><code>--cu-dur-card</code> · <code>--cu-ease-spring</code></td><td>320ms — 고른 선택지가 살짝 튀고 카드가 넘어가요</td></tr>
+      </table><p class="bd-mini bd-muted" style="margin-top:8px">'동작 줄이기'가 켜져 있으면 튀는 움직임을 빼고 바로 바꿔요.</p></div>
+  </div>
+</section>
+
+<!-- ───── 07 컴포넌트 ───── -->
+<section class="bd-chapter" id="comp">
+  <div class="bd-kicker">07 · 컴포넌트</div>
+  <h2>컴포넌트 34개면 결정함의 모든 화면을 그려요</h2>
+  <p class="bd-lead">클래스 이름이 곧 만들 컴포넌트 이름이에요(<code>.cu-opt</code> = <code>&lt;OptionRow&gt;</code>). 아래 견본은 <code>components.css</code>로 그린 실제 부품이고, 결정함 보드의 화면도 이 부품만으로 그렸어요.</p>
+  <div class="bd-grid2">
+    <div class="ds-panel cu-root">
+      <div class="ds-cap">&lt;OptionRow&gt; — 보통 · 추천 · 고름 · 흐림</div>
+      <div class="cu-opts" style="margin-top:0">
+        <div class="cu-opt"><span class="key">2</span><div><div class="l">A안으로 진행해요</div><div class="d">예산을 180만 원 넘어요</div></div><span class="r"></span></div>
+        <div class="cu-opt rec"><span class="key">1</span><div><div class="l">B안으로 진행해요</div><div class="d">예산 안에 들고, 출시까지 2주가 남아요</div></div><span class="r"><span class="cu-rec">추천</span><span class="cu-kbd">↵</span></span></div>
+        <div class="cu-opt picked"><span class="key">1</span><div><div class="l">B안으로 진행해요</div><div class="d">10초 뒤에 보내요</div></div><span class="r"></span></div>
+        <div class="cu-opt dimmed"><span class="key">3</span><div><div class="l">A안 범위를 되물어요</div><div class="d">다른 답을 골라서 흐려졌어요</div></div><span class="r"></span></div>
+        <div class="cu-opt"><span class="key">2</span><div><div class="l">이번 한 번만 허용해요</div><div class="d">위험한 답 — 빨강을 칠하지 않고, 한 번 더 확인해요</div></div><span class="r"><span class="risk"><svg><use href="#i-warning"/></svg>위험</span></span></div>
+      </div>
+      <div class="ds-cap">&lt;Composer&gt; — 빈 칸 · 쓰는 중</div>
+      <div class="cu-composer" style="margin-top:0"><span class="sp">다르게 답하기 — 비서에게 말로 알려 주세요</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div>
+      <div class="cu-composer typed"><span class="sp">토요일은 결혼식이 있어. 일요일 점심으로 여쭤봐 줘</span><span class="cu-ib"><svg><use href="#i-microphone"/></svg></span><span class="cu-send go"><svg><use href="#i-arrow-up"/></svg></span></div>
+    </div>
+    <div class="ds-panel cu-root">
+      <div class="ds-cap">&lt;Button&gt; — 주 · 보조 · 투명 · 큰</div>
+      <div class="ds-line"><span class="cu-btn primary">다 봤어요 <span class="cu-kbd inv">↵</span></span><span class="cu-btn">연결</span><span class="cu-btn ghost"><svg><use href="#i-hand-tap"/></svg>내가 직접 할게요 <span class="cu-kbd">D</span></span></div>
+      <div class="ds-line" style="margin-top:10px"><span class="cu-btn primary lg">캐치업 시작하기</span><span class="cu-ib"><svg><use href="#i-arrow-u-up-left"/></svg></span><span class="cu-ib off"><svg><use href="#i-arrow-u-up-left"/></svg></span></div>
+      <div class="ds-cap">&lt;CardProgress&gt; — 끝남 · 지금 · 남음</div>
+      <div class="cu-steps"><span class="cu-step done"><svg><use href="#i-check"/></svg></span><span class="cu-step on"><svg><use href="#i-terminal-window"/></svg></span><span class="cu-step"><svg><use href="#i-calendar-blank"/></svg></span><span class="cu-step"><svg><use href="#i-chat-circle"/></svg></span><span class="cu-step"><svg><use href="#i-envelope-simple"/></svg></span></div>
+      <div class="ds-cap">&lt;SidebarItem&gt; — 고름 · 보통</div>
+      <div style="width:264px;background:var(--cu-bg-sidebar);border-radius:24px;padding:8px">
+        <div class="cu-nav on"><svg><use href="#i-cards"/></svg><span>캐치업</span><span class="n badge">7</span></div>
+        <div class="cu-nav"><svg><use href="#i-list-checks"/></svg><span>알려만 드려요</span><span class="n">12</span></div>
+        <div class="cu-run"><svg><use href="#i-terminal-window"/></svg><span class="t">결제 재시도 넣기</span><span class="s wait">Claude Code · 답을 기다려요</span></div>
+      </div>
+      <div class="ds-cap">&lt;SegmentedControl&gt; · &lt;Switch&gt; · &lt;EvidenceChip&gt; · &lt;Avatar&gt;</div>
+      <div class="ds-line"><span class="cu-seg"><span class="on">모두</span><span>내가 정한 것 6</span></span><span class="cu-switch"></span><span class="cu-switch off"></span><span class="cu-chip"><svg><use href="#i-envelope-simple"/></svg>메일 3통</span><span class="cu-avatar">지우</span></div>
+      <div class="ds-cap">&lt;Toast&gt; — 되돌리기가 붙어요</div>
+      <div style="position:relative;height:56px"><div class="cu-toast" style="bottom:4px"><span>박서연 님께 8초 뒤에 답장을 보내요</span><span class="u">되돌리기</span></div></div>
+    </div>
+  </div>
+  <div class="bd-card ds-comp" style="margin-top:24px"><h3>컴포넌트 목록</h3>
+    <table class="bd-table"><tr><th>컴포넌트</th><th>클래스</th><th>상태 · 모양</th><th>쓰는 화면</th></tr>
+      <tr><td>DecisionCard</td><td><code>.cu-card</code> (<code>.flat</code> <code>.p</code>)</td><td>지금 카드 · 따로 보기 · 아이폰</td><td>캐치업 · 카드 종류 · 아이폰</td></tr>
+      <tr><td>CardSource · DueTag</td><td><code>.cu-from</code> <code>.cu-tile</code> <code>.cu-due</code></td><td>기한 · 위험 · 급하지 않음</td><td>모든 카드</td></tr>
+      <tr><td>Summary · EvidenceChip</td><td><code>.cu-sum</code> <code>.cu-chip</code></td><td>굵게 · 흐리게 / 칠 · 선</td><td>모든 카드</td></tr>
+      <tr><td>OptionRow · RecommendBadge · KeyHint</td><td><code>.cu-opt</code> <code>.cu-rec</code> <code>.cu-kbd</code></td><td>보통 · 추천 · 고름 · 흐림 · 잠김</td><td>모든 카드</td></tr>
+      <tr><td>EffectPreview · CodeDiff · SlotCompare</td><td><code>.cu-prev</code> <code>.cu-code</code> <code>.cu-slots</code></td><td>나갈 글 · 바뀔 코드 · 겹친 일정</td><td>메일 · 코딩 에이전트 · 캘린더 카드</td></tr>
+      <tr><td>Composer · ChatBubble</td><td><code>.cu-composer</code> <code>.cu-said</code> <code>.cu-work</code></td><td>빈 칸 · 쓰는 중 / 내 말 · 비서가 한 일</td><td>모든 카드 · 주관식</td></tr>
+      <tr><td>CardDeck · CardProgress</td><td><code>.cu-deck</code> <code>.cu-peek</code> <code>.cu-steps</code> <code>.cu-pbar</code></td><td>끝남 · 지금 · 남음</td><td>캐치업 · 아이폰</td></tr>
+      <tr><td>Sidebar · SidebarItem · RunItem · SourceRow</td><td><code>.cu-side</code> <code>.cu-nav</code> <code>.cu-run</code> <code>.cu-src-row</code></td><td>고름 · 보통 / 기다림 · 하는 중</td><td>아이패드 · 웹</td></tr>
+      <tr><td>TopBar · IconButton</td><td><code>.cu-top</code> <code>.cu-ib</code></td><td>켜짐 · 꺼짐</td><td>모든 화면</td></tr>
+      <tr><td>Button · SegmentedControl · Switch</td><td><code>.cu-btn</code> <code>.cu-seg</code> <code>.cu-switch</code></td><td>주 · 보조 · 투명 · 큰 / 켜짐 · 꺼짐</td><td>모든 화면</td></tr>
+      <tr><td>ListRow · SectionHeader · Link</td><td><code>.cu-row</code> <code>.cu-h</code> <code>.cu-link</code></td><td>되돌리기 · 실패 · 연결됨</td><td>처리 기록 · 다 봤어요 · 알려만</td></tr>
+      <tr><td>Toast</td><td><code>.cu-toast</code></td><td>되돌리기</td><td>답한 뒤 10초</td></tr>
+      <tr><td>EmptyState · Mascot</td><td><code>.cu-center</code> <code>.cu-mascot</code></td><td>기본 · 생각 · 다 봤어요 · 걱정</td><td>처음 · 다 봤어요 · 연결 끊김</td></tr>
+      <tr><td>Logo · AppIcon · Avatar</td><td><code>.cu-logo</code> <code>.cu-appicon</code> <code>.cu-avatar</code></td><td>큰 · 작은 표지</td><td>사이드바 · 알림 · 내 정보</td></tr>
+      <tr><td>LockNotification(iOS 시스템)</td><td><code>.cu-noti</code> <code>.cu-nacts</code></td><td>시스템 모양 그대로</td><td>잠금 화면</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ───── 08 로고 · 캐릭터 ───── -->
+<section class="bd-chapter" id="brand">
+  <div class="bd-kicker">08 · 로고 · 비서 캐릭터</div>
+  <h2>토마토 하나가 로고이고, 같은 토마토에 얼굴을 그리면 비서예요</h2>
+  <p class="bd-lead">'CatchUp'을 소리 내면 '케챱'이라, 케첩의 토마토를 바탕으로 삼았어요. 로고는 얼굴 없는 토마토, 비서는 같은 토마토에 눈 · 입 · 볼을 더한 거예요. 원본은 <code>brand/build_brand.py</code> 한 파일에서 만들어서 색을 바꾸면 모두 같이 바뀌어요.</p>
+  <div class="ds-brand">
+    <div class="bd-card"><h3>로고</h3>
+      <div class="ds-marks" style="margin-top:12px">
+        <svg width="96" height="96"><use href="#cu-mark"/></svg>
+        <svg width="40" height="40"><use href="#cu-mark"/></svg>
+        <svg width="24" height="24"><use href="#cu-mark-small"/></svg>
+        <svg width="16" height="16"><use href="#cu-mark-small"/></svg>
+        <span style="display:inline-flex;align-items:center;gap:10px;font:700 28px/1 var(--cu-font);letter-spacing:-.03em;color:var(--cu-fg)"><svg width="40" height="40"><use href="#cu-mark"/></svg>CatchUp</span>
+      </div>
+      <table class="bd-table" style="margin-top:16px"><tr><th>파일</th><th>쓰는 곳</th></tr>
+        <tr><td><code>brand/mark.svg</code></td><td>28px 이상 — 빛과 아래 그늘이 있어요</td></tr>
+        <tr><td><code>brand/mark-small.svg</code></td><td>24px 이하 — 빛 · 그늘을 빼고 잎을 네 장으로 줄였어요</td></tr>
+        <tr><td><code>brand/wordmark.svg</code></td><td>로그인 · 소개 페이지. 글자는 Pretendard 750</td></tr>
+        <tr><td><code>brand/sprite.svg</code></td><td>화면용 묶음(<code>#cu-mark</code> · <code>#cu-mascot-*</code>)</td></tr>
+      </table></div>
+    <div class="bd-card"><h3>비서 캐릭터 — 표정 넷</h3>
+      <div class="ds-faces" style="margin-top:12px">
+        <figure><svg><use href="#cu-mascot-basic"/></svg><figcaption>기본<span>처음 화면 · 소개</span></figcaption></figure>
+        <figure><svg><use href="#cu-mascot-thinking"/></svg><figcaption>생각하는 중<span>밤사이 것을 읽는 중</span></figcaption></figure>
+        <figure><svg><use href="#cu-mascot-done"/></svg><figcaption>다 봤어요<span>카드를 다 정했을 때</span></figcaption></figure>
+        <figure><svg><use href="#cu-mascot-worried"/></svg><figcaption>걱정돼요<span>연결이 끊겼을 때</span></figcaption></figure>
+      </div>
+      <div class="bd-rule" style="margin-top:16px"><span class="no">!</span><div><b>결정 카드 위에는 나오지 않아요.</b> 정할 것이 있을 때 캐릭터가 웃고 있으면 무게가 가벼워 보여요. 실패 카드도 같은 이유로 캐릭터 없이 그려요.</div></div>
+      <p class="bd-mini bd-muted" style="margin-top:8px">이름은 아직 없어요(열린 질문 Q1). 화면에서는 '비서'라고만 불러요.</p></div>
+  </div>
+</section>
+
+<!-- ───── 09 다크 ───── -->
+<section class="bd-chapter" id="dark">
+  <div class="bd-kicker">09 · 다크 모드 토큰</div>
+  <h2>다크에서는 뜻 색만 바꿔요. 부품 코드는 그대로예요</h2>
+  <p class="bd-lead">1차에서는 다크 화면을 만들지 않기로 했어요(<code>plan.md</code>). 대신 토큰 짝을 미리 정해 두고, 같은 부품이 다크에서 깨지지 않는지 한 번 그려 봤어요. 아래 두 칸은 같은 HTML이고 <code>data-theme="dark"</code>만 다르게 줬어요.</p>
+  <div class="ds-pair">
+    <div class="ds-panel cu-root">
+      <div class="cu-card flat" style="width:auto"><div class="cu-from"><span class="cu-tile"><svg><use href="#i-terminal-window"/></svg></span><span class="who">Claude Code</span><span class="meta">결제 재시도 넣기</span><span class="sp"></span><span class="cu-due">12분째 멈춰 있어요</span></div>
+        <h2 class="cu-ask" style="font-size:20px;line-height:28px">결제 재시도를 어디에서 하게 할까요?</h2>
+        <div class="cu-opts"><div class="cu-opt rec"><span class="key">1</span><div><div class="l">결제 서버에서 다시 시도해요</div><div class="d">정기 결제까지 한 번에 해결돼요</div></div><span class="r"><span class="cu-rec">추천</span></span></div><div class="cu-opt"><span class="key">2</span><div><div class="l">주문 화면에서만 다시 시도해요</div><div class="d">가장 작게 바꿔요</div></div><span class="r"></span></div></div>
+        <div class="cu-composer"><span class="sp">다르게 답하기</span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div></div>
+    </div>
+    <div class="ds-panel cu-root" data-theme="dark">
+      <div class="cu-card flat" style="width:auto"><div class="cu-from"><span class="cu-tile"><svg><use href="#i-terminal-window"/></svg></span><span class="who">Claude Code</span><span class="meta">결제 재시도 넣기</span><span class="sp"></span><span class="cu-due">12분째 멈춰 있어요</span></div>
+        <h2 class="cu-ask" style="font-size:20px;line-height:28px">결제 재시도를 어디에서 하게 할까요?</h2>
+        <div class="cu-opts"><div class="cu-opt rec"><span class="key">1</span><div><div class="l">결제 서버에서 다시 시도해요</div><div class="d">정기 결제까지 한 번에 해결돼요</div></div><span class="r"><span class="cu-rec">추천</span></span></div><div class="cu-opt"><span class="key">2</span><div><div class="l">주문 화면에서만 다시 시도해요</div><div class="d">가장 작게 바꿔요</div></div><span class="r"></span></div></div>
+        <div class="cu-composer"><span class="sp">다르게 답하기</span><span class="cu-send"><svg><use href="#i-arrow-up"/></svg></span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── 10 규칙 ───── -->
+<section class="bd-chapter" id="rules">
+  <div class="bd-kicker">10 · 쓰는 규칙</div>
+  <h2>화면은 이 디자인 시스템에서만 그려요</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>지킬 것</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>값을 지어내지 않아요.</b> 색 · 크기 · 모서리 · 그늘은 <code>tokens.css</code>의 변수만 써요. 필요한 값이 없으면 토큰을 먼저 더하고 이 보드에 적어요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>즉석 장식을 만들지 않아요.</b> 둥근 상자에 한쪽 색 띠, 색 배경 줄, 그러데이션 배지 같은 것은 없어요. 강조는 추천 줄 하나, 상태는 점과 낱말이에요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>고를 곳의 빨강은 한 화면에 하나.</b> 추천 답이 있는 화면에서는 단추를 빨강으로 칠하지 않아요(카드 아래 단추는 투명). 위험한 선택지에는 칠하지 않아요. 링크 · 되돌리기는 잉크색이에요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>글자는 12px 아래로 내리지 않아요.</b> 셋째 글자도 4.5 : 1 이상이에요. 숫자는 고정폭 숫자예요.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>iOS는 같은 이름 · 같은 값을 옮겨요.</b> 모서리는 SwiftUI의 연속 곡선(<code>.continuous</code>)을 써요. 웹의 반원과 같은 값이에요.</div></div>
+    </div>
+    <div class="bd-card"><h3>파일</h3>
+      <table class="bd-table"><tr><th>파일</th><th>내용</th></tr>
+        <tr><td><code>tokens.css</code></td><td>원료 색 · 뜻 색 · 모서리 · 높이 · 간격 · 그늘 · 글자 · 움직임, 다크 짝</td></tr>
+        <tr><td><code>components.css</code></td><td>컴포넌트 34개. 결정함 보드가 이 파일을 그대로 읽어요</td></tr>
+        <tr><td><code>brand/</code></td><td>로고 · 비서 캐릭터 SVG와 만드는 스크립트</td></tr>
+        <tr><td><code>README.md</code></td><td>원칙 · 토큰 표 · 컴포넌트 표 · 다시 굽기</td></tr>
+        <tr><td><code>catchup-design-system.html</code></td><td>이 보드(한 파일로 묶은 것)</td></tr>
+        <tr><td><code>shots/before</code> · <code>shots/after</code></td><td>01장의 전 · 후 그림</td></tr>
+      </table></div>
+  </div>
+</section>
+
+<!-- ───── 11 질문 ───── -->
+<section class="bd-chapter" id="next">
+  <div class="bd-kicker">11 · 열린 질문</div>
+  <h2>캐릭터 이름과 위험 색만 정해 주시면 돼요</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>정해진 것</h3>
+      <div class="bd-rule"><span class="no">✓</span><div><b>이름은 CatchUp.</b> 강조색은 토마토 케첩 빨강, 로고 · 캐릭터는 토마토 바탕(Q9).</div></div>
+      <div class="bd-rule"><span class="no">✓</span><div><b>CatchUp만의 디자인 시스템.</b> 카드와 선택지는 완전히 둥글게(Q8).</div></div>
+      <div class="bd-rule"><span class="no">✓</span><div><b>밀기는 시안대로.</b> 왼쪽 밀기 = 미루기만(Q7).</div></div>
+    </div>
+    <div class="bd-card"><h3>열린 질문</h3>
+      <div class="bd-rule q"><div><b>Q1 · 비서 캐릭터 이름</b> — 시안은 이름 없이 '비서'로 불러요. 이름을 붙이면 알림 · 처음 화면에서 '토토가 밤사이 41통을 읽었어요'처럼 쓸 수 있어요. 후보가 있으면 알려 주세요.</div></div>
+      <div class="bd-rule q"><div><b>Q2 · 위험을 어떤 색으로 말할까요</b> — 시안은 (가) 검붉은 글자 + 경고 아이콘(칠 없음)이에요. (나) 위험만 다른 색(예: 보라)으로 따로 두는 길도 있어요. (가)는 브랜드 색이 하나로 깔끔하고, (나)는 위험이 더 눈에 띄어요.</div></div>
+      <div class="bd-rule q"><div><b>Q3 · iOS 글꼴</b> — 시안은 웹 · 앱 모두 Pretendard로 가정했어요. iOS 앱에서는 기기 글꼴(SF Pro · Apple SD 산돌고딕 Neo)을 쓰면 더 가볍고 기기와 어울려요.</div></div>
+      <div class="bd-rule q"><div><b>Q4 · 바탕색</b> — 피드백대로 붉은 기를 뺐어요. 지금은 거의 흰 바탕(<code>#FAFAF9</code>)에 흰 카드예요. 완전한 흰 바탕을 원하시면 <code>--cu-bg-canvas</code> 하나만 바꾸면 돼요.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="bd-foot">CatchUp 디자인 시스템 v0.2 · 2026-11-21. 화면 속 이름 · 숫자는 예시예요. 정본은 <code>docs/design-system/tokens.css</code> · <code>components.css</code>.</footer>
+</main>
+</body></html>

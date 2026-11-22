@@ -1,0 +1,339 @@
+/*
+  CatchUp 컴포넌트 — v0.4 · 2026-11-21 (화면 검수 반영: 단추 글자 · 초점 · 선택지 모서리 · 위험 표시 · 코드 줄바꿈)
+  값은 모두 tokens.css 의 변수예요. 여기서 새 색 · 크기 숫자를 지어내지 않아요(격자 안의 배치 값만 예외).
+  클래스 이름 = 만들 컴포넌트 이름이에요. 목록과 쓰임은 README.md 의 '컴포넌트' 표에 있어요.
+    .cu-card = <DecisionCard>   .cu-opt = <OptionRow>   .cu-composer = <Composer>   .cu-btn = <Button> …
+
+  디자인 언어 세 줄
+  1. 누르는 것은 끝이 반원이에요(--cu-r-full). 담는 것은 32 · 24 · 16 세 단계예요.
+  2. 케첩 빨강은 '누르면 되는 곳'에만 칠해요. 위험은 빨강 칠이 아니라 경고 아이콘 + 낱말이에요.
+  3. 거의 흰 바탕 위에 흰 카드가 떠요. 회색은 거의 무채색이고, 빨간 느낌은 강조색에만 있어요. 선보다 그늘로 나눠요.
+*/
+
+/* ── 바탕 ── */
+.cu-root {
+  font-family: var(--cu-font); font-size: 16px; line-height: 24px; letter-spacing: var(--cu-track);
+  color: var(--cu-fg); background: var(--cu-bg-canvas); -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss06"; word-break: keep-all; overflow-wrap: break-word;   /* 한글은 낱말 단위로 줄을 바꿔요 */
+}
+.cu-root svg { width: 18px; height: 18px; fill: currentColor; flex: none; display: block; }
+.cu-root b { font-weight: 600; }
+
+/* ── <StatusBar> (기기 틀 그림용) ── */
+.cu-status { height: 24px; padding: 0 20px; display: flex; align-items: center; gap: 8px; font: var(--cu-t-micro); font-variant-numeric: tabular-nums; }
+.cu-status .sp { flex: 1; }
+.cu-status svg { width: 15px; height: 15px; }
+.cu-status.side { background: linear-gradient(to right, var(--cu-bg-sidebar) 264px, var(--cu-bg-canvas) 264px); }
+.cu-app { display: flex; height: calc(100% - 24px); }
+
+/* ── <Logo> · <AppIcon> · <Mascot> ── */
+.cu-logo { width: 28px; height: 28px; display: grid; place-items: center; flex: none; }
+.cu-root .cu-logo svg { width: 28px; height: 28px; }
+.cu-appicon { width: 20px; height: 20px; border-radius: 6px; background: var(--cu-warm-0); box-shadow: inset 0 0 0 1px var(--cu-line); display: grid; place-items: center; flex: none; }
+.cu-root .cu-appicon svg { width: 16px; height: 16px; }
+.cu-mascot { display: block; flex: none; }
+.cu-root .cu-mascot svg { width: 100%; height: 100%; }
+.cu-mascot.lg { width: 112px; height: 112px; }
+.cu-mascot.md { width: 80px; height: 80px; }
+
+/* ── <Sidebar> ── */
+.cu-side { width: 264px; flex: none; background: var(--cu-bg-sidebar); display: flex; flex-direction: column; padding: 8px 12px 12px; }
+.cu-side > * { flex-shrink: 0; } /* 키가 모자라면 줄이 눌리지 않고 사이드바가 스크롤돼요 */
+.cu-side-head { height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 4px 0 10px; }
+.cu-side-head .name { font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); flex: 1; }
+.cu-ib { width: 36px; height: 36px; border-radius: var(--cu-r-full); display: grid; place-items: center; color: var(--cu-fg-2); flex: none; }
+.cu-root .cu-ib svg { width: 20px; height: 20px; }
+.cu-ib.off { color: var(--cu-warm-300); }
+/* <SidebarItem> — 고른 줄은 흰 알약이 떠요 */
+.cu-nav { height: var(--cu-h-md); display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: var(--cu-r-full); font: var(--cu-t-caption); color: var(--cu-fg); }
+.cu-nav svg { color: var(--cu-fg-2); }
+.cu-nav.on { background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift); font-weight: 600; }
+.cu-nav.on svg { color: var(--cu-fg); }
+.cu-nav .n { margin-left: auto; font: var(--cu-t-caption); color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
+.cu-nav.on .n { color: var(--cu-fg); font-weight: 600; }
+/* 빨강 배지는 '지금 여기'(캐치업에 남은 카드 수)에만 — 다른 화면의 수는 글자로 */
+.cu-nav .n.badge { min-width: 24px; height: 24px; padding: 0 8px; border-radius: var(--cu-r-full); background: var(--cu-accent); color: var(--cu-on-accent); font: var(--cu-t-micro); display: inline-grid; place-items: center; margin-right: -6px; }
+.cu-side-label { height: 28px; margin-top: 16px; padding: 0 14px; display: flex; align-items: center; font: var(--cu-t-caption); color: var(--cu-fg-3); }
+/* <RunItem> — 비서가 하는 일 한 줄 */
+.cu-run { display: grid; grid-template-columns: 18px 1fr; column-gap: 10px; padding: 6px 14px; }
+.cu-run .t { font: var(--cu-t-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-run .s { grid-column: 2; font: 400 12px/16px var(--cu-font); color: var(--cu-fg-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.cu-run .s.wait { color: var(--cu-wait); font-weight: 500; }
+.cu-run .s.wait::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--cu-wait-dot); }
+.cu-run svg { margin-top: 1px; color: var(--cu-fg-2); }
+/* <SourceRow> */
+.cu-src-row { height: 32px; display: flex; align-items: center; gap: 10px; padding: 0 14px; font: var(--cu-t-caption); }
+.cu-src-row svg { color: var(--cu-fg-2); }
+.cu-src-row .n { margin-left: auto; font: 400 12px/16px var(--cu-font); color: var(--cu-fg-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cu-src-row .n.warn { color: var(--cu-wait); }
+.cu-me { margin-top: auto; height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: var(--cu-r-full); font: var(--cu-t-caption); }
+/* <Avatar> */
+.cu-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--cu-bg-soft-strong); color: var(--cu-fg); font: var(--cu-t-micro); display: grid; place-items: center; flex: none; letter-spacing: 0; }
+.cu-me .sub { margin-left: auto; font: 400 12px/16px var(--cu-font); color: var(--cu-fg-3); }
+
+/* ── <TopBar> · <CardProgress> ── */
+.cu-main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--cu-bg-canvas); position: relative; }
+.cu-top { height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 28px; }
+.cu-top h1 { margin: 0; font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); }
+.cu-top .left { font: var(--cu-t-caption); color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
+.cu-top .sp { flex: 1; }
+.cu-steps { display: flex; gap: 6px; align-items: center; }
+.cu-step { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--cu-fg-3); background: var(--cu-bg-soft); }
+.cu-root .cu-step svg { width: 16px; height: 16px; }
+.cu-step.on { width: 44px; border-radius: var(--cu-r-full); background: var(--cu-accent); color: var(--cu-on-accent); }
+.cu-step.done { background: transparent; box-shadow: inset 0 0 0 1px var(--cu-line-strong); color: var(--cu-fg-3); }
+
+/* ── 카드 무대 · <CardDeck> ── */
+.cu-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 4px 0 0; }
+.cu-deck { position: relative; width: 680px; }
+.cu-peek { height: 12px; margin: -4px auto 0; border-radius: 0 0 var(--cu-r-card) var(--cu-r-card); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift); position: relative; }
+.cu-peek.p1 { width: 632px; z-index: 1; }
+.cu-peek.p2 { width: 584px; background: var(--cu-warm-50); z-index: 0; }
+
+/* ── <DecisionCard> ── */
+.cu-card { width: 680px; background: var(--cu-bg-surface); border-radius: var(--cu-r-card); box-shadow: var(--cu-shadow-card); padding: 28px 32px 24px; position: relative; z-index: 2; }
+.cu-card.flat { box-shadow: var(--cu-shadow-lift); }
+/* <CardSource> — 어디서 왔는지 한 줄 */
+.cu-from { display: flex; align-items: center; gap: 10px; min-height: 32px; }
+.cu-tile { width: 32px; height: 32px; border-radius: 50%; background: var(--cu-bg-soft); display: grid; place-items: center; color: var(--cu-fg); flex: none; }
+.cu-root .cu-tile svg { width: 16px; height: 16px; }
+.cu-from .who { font: 600 14px/20px var(--cu-font); white-space: nowrap; }
+.cu-from .meta { font: var(--cu-t-caption); color: var(--cu-fg-3); white-space: nowrap; }
+.cu-from .sp { flex: 1; }
+/* <DueTag> — 점 하나와 한 마디 */
+.cu-due { display: inline-flex; align-items: center; gap: 6px; font: var(--cu-t-label); color: var(--cu-wait); white-space: nowrap; }
+.cu-due::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cu-wait-dot); }
+.cu-due.calm { color: var(--cu-fg-3); font-weight: 400; }
+.cu-due.calm::before { display: none; }
+/* 위험 · 실패는 빨강 점이 아니라 경고 아이콘 + 낱말 — 케첩 빨강(누르면 되는 곳)과 섞이지 않게 */
+.cu-due.risk { color: var(--cu-danger); font-weight: 600; }
+.cu-due.risk::before { display: none; }
+.cu-root .cu-due.risk svg { width: 16px; height: 16px; }
+.cu-ask { margin: 16px 0 0; font: var(--cu-t-question); letter-spacing: var(--cu-track-tight); }
+/* <Summary> */
+.cu-sum { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font: var(--cu-t-body); color: var(--cu-fg); }
+.cu-sum li { position: relative; padding-left: 18px; }
+.cu-sum li::before { content: ""; position: absolute; left: 4px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--cu-warm-300); }
+.cu-sum .dim { color: var(--cu-fg-2); }
+/* <EvidenceChip> */
+.cu-ev { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.cu-chip { height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px 0 12px; border-radius: var(--cu-r-full); background: var(--cu-bg-soft); font: var(--cu-t-caption); color: var(--cu-fg-2); white-space: nowrap; }
+.cu-root .cu-chip svg { width: 15px; height: 15px; }
+.cu-chip.line { background: transparent; box-shadow: inset 0 0 0 1px var(--cu-line-strong); }
+
+/* ── <OptionRow> — 끝이 반원인 선택지 ── */
+.cu-opts { margin-top: 20px; display: grid; gap: 8px; }
+.cu-opt { min-height: var(--cu-h-option); display: grid; grid-template-columns: 36px 1fr auto; column-gap: 14px; align-items: center; padding: 8px 20px 8px 14px; border-radius: var(--cu-r-card); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); }
+/* 높이 64 에서 반지름 32 = 반원. 줄이 늘어도 32 에서 멈춰 타원이 되지 않아요 */
+.cu-opt .key { width: 36px; height: 36px; border-radius: 50%; background: var(--cu-bg-soft); display: grid; place-items: center; font: 600 14px/20px var(--cu-font); color: var(--cu-fg-2); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.cu-opt .l { font: var(--cu-t-body-strong); }
+.cu-opt .d { font: var(--cu-t-caption); color: var(--cu-fg-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cu-opt .l { display: block; }
+/* 위험한 선택지 — 경고 아이콘 + 낱말(자물쇠는 '잠김'으로 읽혀서 쓰지 않아요) */
+.cu-opt .r .risk { display: inline-flex; align-items: center; gap: 4px; color: var(--cu-danger); font: var(--cu-t-micro); }
+.cu-opt .r .risk svg { width: 14px; height: 14px; color: var(--cu-danger); }
+.cu-opt.confirm .d svg { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; margin-right: 4px; }
+.cu-opt .r { font: 400 12px/16px var(--cu-font); color: var(--cu-fg-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.cu-root .cu-opt .r svg { width: 16px; height: 16px; color: var(--cu-fg-3); }
+.cu-opt.rec { background: var(--cu-accent-soft); box-shadow: inset 0 0 0 2px var(--cu-accent); }
+.cu-opt.rec .key { background: var(--cu-accent); color: var(--cu-on-accent); }
+.cu-opt.picked { background: var(--cu-accent); color: var(--cu-on-accent); box-shadow: none; }
+.cu-opt.picked .d, .cu-opt.picked .r { color: rgb(255 255 255 / .82); }
+.cu-opt.picked .key { background: var(--cu-warm-0); color: var(--cu-accent-text); }
+.cu-opt.dimmed { opacity: .45; }
+.cu-opt .l, .cu-opt .d { width: fit-content; }
+/* <RecommendBadge> */
+.cu-rec { height: 24px; padding: 0 10px; border-radius: var(--cu-r-full); background: var(--cu-bg-surface); font: var(--cu-t-micro); line-height: 24px; color: var(--cu-accent-text); }
+/* <KeyHint> */
+.cu-kbd { min-width: 24px; height: 24px; padding: 0 7px; border-radius: var(--cu-r-full); box-shadow: inset 0 0 0 1px var(--cu-line-strong); display: inline-grid; place-items: center; font: 500 12px/1 var(--cu-font); color: var(--cu-fg-2); letter-spacing: 0; }
+.cu-opt.rec .cu-kbd { box-shadow: inset 0 0 0 1px var(--cu-tomato-200); color: var(--cu-accent-text); }
+.cu-kbd.inv { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .45); color: var(--cu-on-accent); }
+
+/* ── <EffectPreview> — 고르면 일어나는 일 ── */
+.cu-prev { margin-top: 12px; padding: 14px 20px 16px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); }
+.cu-prev .h { display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-root .cu-prev .h svg { width: 16px; height: 16px; }
+.cu-prev .h .sp { flex: 1; }
+.cu-prev .h a { color: var(--cu-fg); font-weight: 600; text-decoration: none; }
+.cu-prev p { margin: 6px 0 0; font: var(--cu-t-caption); color: var(--cu-fg); }
+/* <CodeDiff> */
+.cu-code { margin-top: 12px; border-radius: var(--cu-r-inset); box-shadow: inset 0 0 0 1px var(--cu-line-strong); overflow: hidden; font-family: var(--cu-mono); font-size: 12px; line-height: 20px; letter-spacing: 0; }
+.cu-code .fh { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: var(--cu-bg-soft); font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-root .cu-code .fh svg { width: 16px; height: 16px; }
+.cu-code .fh .sp { flex: 1; }
+.cu-code .fh .a { color: var(--cu-ok); font-weight: 600; } .cu-code .fh .m { color: var(--cu-danger); font-weight: 600; }
+.cu-code div.ln { padding: 0 14px 0 calc(14px + 2ch); text-indent: -2ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cu-code .fh .file { font-family: var(--cu-mono); font-size: 12px; color: var(--cu-fg-2); min-width: 0; overflow-wrap: anywhere; }
+.cu-code .fh .file::before { content: '· '; font-family: var(--cu-font); }
+.cu-code .fh .st { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.cu-code .fh + .ln { padding-top: 6px; } .cu-code .ln:last-child { padding-bottom: 6px; }
+.cu-code div.add { background: var(--cu-diff-add); } .cu-code div.del { background: var(--cu-diff-del); }
+/* <SlotCompare> — 겹친 일정 */
+.cu-slots { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cu-slot { padding: 14px 20px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); display: grid; gap: 2px; }
+.cu-slot .tm { font: var(--cu-t-caption); color: var(--cu-fg-2); font-variant-numeric: tabular-nums; }
+.cu-slot .nm { font: var(--cu-t-body-strong); }
+.cu-slot .wh { font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-slot.new { background: var(--cu-bg-surface); box-shadow: none; outline: 1px dashed var(--cu-warm-300); outline-offset: -1px; }
+
+/* ── <Composer> — 다르게 답하기 ── */
+.cu-composer { margin-top: 12px; height: var(--cu-h-lg); display: flex; align-items: center; gap: 6px; padding: 0 8px 0 22px; border-radius: var(--cu-r-full); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); font: var(--cu-t-body); color: var(--cu-fg-3); }
+.cu-composer .sp { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-composer.typed { color: var(--cu-fg); box-shadow: inset 0 0 0 2px var(--cu-fg); }
+.cu-send { width: 36px; height: 36px; border-radius: 50%; background: var(--cu-bg-soft); color: var(--cu-fg-3); display: grid; place-items: center; flex: none; }
+.cu-send.go { background: var(--cu-accent); color: var(--cu-on-accent); }
+.cu-root .cu-send svg { width: 18px; height: 18px; }
+
+/* ── <Button> ── 주 단추는 화면에 하나 */
+.cu-acts { width: 680px; margin-top: 20px; display: flex; align-items: center; gap: 4px; }
+.cu-acts .sp { flex: 1; }
+.cu-acts.in { width: auto; margin-top: 12px; }
+.cu-btn { height: var(--cu-h-md); display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: var(--cu-r-full); font: 600 14px/20px var(--cu-font); color: var(--cu-fg); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); white-space: nowrap; }
+.cu-root .cu-btn svg { width: 16px; height: 16px; color: var(--cu-fg-2); }
+.cu-btn.ghost { box-shadow: none; background: transparent; color: var(--cu-fg-2); font-weight: 500; }
+.cu-btn.primary { background: var(--cu-accent); color: var(--cu-on-accent); box-shadow: none; }
+.cu-btn.primary svg { color: var(--cu-on-accent); }
+.cu-btn.lg { height: var(--cu-h-lg); padding: 0 28px; font: var(--cu-t-body-strong); }
+
+/* ── 대화 조각 · <ChatBubble> ── */
+.cu-said { margin: 14px 0 0 auto; max-width: 460px; width: fit-content; padding: 12px 18px; border-radius: 24px 24px 8px 24px; background: var(--cu-bg-soft); font: var(--cu-t-body); }
+.cu-reply { margin-top: 12px; font: var(--cu-t-body); color: var(--cu-fg); }
+.cu-work { margin-top: 12px; display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-fg-3); }
+.cu-root .cu-work svg { width: 14px; height: 14px; }
+
+/* ── 목록 · <ListRow> · <SectionHeader> ── */
+.cu-page { flex: 1; min-height: 0; overflow: hidden; padding: 8px 40px 0; }
+.cu-page-in { width: 760px; margin: 0 auto; }
+.cu-h { display: flex; align-items: baseline; gap: 8px; margin: 20px 0 4px; font: var(--cu-t-caption); color: var(--cu-fg-3); }
+.cu-h b { color: var(--cu-fg); font: 700 16px/24px var(--cu-font); }
+.cu-h .sp { flex: 1; }
+.cu-row { min-height: 56px; display: grid; grid-template-columns: 32px 1fr auto; column-gap: 14px; align-items: center; padding: 8px 0; border-top: 1px solid var(--cu-line); }
+.cu-row .t { font: var(--cu-t-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-row .s { font: var(--cu-t-caption); color: var(--cu-fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-row .e { display: flex; align-items: center; gap: 12px; font: var(--cu-t-caption); color: var(--cu-fg-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cu-root .cu-row .e svg { width: 16px; height: 16px; }
+.cu-row .e.ok { color: var(--cu-ok); font-weight: 500; gap: 6px; }
+.cu-link { font: 600 14px/20px var(--cu-font); color: var(--cu-fg); white-space: nowrap; }
+.cu-fail { color: var(--cu-danger); font-weight: 600; }
+/* 목록이 카드 안에 들어갈 때 */
+.cu-fyi { margin-top: 12px; }
+.cu-fyi .cu-row:first-child, .cu-connect .cu-row:first-child { border-top: 0; }
+
+/* ── <Switch> ── 켜짐은 잎 색 */
+.cu-switch { width: 44px; height: 26px; border-radius: var(--cu-r-full); background: var(--cu-ok); position: relative; flex: none; }
+.cu-switch::after { content: ""; position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--cu-warm-0); box-shadow: var(--cu-shadow-lift); }
+.cu-switch.off { background: var(--cu-warm-200); }
+.cu-switch.off::after { right: auto; left: 3px; }
+
+/* ── <SegmentedControl> ── */
+.cu-seg { height: 40px; padding: 4px; border-radius: var(--cu-r-full); background: var(--cu-bg-soft); display: inline-flex; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-seg > span { padding: 0 16px; display: inline-flex; align-items: center; border-radius: var(--cu-r-full); white-space: nowrap; }
+.cu-seg .on { background: var(--cu-bg-surface); color: var(--cu-fg); font-weight: 600; box-shadow: var(--cu-shadow-lift); }
+/* 단추로 쓰는 탭 — 스페이스 · 엔터가 그대로 먹어요 */
+.cu-seg button { padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: var(--cu-r-full); background: transparent; font: inherit; color: inherit; white-space: nowrap; cursor: pointer; }
+.cu-seg button .n { color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
+.cu-seg button.on .n { color: var(--cu-fg-2); }
+@media (hover: hover) { .cu-seg button:not(.on):hover { color: var(--cu-fg); } }
+
+/* ── <Toast> — 되돌리기가 붙은 알림 ── */
+.cu-toast { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 8px 0 22px; border-radius: var(--cu-r-full); background: var(--cu-bg-inverse); color: var(--cu-fg-on-inverse); font: var(--cu-t-caption); white-space: nowrap; box-shadow: var(--cu-shadow-pop); z-index: 5; }
+.cu-toast .u { height: 32px; padding: 0 14px; border-radius: var(--cu-r-full); background: rgb(255 255 255 / .16); display: inline-flex; align-items: center; font-weight: 600; }
+
+/* ── 가운데 선 화면(처음 · 다 봤어요) · <EmptyState> ── */
+.cu-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.cu-big { font: var(--cu-t-display); letter-spacing: -.03em; margin: 0; }
+.cu-sub { margin: 8px 0 0; font: var(--cu-t-body); color: var(--cu-fg-2); }
+.cu-done-head { padding: 36px 0 12px; display: flex; align-items: center; gap: 24px; }
+.cu-connect { width: 560px; margin-top: 28px; padding: 4px 24px; border-radius: var(--cu-r-card); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift); text-align: left; }
+.cu-promise { width: 560px; margin: 16px 0 0; padding: 14px 20px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); display: flex; gap: 10px; text-align: left; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-promise svg { margin-top: 1px; color: var(--cu-ok); }
+
+/* ── 카드만 따로(보드용 칸) ── */
+.cu-solo { padding: 24px; background: var(--cu-bg-canvas); height: 100%; }
+.cu-foot { margin-top: 12px; display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.cu-root .cu-foot svg { width: 16px; height: 16px; }
+
+/* ── 아이폰 ── */
+.cu-phone { height: 100%; display: flex; flex-direction: column; background: var(--cu-bg-canvas); }
+.cu-ptop { height: 52px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+.cu-ptop .ttl { font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); }
+.cu-ptop .cnt { font: var(--cu-t-caption); color: var(--cu-fg-3); }
+.cu-ptop .sp { flex: 1; }
+/* <CardProgress> 좁은 모양 — 지금 카드만 길어져요 */
+.cu-pbar { display: flex; gap: 4px; padding: 0 16px 12px; }
+.cu-pbar i { flex: 1; height: 6px; border-radius: var(--cu-r-full); background: var(--cu-bg-soft-strong); }
+.cu-pbar i.d { background: var(--cu-warm-300); } .cu-pbar i.on { flex: 3; background: var(--cu-accent); }
+.cu-card.p { width: auto; margin: 0 12px; padding: 20px 18px 18px; border-radius: 28px; }
+.cu-card.p .cu-ask { font: 700 20px/28px var(--cu-font); margin-top: 14px; }
+.cu-card.p .cu-opts { margin-top: 16px; }
+.cu-card.p .cu-opt { padding-left: 10px; padding-right: 14px; min-height: 60px; column-gap: 12px; grid-template-columns: 32px 1fr auto; }
+.cu-card.p .cu-opt .key { width: 32px; height: 32px; }
+.cu-slots.one { grid-template-columns: 1fr; margin-top: 14px; }
+.cu-slots.one .cu-slot { padding: 10px 18px; }
+.cu-pdock { margin-top: auto; padding: 8px 12px 28px; }
+.cu-pdock .cu-composer { margin-top: 0; }
+.cu-pacts { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 8px; font: var(--cu-t-label); color: var(--cu-fg-2); }
+.cu-pacts span { height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+.cu-root .cu-pacts svg { width: 16px; height: 16px; }
+/* 아이폰 선택지: 테두리를 ::after 로 — 줄 안 빈자리에 보드 핀을 둘 수 있게. 모양은 같아요 */
+.cu-card.p .cu-opt { box-shadow: none; position: relative; background: transparent; }
+.cu-card.p .cu-opt.rec { background: var(--cu-accent-soft); }
+.cu-card.p .cu-opt::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--cu-line-strong); pointer-events: none; }
+.cu-card.p .cu-opt.rec::after { box-shadow: inset 0 0 0 2px var(--cu-accent); }
+
+/* ── 잠금 화면 알림(iOS 가 그리는 부분은 시스템 모양을 따라요) ── */
+.cu-lock { height: 100%; background: linear-gradient(180deg, #2b2927, #121110); color: #fff; padding: 56px 12px 0; display: flex; flex-direction: column; align-items: center; }
+.cu-ldate { font: 500 18px/28px var(--cu-font); opacity: .85; }
+.cu-ltime { font: 700 84px/92px var(--cu-font); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.cu-noti { width: 100%; margin-top: 40px; padding: 14px 16px 16px; border-radius: var(--cu-r-panel); background: rgb(255 255 255 / .92); color: var(--cu-warm-950); }
+.cu-noti .h { display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-warm-700); }
+.cu-noti .h .sp { flex: 1; }
+.cu-noti .t { margin-top: 8px; font: var(--cu-t-body-strong); }
+.cu-noti .b { font: var(--cu-t-body); }
+.cu-nacts { width: 100%; margin-top: 8px; border-radius: var(--cu-r-panel); background: rgb(255 255 255 / .92); color: var(--cu-warm-950); overflow: hidden; }
+.cu-nacts div { height: 52px; display: flex; align-items: center; justify-content: center; font: 500 16px/24px var(--cu-font); border-top: 1px solid rgb(0 0 0 / .1); }
+.cu-nacts div:first-child { border-top: 0; font-weight: 600; }
+.cu-lhint { margin-top: 16px; font: var(--cu-t-caption); opacity: .7; }
+
+/* ── 앱에서 쓰는 상태(v0.3) ── */
+/* <OptionRow> 위험한 답의 '한 번 더 확인' — 빨강을 칠하지 않고 잉크 테두리 + 경고 낱말 */
+.cu-opt.confirm { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+.cu-opt.confirm .key { background: var(--cu-fg); color: var(--cu-fg-on-inverse); }
+.cu-opt.confirm .d { color: var(--cu-danger); font-weight: 600; }
+/* <OptionRow> 누를 수 있는 단추로 쓸 때 */
+button.cu-opt { width: 100%; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: box-shadow var(--cu-dur) var(--cu-ease), background var(--cu-dur) var(--cu-ease), transform var(--cu-dur-fast) var(--cu-ease); }
+button.cu-opt:active { transform: scale(.985); }
+/* 키보드 초점 — 잉크 고리 하나로 통일해요. 빨강 고리는 추천 답과 헷갈려서 쓰지 않아요 */
+.cu-root :focus-visible { outline: 2px solid var(--cu-fg); outline-offset: 2px; }
+.cu-root input:focus-visible, .cu-root textarea:focus-visible { outline: none; }
+@media (hover: hover) { button.cu-opt:not(.rec):not(.confirm):hover { box-shadow: inset 0 0 0 2px var(--cu-warm-300); } }
+/* <Composer> 실제 입력 */
+.cu-composer input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; color: var(--cu-fg); padding: 0; }
+.cu-composer input::placeholder { color: var(--cu-fg-3); }
+.cu-composer:focus-within { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+button.cu-send, button.cu-ib, button.cu-btn { border: 0; font-family: inherit; cursor: pointer; }
+/* 37 · 36 마우스를 올리면 · 글자 단추는 32 높이로 누르기 쉽게 */
+@media (hover: hover) { button.cu-btn:not(.ghost):not(.primary):hover, a.cu-btn:not(.ghost):not(.primary):hover { background: var(--cu-bg-soft); } button.cu-btn.primary:hover, a.cu-btn.primary:hover { background: var(--cu-accent-hover); } button.cu-link:not(:disabled):hover { background: var(--cu-bg-soft); } }
+button.cu-link { min-height: var(--cu-h-sm); padding: 0 10px; margin: 0 -10px; border: 0; background: transparent; border-radius: var(--cu-r-full); font: 600 14px/20px var(--cu-font); color: var(--cu-fg); cursor: pointer; }
+button.cu-link:disabled { color: var(--cu-fg-3); cursor: default; }
+button.cu-ib { background: transparent; }
+button.cu-btn.ghost:hover, button.cu-ib:hover { background: var(--cu-bg-soft); }
+button.cu-ib:disabled { color: var(--cu-warm-300); cursor: default; background: transparent; }
+a.cu-nav, button.cu-nav { color: inherit; text-decoration: none; border: 0; background: transparent; width: 100%; font: var(--cu-t-caption); cursor: pointer; text-align: left; }
+button.cu-nav.on { font-weight: 600; }
+button.cu-nav:not(.on):hover, a.cu-nav:not(.on):hover { background: var(--cu-bg-soft-strong); }
+/* <Toast> 되돌리기 단추가 없을 때 — 양옆 여백을 같게 · 긴 글은 두 줄까지 */
+.cu-toast:not(:has(.u)) { padding: 0 22px; }
+/* <EffectPreview> 초안 고치기 */
+.cu-prev .h button { border: 0; background: transparent; padding: 0; font: inherit; font-weight: 600; color: var(--cu-fg); cursor: pointer; }
+.cu-prev textarea { display: block; width: 100%; margin-top: 8px; padding: 10px 14px; border: 0; border-radius: var(--cu-r-inset); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-strong); font: var(--cu-t-caption); color: var(--cu-fg); resize: vertical; min-height: 64px; }
+.cu-prev textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--cu-fg); }
+/* <Composer> 받아쓰는 중 — 잉크로 칠해요(빨강은 고를 곳에만) */
+button.cu-ib.listening { background: var(--cu-fg); color: var(--cu-fg-on-inverse); }
+/* <SearchField> */
+.cu-search { height: var(--cu-h-md); display: flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: var(--cu-r-full); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-strong); color: var(--cu-fg-3); }
+.cu-search svg { width: 16px; height: 16px; }
+.cu-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: var(--cu-t-body); color: var(--cu-fg); }
+.cu-search input::placeholder { color: var(--cu-fg-3); }
+.cu-search:focus-within { box-shadow: inset 0 0 0 2px var(--cu-fg); }

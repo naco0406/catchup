@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.vite/
+test-results/
+playwright-report/
+landing/dist/
+.DS_Store
+# 계정 캐시 · 비밀값 · 로컬 실행 상태
+.wrangler/
+.dev.vars*
+.env
+.env.*
+!.env.example
+.local/
+.claude/settings.local.json
+# 다시 만들 수 있는 것
+target/
+*.tsbuildinfo
+__pycache__/
+docs/design-system/check/
+docs/design/decision-inbox/check/

@@ -1,0 +1,4 @@
+/* 보드 전용 — 기기 틀 크기만 정해요. 화면 안의 모양은 모두 docs/design-system 에서 와요. */
+.bd-frame.pad { width: 1196px; border-radius: 28px; }
+.bd-frame.pad .bd-screen { width: 1194px; height: 834px; }
+.bd-frame.cardonly { border-radius: 56px; }   /* 안쪽 카드(32) + 여백(24) — 두 곡선이 나란해요 */
