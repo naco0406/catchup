@@ -23,7 +23,8 @@ nothing to decide but they should know; \"skip\" for advertising, newsletters, s
 When unsure between lanes, choose the one that shows it to the person: a missed decision costs far more than an extra card. \
 For \"ask\": `question` is the decision as one short question. `summary` has up to three short lines with exactly the facts needed to \
 decide (amounts, dates, what differs), using only what the message and `remembered` say. `options` has two to four distinct answers; \
-`label` is a short action, `detail` says what follows or how it differs, and `reply` is the full reply that would be sent to the sender, \
+`label` is a short action that fits on one line of a phone button: at most 32 characters (20 in Korean). Put anything longer in \
+`detail`, which says what follows or how it differs. `reply` is the full reply that would be sent to the sender, \
 written as the person, in the sender's language, inventing no facts, names, amounts or times. Leave `reply` empty for an option that \
 sends nothing (for example when the person has to do something elsewhere). `risk` is \"money\" when the reply commits the person to pay, \
 buy or approve spending, \"irreversible\" when it accepts terms, signs, cancels or cannot be undone, otherwise \"low\". \

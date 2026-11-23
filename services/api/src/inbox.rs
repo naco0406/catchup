@@ -29,6 +29,9 @@ use crate::{
 
 const MAX_TEXT: usize = 20_000;
 const EXCERPT: usize = 280;
+/// 답의 이름이 가질 수 있는 가장 긴 길이. 모델에는 한 줄(영어 32자 · 한국어 20자)을 시키고, 그래도 넘친 것은 여기서 잘라요 —
+/// 휴대폰의 답 단추에서 두 줄을 넘지 않게(docs/design/simple-ui 6장)
+pub const LABEL_MAX: usize = 64;
 /// 모델이 이만큼 엉뚱하게 답하면 있는 그대로 올려요
 pub const MAX_TRIES: i32 = 3;
 const SHOWN: i64 = 100;
@@ -259,7 +262,7 @@ fn options_from(sorted: &Sorted, sender: &str, ko: bool) -> Made {
         .filter(|c| !c.label.trim().is_empty())
         .take(4)
         .map(|c| {
-            let label = clip(&c.label, 120);
+            let label = clip(&c.label, LABEL_MAX);
             let reply = visible(c.reply.trim()).chars().take(4000).collect::<String>();
             let (effect, done) = match (reply.is_empty(), ko) {
                 (true, true) => (Effect::None, format!("적어 뒀어요: {label}")),
