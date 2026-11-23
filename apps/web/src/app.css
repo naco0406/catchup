@@ -198,6 +198,8 @@ button.list-row { width: 100%; border: 0; background: transparent; font: inherit
 button.list-row > span:nth-child(2) { min-width: 0; }
 button.list-row .t, button.list-row .s { display: block; }
 @media (hover: hover) { button.list-row:hover .t { text-decoration: underline; text-underline-offset: 3px; } }
+/* 좁은 창에서 마우스를 올리면 알약의 테두리만 짙어져요(이유 글까지 두르지 않아요) */
+@media (max-width: 599px) and (hover: hover) { button.cu-opt:not(.rec):not(.confirm):hover::before { box-shadow: inset 0 0 0 2px var(--cu-warm-300); } }
 button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); border-radius: var(--cu-r-inset); }
 
 /* 목록 화면 */
@@ -246,11 +248,26 @@ button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); bord
   .cu-peek { display: none; }
   .cu-card { padding: 20px 18px 18px; border-radius: 28px; box-shadow: var(--cu-shadow-lift); }
   .cu-card .cu-ask { font: 700 20px/28px var(--cu-font); margin-top: 14px; }
-  .cu-card .cu-opts { margin-top: 16px; }
-  .cu-opt { min-height: 60px; padding: 8px 14px 8px 10px; column-gap: 12px; grid-template-columns: 32px minmax(0, 1fr) auto; border-radius: 30px; }
-  .cu-opt .r .cu-rec { display: none; }
-  .cu-opt .key { width: 32px; height: 32px; }
-  .cu-opt .r .cu-kbd { display: none; }
+  /* 답 줄(아이폰): 알약에는 번호와 이름만, 이유는 알약 아래의 작은 글 — docs/design/simple-ui 6장.
+     알약은 단추의 첫 줄에만 그려요(::before). 단추 전체(알약 + 이유)가 누르는 곳이에요.
+     이름은 한 줄에 들어오게 써요(영어 32자 · 한국어 20자). 넘치면 알약이 두 줄 높이로 커지고 끝은 반원 그대로예요 */
+  .cu-card .cu-opts { margin-top: 16px; gap: 10px; }
+  .cu-opt { min-height: 0; grid-template-columns: 32px minmax(0, 1fr) auto; column-gap: 10px; row-gap: 4px; align-content: start; padding: 0 16px 0 8px; border-radius: 24px; background: transparent; box-shadow: none; }
+  .cu-opt::before { content: ''; grid-column: 1 / -1; grid-row: 1; align-self: stretch; min-height: 48px; margin: 0 -16px 0 -8px; border-radius: var(--cu-r-full); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-strong); transition: box-shadow var(--cu-dur) var(--cu-ease), background var(--cu-dur) var(--cu-ease); }
+  .cu-opt > .key { grid-row: 1; width: 32px; height: 32px; }
+  .cu-opt > .l { grid-row: 1; padding: 12px 0; width: auto; }
+  .cu-opt > .r { grid-row: 1; }
+  .cu-opt > .d { grid-row: 2; grid-column: 2 / -1; display: block; overflow: visible; width: auto; text-wrap: pretty; }
+  .cu-opt > .d:empty { display: none; }
+  .cu-opt.rec, .cu-opt.confirm, .cu-opt.picked { background: transparent; box-shadow: none; }
+  .cu-opt.rec::before { background: var(--cu-accent-soft); box-shadow: inset 0 0 0 2px var(--cu-accent); }
+  .cu-opt.confirm::before { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+  .cu-opt.picked::before { background: var(--cu-accent); box-shadow: none; }
+  /* 차오르는 줄: 알약만 차올라요 — 겹친 줄의 이유는 숨기고 아래 줄의 것이 그대로 보여요 */
+  .cu-opt.picked > .d { visibility: hidden; }
+  .cu-fill > .cu-opt.picked { clip-path: inset(0 calc((1 - var(--f, 0)) * 100%) 0 0 round 24px); }
+  button.cu-opt:not(.rec):not(.confirm):hover { box-shadow: none; }
+  .cu-opt .r .cu-rec, .cu-opt .r .cu-kbd { display: none; }
   /* 보낸 곳 — 이름과 기한이 한 줄, 자세한 곳은 다음 줄 */
   .cu-from { flex-wrap: wrap; row-gap: 0; }
   .cu-from .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

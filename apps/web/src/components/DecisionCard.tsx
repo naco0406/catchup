@@ -98,7 +98,8 @@ function OptionRow({ o, i, rec, confirm, onPick, fill }: { o: Option; i: number;
   const button = (
     <button type="button" className={cls} onClick={e => { onPick(i, risky); if (!risky) e.currentTarget.blur(); }} aria-keyshortcuts={String(i + 1)} data-opt={i}>
       <span className="key">{i + 1}</span>
-      <span><span className="l">{o.label}</span><span className="d">{confirm ? <><I.warning aria-hidden />{t('card.confirmHint')}</> : o.detail}</span></span>
+      <span className="l">{o.label}</span>
+      <span className="d">{confirm ? <><I.warning aria-hidden />{t('card.confirmHint')}</> : o.detail}</span>
       <span className="r">
         {rec && !risky && <><span className="cu-rec">{t('card.suggested')}</span><span className="cu-kbd">↵</span></>}
         {risky && <span className="risk"><I.warning aria-hidden />{t('card.riskWord')}</span>}
@@ -113,7 +114,7 @@ function OptionRow({ o, i, rec, confirm, onPick, fill }: { o: Option; i: number;
       <div className="cu-opt picked" aria-hidden>
         {/* 글은 CSS 로 그려요(data-t) — 같은 글이 문서에 두 번 들어가면 찾기 · 긁기 · 화면 읽기가 헷갈려요 */}
         <span className="key"><span className="num" data-t={i + 1} /><I.check className="ck" /></span>
-        <span><span className="l" data-t={o.label} /><span className="d" data-t={o.detail} /></span>
+        <span className="l" data-t={o.label} /><span className="d" data-t={o.detail} />
         <span className="r" />
       </div>
     </div>

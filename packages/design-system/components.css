@@ -1,5 +1,5 @@
 /*
-  CatchUp 컴포넌트 — v0.6 · 2026-11-22 (밀기: 차오르는 추천 답 · 두 줄 토스트와 고리 · 방향 단추)
+  CatchUp 컴포넌트 — v0.7 · 2026-11-23 (답 줄: 이름과 이유를 따로 놓는 칸 배치 — 좁은 화면에서는 알약에 이름만)
   값은 모두 tokens.css 의 변수예요. 여기서 새 색 · 크기 숫자를 지어내지 않아요(격자 안의 배치 값만 예외).
   클래스 이름 = 만들 컴포넌트 이름이에요. 목록과 쓰임은 README.md 의 '컴포넌트' 표에 있어요.
     .cu-card = <DecisionCard>   .cu-opt = <OptionRow>   .cu-composer = <Composer>   .cu-btn = <Button> …
@@ -123,7 +123,13 @@
 
 /* ── <OptionRow> — 끝이 반원인 선택지 ── */
 .cu-opts { margin-top: 20px; display: grid; gap: 8px; }
-.cu-opt { min-height: var(--cu-h-option); display: grid; grid-template-columns: 36px 1fr auto; column-gap: 14px; align-items: center; padding: 8px 20px 8px 14px; border-radius: var(--cu-r-card); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); }
+.cu-opt { min-height: var(--cu-h-option); display: grid; grid-template-columns: 36px 1fr auto; column-gap: 14px; align-items: center; align-content: center; padding: 8px 20px 8px 14px; border-radius: var(--cu-r-card); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); }
+/* 칸: 번호 | 이름(위) · 이유(아래) | 꼬리표. 번호와 꼬리표는 두 줄에 걸쳐 가운데 서요.
+   이름과 이유를 답 줄의 바로 아래 자식으로 두는 까닭 — 좁은 화면에서는 이유가 알약 밖으로 나가요(앱의 app.css) */
+.cu-opt > .key { grid-column: 1; grid-row: 1 / span 2; }
+.cu-opt > .l { grid-column: 2; grid-row: 1; }
+.cu-opt > .d { grid-column: 2; grid-row: 2; }
+.cu-opt > .r { grid-column: 3; grid-row: 1 / span 2; }
 /* 높이 64 에서 반지름 32 = 반원. 줄이 늘어도 32 에서 멈춰 타원이 되지 않아요 */
 .cu-opt .key { width: 36px; height: 36px; border-radius: 50%; background: var(--cu-bg-soft); display: grid; place-items: center; font: 600 14px/20px var(--cu-font); color: var(--cu-fg-2); font-variant-numeric: tabular-nums; letter-spacing: 0; }
 .cu-opt .l { font: var(--cu-t-body-strong); }
