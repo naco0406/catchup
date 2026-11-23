@@ -19,6 +19,7 @@ use catchup_api::{
     db::{self, Db},
     error::Error,
     executor::{Action, Executor, Found, Outcome, Revision, Source, Task},
+    inbox::{self, Choice, Incoming, Sorted},
     memory,
     model::{AnswerInput, Card, CardOption, Effect, NewCard, Receipt, Risk, Surface},
     passkeys,
@@ -1762,4 +1763,269 @@ async fn a_passkey_login_refuses_replays_other_sites_and_bad_signatures() {
     assert_eq!(passkeys::list(&w.db, mine).await.unwrap().len(), 1);
     // 앱 역할은 열쇠 표를 직접 읽지 못해요(좁은 문으로만)
     assert!(sqlx::query("SELECT 1 FROM front.passkeys").execute(w.db.pool()).await.is_err());
+}
+
+// ─── 4단계: 가르기 — 들어온 것을 물어봐요 · 알려만 드려요 · 넘겨요로 나누고 카드를 만들어요
+
+fn mail(id: &str, from: &str, text: &str) -> Incoming {
+    Incoming {
+        id: id.into(),
+        thread: None,
+        from: from.into(),
+        org: "한빛 디자인".into(),
+        direct: true,
+        list: false,
+        subject: "견적".into(),
+        text: text.into(),
+        received_at: None,
+    }
+}
+
+fn choice(label: &str, reply: &str, risk: &str) -> Choice {
+    Choice { label: label.into(), detail: String::new(), reply: reply.into(), risk: risk.into() }
+}
+
+fn ask(question: &str, options: Vec<Choice>, recommended: i32) -> Sorted {
+    Sorted {
+        lane: "ask".into(),
+        reason: "답이 필요해요".into(),
+        question: question.into(),
+        summary: vec!["요약".into()],
+        options,
+        recommended,
+        due: String::new(),
+    }
+}
+
+async fn sorted(w: &World, cell: Uuid, model: &Sorted) -> Option<Uuid> {
+    let item = inbox::next(&w.db, cell).await.unwrap().expect("가를 것이 있어야 해요");
+    inbox::settle(&w.db, cell, item.id, model, "model").await.unwrap()
+}
+
+/// 들어온 메일이 카드가 돼요. 답장은 보낸 사람에게만 가고, 같은 메일이 두 번 와도 카드는 하나예요
+#[tokio::test]
+async fn incoming_mail_becomes_a_card_addressed_only_to_its_sender() {
+    let mut w = World::new().await;
+    let (cell, other) = (w.cell().await, w.cell().await);
+    let quote = mail("m1", "박서연", "A안 1,480만 원, B안 1,150만 원 중 어느 안으로 할까요? 금요일까지 알려 주세요.");
+    assert_eq!(inbox::receive(&w.db, cell, "local", std::slice::from_ref(&quote)).await.unwrap(), 1);
+    assert_eq!(inbox::receive(&w.db, cell, "local", std::slice::from_ref(&quote)).await.unwrap(), 0, "같은 글은 한 번만");
+    assert!(inbox::next(&w.db, other).await.unwrap().is_none());
+
+    let model = ask(
+        "견적은 어느 안으로 할까요?",
+        vec![choice("B안으로 진행해요", "서연 님, B안으로 진행하겠습니다.", "low"), choice("답하지 않아요", "", "low")],
+        0,
+    );
+    let item = inbox::next(&w.db, cell).await.unwrap().unwrap();
+    let card = inbox::settle(&w.db, cell, item.id, &model, "model").await.unwrap().unwrap();
+    assert_eq!(inbox::settle(&w.db, cell, item.id, &model, "model").await.unwrap(), Some(card), "두 번 갈라도 카드는 하나");
+    assert!(inbox::next(&w.db, cell).await.unwrap().is_none());
+
+    let open = w.open(cell).await;
+    assert_eq!(open.len(), 1);
+    assert_eq!(
+        (open[0].kind.as_str(), open[0].question.as_str(), open[0].reply_path.as_str()),
+        ("reply", "견적은 어느 안으로 할까요?", "send")
+    );
+    assert_eq!(open[0].source.0, json!({ "type": "local", "from": "박서연", "org": "한빛 디자인" }));
+    // 받는 사람은 서버가 정해요 — 모델의 글은 답장의 내용만
+    assert_eq!(open[0].options.0[0].effect, Effect::Send { to: "박서연".into(), text: "서연 님, B안으로 진행하겠습니다.".into() });
+    assert_eq!(open[0].options.0[1].effect, Effect::None);
+    assert!(w.open(other).await.is_empty());
+
+    // 가른 뒤에는 원문을 두지 않고 짧은 발췌만 남겨요
+    let kept: (Option<String>, String, String, String) =
+        sqlx::query_as("SELECT text, excerpt, lane, sorted_by FROM catchup.inbox_items").fetch_one(&mut w.owner).await.unwrap();
+    assert_eq!((kept.0, kept.2.as_str(), kept.3.as_str()), (None, "ask", "model"));
+    assert!(kept.1.starts_with("A안 1,480만 원"));
+    // 답하면 그 글이 보낸 사람에게 나가요
+    let receipt = w.answer(cell, &open[0]).await;
+    w.elapse().await;
+    w.worker().run_once().await.unwrap();
+    assert_eq!(
+        w.fake.done.lock().unwrap().get(&receipt.id),
+        Some(&Effect::Send { to: "박서연".into(), text: "서연 님, B안으로 진행하겠습니다.".into() })
+    );
+}
+
+/// 위험한 답은 추천이 되지 않아요. 모델이 낮다고 해도 돈을 보내는 글은 위험으로 올려요
+#[tokio::test]
+async fn a_risky_reply_is_never_the_recommendation() {
+    let mut w = World::new().await;
+    let cell = w.cell().await;
+    let receive = |id: &'static str| mail(id, "한서준", "아이패드 2대 320만 원 구매 승인 부탁드립니다.");
+
+    // 모델이 위험한 답을 추천으로 골랐어요 → 위험하지 않은 첫 답으로
+    inbox::receive(&w.db, cell, "local", &[receive("p1")]).await.unwrap();
+    sorted(
+        &w,
+        cell,
+        &ask(
+            "구매를 승인할까요?",
+            vec![choice("승인해요", "승인합니다.", "money"), choice("더 알아봐요", "어디에 쓰는지 알려 주세요.", "low")],
+            0,
+        ),
+    )
+    .await;
+    let card = w.open(cell).await.remove(0);
+    assert_eq!((card.recommended, card.options.0[0].risk, card.risk.as_str()), (1, Risk::Money, "low"));
+
+    // 모두 위험하면 아무것도 보내지 않는 답을 더해 그것을 추천으로
+    inbox::receive(&w.db, cell, "local", &[receive("p2")]).await.unwrap();
+    sorted(
+        &w,
+        cell,
+        &ask(
+            "어느 쪽으로 결제할까요?",
+            vec![
+                choice("카드로 결제해요", "카드로 결제해 주세요.", "money"),
+                choice("계좌로 보내요", "계좌로 보내겠습니다.", "money"),
+            ],
+            1,
+        ),
+    )
+    .await;
+    let card = w.open(cell).await.into_iter().find(|c| c.question.starts_with("어느 쪽")).unwrap();
+    let safe = &card.options.0[card.recommended as usize];
+    assert_eq!((card.options.0.len(), safe.risk, &safe.effect), (3, Risk::Low, &Effect::None));
+    assert_eq!(card.risk, "money", "위험하지 않은 답이 원래 없던 카드는 밀어서 넘길 수 없어요");
+
+    // 모델이 '낮음'이라 해도, 돈을 보낸다는 글은 서버가 위험으로 올려요
+    inbox::receive(&w.db, cell, "local", &[receive("p3")]).await.unwrap();
+    sorted(
+        &w,
+        cell,
+        &ask(
+            "송금할까요?",
+            vec![choice("보내요", "오늘 2,400만 원 송금하겠습니다.", "low"), choice("확인해요", "확인 후 답 드릴게요.", "low")],
+            0,
+        ),
+    )
+    .await;
+    let card = w.open(cell).await.into_iter().find(|c| c.question == "송금할까요?").unwrap();
+    assert_eq!((card.options.0[0].risk, card.recommended), (Risk::Money, 1));
+    // 이상한 위험 이름 · 너무 많은 답 · 빈 답은 걸러요
+    inbox::receive(&w.db, cell, "local", &[receive("p4")]).await.unwrap();
+    let many = (0..7)
+        .map(|i| choice(&format!("답 {i}"), "네", if i == 0 { "harmless" } else { "low" }))
+        .chain([choice(" ", "x", "low")])
+        .collect();
+    sorted(&w, cell, &ask("많은 답", many, 99)).await;
+    let card = w.open(cell).await.into_iter().find(|c| c.question == "많은 답").unwrap();
+    assert!(card.options.0.len() <= 5 && card.options.0.iter().all(|o| !o.label.trim().is_empty()));
+    assert_eq!(card.options.0[0].risk, Risk::Irreversible, "모르는 위험 이름은 가장 조심스럽게");
+    assert_eq!(card.options.0[card.recommended as usize].risk, Risk::Low);
+}
+
+/// 사람이 나에게 직접 보낸 글은 조용히 넘기지 않아요. 단체 메일은 규칙으로 넘기되, 기한 · 동의가 걸리면 모델에 물어요
+#[tokio::test]
+async fn nothing_from_a_person_is_silently_dropped() {
+    let mut w = World::new().await;
+    let cell = w.cell().await;
+    let skip = Sorted { lane: "skip".into(), reason: "광고예요".into(), ..Sorted::default() };
+
+    inbox::receive(&w.db, cell, "local", &[mail("d1", "이도현", "내일 3시 가능?")]).await.unwrap();
+    let card = sorted(&w, cell, &skip).await.expect("넘기지 않고 알려만 드려요로");
+    let news = w.open(cell).await;
+    assert_eq!((news[0].id, news[0].kind.as_str()), (card, "fyi"));
+    assert!(news[0].question.contains("이도현"));
+
+    // 단체 메일: 넘겨요(카드 없음). 기록은 남아요
+    let bulk = |id: &str, text: &str| Incoming { direct: false, list: true, ..mail(id, "요즘IT", text) };
+    inbox::receive(&w.db, cell, "local", &[bulk("n1", "이번 주 인기 글 10선. 수신 거부는 아래 링크.")]).await.unwrap();
+    let item = inbox::next(&w.db, cell).await.unwrap().unwrap();
+    let rule = inbox::by_rule(&item).expect("규칙으로 넘겨요");
+    assert_eq!(rule.lane, "skip");
+    assert_eq!(inbox::settle(&w.db, cell, item.id, &rule, "rule").await.unwrap(), None);
+    assert_eq!(w.open(cell).await.len(), 1);
+    let listed = inbox::list(&w.db, cell).await.unwrap();
+    assert_eq!(
+        listed.iter().map(|i| (i.lane.as_str(), i.sorted_by.as_str())).collect::<Vec<_>>(),
+        vec![("skip", "rule"), ("fyi", "model")]
+    );
+
+    // 기한 · 동의 · 결제가 걸린 단체 메일은 규칙으로 넘기지 않아요
+    for (id, text) in [
+        ("n2", "11월 30일까지 동의하지 않으시면 유료 플랜이 해지됩니다."),
+        ("n3", "도메인이 12월 2일에 만료됩니다. 연장하시려면 결제를 진행해 주세요."),
+        ("n4", "Your subscription expires on Dec 2. Please update your payment method."),
+    ] {
+        inbox::receive(&w.db, cell, "local", &[bulk(id, text)]).await.unwrap();
+        let item = inbox::next(&w.db, cell).await.unwrap().unwrap();
+        assert!(inbox::by_rule(&item).is_none(), "{text}");
+        inbox::settle(&w.db, cell, item.id, &skip, "model").await.unwrap();
+    }
+    // 사람이 직접 보낸 글은 규칙으로 가르지 않아요
+    inbox::receive(&w.db, cell, "local", &[mail("d2", "박서연", "자료 잘 받았습니다.")]).await.unwrap();
+    assert!(inbox::by_rule(&inbox::next(&w.db, cell).await.unwrap().unwrap()).is_none());
+}
+
+/// 같은 대화에 새 글이 오면 앞의 열린 카드는 접고 새 카드로 물어요
+#[tokio::test]
+async fn a_new_message_in_the_thread_replaces_the_open_card() {
+    let mut w = World::new().await;
+    let cell = w.cell().await;
+    let in_thread = |id: &str, text: &str| Incoming { thread: Some("t-quote".into()), ..mail(id, "박서연", text) };
+    inbox::receive(&w.db, cell, "local", &[in_thread("m1", "A안과 B안 중 어느 안으로 할까요?")]).await.unwrap();
+    let first = sorted(&w, cell, &ask("어느 안으로 할까요?", vec![choice("B안", "B안으로 할게요.", "low")], 0)).await.unwrap();
+    inbox::receive(&w.db, cell, "local", &[in_thread("m2", "죄송해요, B안 금액이 1,250만 원으로 바뀌었어요. 다시 봐 주세요.")])
+        .await
+        .unwrap();
+    let second = sorted(&w, cell, &ask("바뀐 금액으로 어느 안으로 할까요?", vec![choice("그래도 B안", "B안으로 할게요.", "low")], 0))
+        .await
+        .unwrap();
+    assert_ne!(first, second);
+    let open = w.open(cell).await;
+    assert_eq!(open.iter().map(|c| c.id).collect::<Vec<_>>(), vec![second]);
+    let state: String = sqlx::query_scalar("SELECT state FROM catchup.decision_cards WHERE id = $1")
+        .bind(first)
+        .fetch_one(&mut w.owner)
+        .await
+        .unwrap();
+    assert_eq!(state, "expired");
+    // 다른 대화의 카드는 그대로예요
+    inbox::receive(&w.db, cell, "local", &[mail("m3", "이도현", "리뷰는 몇 시에 할까요?")]).await.unwrap();
+    sorted(&w, cell, &ask("리뷰는 몇 시에 할까요?", vec![choice("11시", "11시에 해요.", "low")], 0)).await.unwrap();
+    assert_eq!(w.open(cell).await.len(), 2);
+}
+
+/// 모델이 세 번 엉뚱하게 답해도 글은 사라지지 않아요 — 있는 그대로 카드로 올려요. 넘긴 것은 내가 카드로 올릴 수 있어요
+#[tokio::test]
+async fn a_message_is_never_lost_and_a_skipped_one_can_be_raised() {
+    let mut w = World::new().await;
+    let cell = w.cell().await;
+    inbox::receive(&w.db, cell, "local", &[mail("b1", "김민수", "계약서 최종본입니다. 28일까지 서명 부탁드립니다.")]).await.unwrap();
+    let item = inbox::next(&w.db, cell).await.unwrap().unwrap();
+    for _ in 0..2 {
+        inbox::failed(&w.db, cell, item.id).await.unwrap();
+        assert!(w.open(cell).await.is_empty());
+        assert_eq!(inbox::next(&w.db, cell).await.unwrap().map(|i| i.id), Some(item.id), "다시 물어요");
+    }
+    inbox::failed(&w.db, cell, item.id).await.unwrap();
+    let plain = w.open(cell).await.remove(0);
+    assert!(plain.question.contains("김민수"));
+    assert!(plain.body.0["summary"][0].as_str().unwrap().contains("28일까지 서명"));
+    assert!(plain.options.0.iter().all(|o| o.effect == Effect::None), "모델 없이 만든 카드는 아무것도 보내지 않아요");
+    assert!(inbox::next(&w.db, cell).await.unwrap().is_none());
+    // 모델이 '물어봐요'라면서 쓸 답을 하나도 못 냈을 때도 같아요
+    inbox::receive(&w.db, cell, "local", &[mail("b2", "오지현", "사업자등록번호가 작년과 같은지 확인 부탁드립니다.")]).await.unwrap();
+    sorted(&w, cell, &ask("", vec![], 0)).await.expect("빈 답이어도 카드로");
+
+    // 넘긴 것을 내가 카드로 — 가르기가 틀렸다는 기록이 남아요
+    let bulk = Incoming { direct: false, list: true, ..mail("s1", "클라우드웍스", "새 기능 소식을 전해요.") };
+    inbox::receive(&w.db, cell, "local", &[bulk]).await.unwrap();
+    let item = inbox::next(&w.db, cell).await.unwrap().unwrap();
+    inbox::settle(&w.db, cell, item.id, &inbox::by_rule(&item).unwrap(), "rule").await.unwrap();
+    let raised = inbox::raise(&w.db, cell, item.id).await.unwrap();
+    assert_eq!(inbox::raise(&w.db, cell, item.id).await.unwrap(), raised, "두 번 눌러도 카드는 하나");
+    assert!(w.open(cell).await.iter().any(|c| c.id == raised && c.question.contains("클라우드웍스")));
+    let fixed: (String, Option<String>) = sqlx::query_as("SELECT lane, corrected FROM catchup.inbox_items WHERE id = $1")
+        .bind(item.id)
+        .fetch_one(&mut w.owner)
+        .await
+        .unwrap();
+    assert_eq!(fixed, ("skip".to_owned(), Some("ask".to_owned())));
+    let stranger = w.cell().await;
+    assert!(matches!(inbox::raise(&w.db, stranger, item.id).await, Err(Error::NotFound)));
 }

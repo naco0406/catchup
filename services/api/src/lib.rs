@@ -11,6 +11,7 @@ pub mod error;
 pub mod events;
 pub mod executor;
 pub mod http;
+pub mod inbox;
 pub mod local;
 pub mod memory;
 pub mod model;

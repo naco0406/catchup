@@ -19,7 +19,7 @@ use super::{
     home::Home,
     lanes::Lanes,
     rpc::{AppServer, Incoming},
-    runner, talk,
+    runner, sort, talk,
 };
 use crate::{
     crypto::Key,
@@ -349,6 +349,7 @@ impl Hub {
         let stepping: Arc<StdMutex<std::collections::HashSet<Uuid>>> = Arc::default();
         let drafting: Arc<StdMutex<std::collections::HashSet<Uuid>>> = Arc::default();
         let talking: Arc<StdMutex<std::collections::HashSet<Uuid>>> = Arc::default();
+        let sorting: Arc<StdMutex<std::collections::HashSet<Uuid>>> = Arc::default();
         let mut saved = Instant::now();
         loop {
             tokio::select! { _ = tick.tick() => {}, _ = stop.changed() => break }
@@ -427,6 +428,26 @@ impl Hub {
                                 Err(_) => tracing::error!(%cell, "talk panicked"),
                             }
                             talking.lock().unwrap_or_else(PoisonError::into_inner).remove(&cell);
+                        });
+                    }
+                }
+            }
+            // 들어온 글 가르기
+            match sqlx::query_scalar::<_, Uuid>("SELECT cell FROM front.cells_with_inbox()").fetch_all(self.db.pool()).await {
+                Err(error) => tracing::error!(%error, "cannot look for inbox"),
+                Ok(cells) => {
+                    for cell in cells {
+                        if !sorting.lock().unwrap_or_else(PoisonError::into_inner).insert(cell) {
+                            continue;
+                        }
+                        let (hub, sorting) = (self.clone(), sorting.clone());
+                        tokio::spawn(async move {
+                            match futures_util::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(sort::tick(&hub, cell))).await {
+                                Ok(Ok(())) => {}
+                                Ok(Err(error)) => tracing::warn!(%cell, %error, "sorting stopped"),
+                                Err(_) => tracing::error!(%cell, "sorting panicked"),
+                            }
+                            sorting.lock().unwrap_or_else(PoisonError::into_inner).remove(&cell);
                         });
                     }
                 }

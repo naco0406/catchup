@@ -753,10 +753,67 @@
         }
       }
     },
+    "/v1/me/inbox": {
+      "get": {
+        "tags": [],
+        "summary": "비서가 아는 것(3.6단계). 내 답 · 고친 초안 · 내 말 · 끝난 세션 · 내가 알려 준 것에서 읽어 내요\n가른 기록 — 무엇을 올렸고 무엇을 넘겼는지",
+        "operationId": "sorted_inbox",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Entry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/inbox/{id}/card": {
+      "post": {
+        "tags": [],
+        "summary": "넘긴 것을 카드로 올려요",
+        "operationId": "raise_item",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          },
+          "409": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/v1/me/memories": {
       "get": {
         "tags": [],
-        "summary": "비서가 아는 것(3.6단계). 내 답 · 고친 초안 · 내 말 · 끝난 세션 · 내가 알려 준 것에서 읽어 내요",
         "operationId": "memories",
         "responses": {
           "200": {
@@ -1681,6 +1738,64 @@
           }
         ],
         "description": "고르면 일어나는 일 — 선택지마다 하나. 보여 준 글이 곧 실행하는 글이에요"
+      },
+      "Entry": {
+        "type": "object",
+        "description": "가른 기록(화면의 '넘긴 것')",
+        "required": [
+          "id",
+          "sender",
+          "subject",
+          "excerpt",
+          "lane",
+          "sorted_by",
+          "raised",
+          "received_at"
+        ],
+        "properties": {
+          "card": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lane": {
+            "type": "string",
+            "description": "ask · fyi · skip"
+          },
+          "raised": {
+            "type": "boolean",
+            "description": "내가 카드로 올렸어요"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sender": {
+            "type": "string"
+          },
+          "sorted_by": {
+            "type": "string",
+            "description": "rule · model · plain(모델 없이 있는 그대로)"
+          },
+          "subject": {
+            "type": "string"
+          }
+        }
       },
       "LoginInput": {
         "type": "object",

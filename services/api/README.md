@@ -24,6 +24,8 @@ http://127.0.0.1:5181 에서 그 이메일과 코드로 들어가요. 끌 때는
 
 예시 20장이 든 데모 계정(`demo@example.test`): `pnpm backend:demo` → `zsh infra/local/local.sh ops login-code demo@example.test`
 
+예시 메일 넣기(가르기가 카드로 만들어요): `Incoming` 배열(JSON)을 `zsh infra/local/local.sh ops inbox <이메일>`의 표준 입력으로 줘요. 본보기는 `tests/fixtures/triage-mail.json`이에요. 그 계정이 Codex에 연결돼 있어야 갈라요.
+
 손으로 카드 넣기: `NewCard` 배열(JSON)을 `zsh infra/local/local.sh ops seed <이메일>`의 표준 입력으로 줘요. 본보기는 `tests/live.mjs`.
 
 ## Codex(3단계)
@@ -57,6 +59,7 @@ pnpm test:codex
 |---|---|
 | `src/memory.rs` | 기억 읽기 · 고치기 · 지우기 · 알려 주기, 모델에 넣는 맥락 꾸러미(초안 · 세션 · 묻기)와 그 기록 |
 | `src/promises.rs` | 내가 보낸 글의 약속(낌새가 있을 때만 모델에 물어요), 약속한 날이 되면 카드로 올리기 |
+| `src/inbox.rs` · `src/codex/sort.rs` | 가르기: 들어온 글을 물어봐요 · 알려만 · 넘겨요로 나누고 카드를 만들어요. 답장은 보낸 사람에게만, 위험한 답은 추천이 못 돼요 |
 | `src/passkeys.rs` | 패스키(WebAuthn) 등록과 로그인. 공개 열쇠만 두고, 물음은 한 번만 · 이 사이트의 서명만 · 사람을 확인한 서명만 받아요 |
 | `src/assistant.rs` | 비서에게 말하기: 기억해 · 물어봐 · 일 맡겨 · 카드 찾기. 일과 카드는 내가 눌러야 실행돼요. 덱에서 한 말은 보고 있던 카드를 같이 남겨요 |
 | `src/codex/talk.rs` | 위 둘의 모델 호출(글만, 도구 없음) |
@@ -94,6 +97,7 @@ node services/api/tests/resilience.mjs
 | `tests/memory-eval.mjs` | 실제 모델로 기억이 초안 · 답 · 세션에 반영되는지(문항은 `docs/eval/memory-cases.md`) |
 | `tests/live.mjs` | 실제 컨테이너를 HTTP로: 로그인 · SSE · 10초 · 강제 종료 · 측정 |
 | `tests/resilience.mjs` | 칸 200개 · Postgres 강제 종료 |
+| `tests/triage-eval.mjs` | 가르기 평가: 예시 메일 34통(`tests/fixtures/triage-mail.json`)을 실제 모델로 갈라 손으로 단 답과 견줘요. ChatGPT 한도를 써요 |
 | `tests/backup.mjs` | 백업(`infra/ops/pg.sh`)을 빈 새 Postgres에 되살리고 서버를 붙여, 열린 카드와 영수증이 그대로 보이는지(3.5단계 끝 기준) |
 | `apps/web/e2e-live` | 실제 서버에 붙은 화면(아이패드 · 아이폰 · 데스크톱) |
 

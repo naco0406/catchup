@@ -72,6 +72,8 @@ pub fn router(app: App) -> Router {
         .route("/v1/me/cards/{id}/undo", post(undo))
         .route("/v1/me/activity", get(activity))
         .route("/v1/me/cards/{id}/promote", post(promote))
+        .route("/v1/me/inbox", get(sorted_inbox))
+        .route("/v1/me/inbox/{id}/card", post(raise_item))
         .route("/v1/me/memories", get(memories).post(tell_memory))
         .route("/v1/me/memories/{key}", axum::routing::put(edit_memory).delete(forget_memory))
         .route("/v1/me/assistant", get(assistant_thread).post(tell_assistant))
@@ -334,6 +336,21 @@ async fn promote(State(app): State<App>, session: Session, Path(id): Path<Uuid>)
 }
 
 /// 비서가 아는 것(3.6단계). 내 답 · 고친 초안 · 내 말 · 끝난 세션 · 내가 알려 준 것에서 읽어 내요
+/// 가른 기록 — 무엇을 올렸고 무엇을 넘겼는지
+#[utoipa::path(get, path = "/v1/me/inbox", responses((status = 200, body = Vec<crate::inbox::Entry>)))]
+async fn sorted_inbox(State(app): State<App>, session: Session) -> Result<Json<Vec<crate::inbox::Entry>>> {
+    Ok(Json(crate::inbox::list(&app.db, session.cell).await?))
+}
+
+/// 넘긴 것을 카드로 올려요
+#[utoipa::path(post, path = "/v1/me/inbox/{id}/card", params(("id" = Uuid, Path)),
+    responses((status = 200, body = Card), (status = 404), (status = 409)))]
+async fn raise_item(State(app): State<App>, session: Session, Path(id): Path<Uuid>) -> Result<Json<Card>> {
+    let card = crate::inbox::raise(&app.db, session.cell, id).await?;
+    let open = cards::list(&app.db, session.cell, "open").await?;
+    open.into_iter().find(|c| c.id == card).map(Json).ok_or(Error::Conflict("card_not_open"))
+}
+
 #[utoipa::path(get, path = "/v1/me/memories", responses((status = 200, body = Vec<crate::memory::Memory>)))]
 async fn memories(State(app): State<App>, session: Session) -> Result<Json<Vec<crate::memory::Memory>>> {
     Ok(Json(crate::memory::list(&app.db, session.cell).await?))
@@ -497,6 +514,8 @@ async fn session_patch(State(app): State<App>, session: Session, Path(id): Path<
         passkey_start,
         passkey_add,
         passkey_remove,
+        sorted_inbox,
+        raise_item,
         me,
         list_cards,
         answer,

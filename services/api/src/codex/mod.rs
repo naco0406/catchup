@@ -20,6 +20,7 @@ pub mod rpc;
 pub mod runner;
 pub mod sandbox;
 pub mod sessions;
+pub mod sort;
 pub mod talk;
 
 pub const VERSION: &str = "0.163.0";

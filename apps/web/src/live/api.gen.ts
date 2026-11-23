@@ -378,6 +378,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 비서가 아는 것(3.6단계). 내 답 · 고친 초안 · 내 말 · 끝난 세션 · 내가 알려 준 것에서 읽어 내요
+         *     가른 기록 — 무엇을 올렸고 무엇을 넘겼는지
+         */
+        get: operations["sorted_inbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/inbox/{id}/card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 넘긴 것을 카드로 올려요 */
+        post: operations["raise_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/memories": {
         parameters: {
             query?: never;
@@ -385,7 +422,6 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 비서가 아는 것(3.6단계). 내 답 · 고친 초안 · 내 말 · 끝난 세션 · 내가 알려 준 것에서 읽어 내요 */
         get: operations["memories"];
         put?: never;
         /** 직접 알려 주기 */
@@ -682,6 +718,25 @@ export interface components {
         } | {
             /** @enum {string} */
             kind: "none";
+        };
+        /** @description 가른 기록(화면의 '넘긴 것') */
+        Entry: {
+            /** Format: uuid */
+            card?: string | null;
+            excerpt: string;
+            /** Format: uuid */
+            id: string;
+            /** @description ask · fyi · skip */
+            lane: string;
+            /** @description 내가 카드로 올렸어요 */
+            raised: boolean;
+            reason?: string | null;
+            /** Format: date-time */
+            received_at: string;
+            sender: string;
+            /** @description rule · model · plain(모델 없이 있는 그대로) */
+            sorted_by: string;
+            subject: string;
         };
         LoginInput: {
             authenticator_data: string;
@@ -1557,6 +1612,58 @@ export interface operations {
                 content?: never;
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sorted_inbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Entry"][];
+                };
+            };
+        };
+    };
+    raise_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Card"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

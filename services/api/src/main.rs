@@ -1,4 +1,4 @@
-//! catchup-api migrate | serve | worker | agent | sandbox | codehost | provision <email> [ko|en] | login-code <email> | seed <email> | openapi | health
+//! catchup-api migrate | serve | worker | agent | sandbox | codehost | provision <email> [ko|en] | login-code <email> | seed <email> | inbox <email> | openapi | health
 
 use std::{io::Read, sync::Arc, time::Duration};
 
@@ -184,6 +184,15 @@ async fn main() -> anyhow::Result<()> {
             }
             println!("{}", new.len());
         }
+        // 예시 메일 넣기(로컬 커넥터): 표준 입력으로 글 배열. 가르기가 카드 · 알려만 · 넘김으로 나눠요
+        ["inbox", email] => {
+            let mut text = String::new();
+            std::io::stdin().read_to_string(&mut text)?;
+            let items: Vec<catchup_api::inbox::Incoming> = serde_json::from_str(&text)?;
+            let master = Key::from_hex(&env("CATCHUP_MASTER_KEY")?)?;
+            let cell = ops::provision(owner()?, &master, email, "ko").await?;
+            println!("{}", catchup_api::inbox::receive(&app_db(2).await?, cell, "local", &items).await?);
+        }
         ["openapi"] => println!("{}", serde_json::to_string_pretty(&Api::openapi())?),
         ["health"] => {
             use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -198,7 +207,7 @@ async fn main() -> anyhow::Result<()> {
             tokio::time::timeout(Duration::from_secs(2), check).await??;
         }
         _ => bail!(
-            "usage: catchup-api migrate | serve | worker | agent | sandbox | codehost | provision <email> [ko|en] | login-code <email> | seed <email> | openapi | health"
+            "usage: catchup-api migrate | serve | worker | agent | sandbox | codehost | provision <email> [ko|en] | login-code <email> | seed <email> | inbox <email> | openapi | health"
         ),
     }
     Ok(())
