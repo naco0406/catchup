@@ -41,6 +41,22 @@ check_space() {
 # CATCHUP_COMPOSE_EXTRA: 구성을 더 얹거나 다른 묶음으로 띄울 때(예: EC2 구성을 로컬에서 돌려 보기 — infra/ec2/try-local.sh)
 dc() { docker compose --env-file "$ENV_FILE" -f "$ROOT/infra/local/compose.yaml" ${=CATCHUP_COMPOSE_EXTRA:-} "$@"; }
 
+# CATCHUP_REMOTE=1: 시험이 쓰는 두 길(ops · psql 한 줄)을 EC2 서버로 보내요 — 화면 시험을 진짜 서버에 돌릴 때
+if [[ -n "${CATCHUP_REMOTE:-}" ]]; then
+  case "${1:-}" in
+    ops)
+      shift
+      if [[ -t 0 ]]; then input=""; else input=$(base64 | tr -d '\n'); fi
+      exec zsh "$ROOT/infra/ec2/aws.sh" run ops-in "${input:-Cg==}" "$@"
+      ;;
+    compose)
+      [[ "$2 $3 $4 $5" == "exec -T postgres psql" ]] || { print -u2 "원격에서는 psql 한 줄만 돼요"; exit 2; }
+      exec zsh "$ROOT/infra/ec2/aws.sh" run sql "$(print -rn -- "${@[-1]}" | base64 | tr -d '\n')"
+      ;;
+    *) print -u2 "원격에서는 ops 와 psql 한 줄만 돼요"; exit 2 ;;
+  esac
+fi
+
 case "${1:-}" in
   up)
     prepare; check_space

@@ -29,9 +29,12 @@ remote() {
   cmd=$(aws ssm send-command --instance-ids "$id" --document-name AWS-RunShellScript --comment "catchup" \
     --parameters "$(python3 -c 'import json,sys; print(json.dumps({"commands": [sys.argv[1]], "executionTimeout": ["1800"]}))' "$1")" \
     --query Command.CommandId --output text)
-  aws ssm wait command-executed --command-id "$cmd" --instance-id "$id" 2> /dev/null || true
-  local state
-  while state=$(aws ssm get-command-invocation --command-id "$cmd" --instance-id "$id" --query Status --output text) && [[ "$state" == (Pending|InProgress|Delayed) ]]; do sleep 5; done
+  # 1초마다 물어요(기본 기다리기는 5초 간격이라 짧은 명령에 느려요). 막 보낸 명령은 잠깐 '없음'으로 나와요
+  local state=Pending
+  while [[ "$state" == (Pending|InProgress|Delayed) ]]; do
+    sleep 1
+    state=$(aws ssm get-command-invocation --command-id "$cmd" --instance-id "$id" --query Status --output text 2> /dev/null || print Pending)
+  done
   aws ssm get-command-invocation --command-id "$cmd" --instance-id "$id" --query StandardOutputContent --output text
   if [[ "$state" != Success ]]; then
     aws ssm get-command-invocation --command-id "$cmd" --instance-id "$id" --query StandardErrorContent --output text >&2
@@ -73,9 +76,12 @@ PY
     local_docker build --quiet -t catchup-web:local -f "$ROOT/infra/docker/web.Dockerfile" "$ROOT"
     aws ecr get-login-password | local_docker login --username AWS --password-stdin "${repo%%/*}" > /dev/null
     for image in api agent sandbox codehost web; do
-      local_docker tag "catchup-$image:local" "$repo:$image-$tag"
-      local_docker push --quiet "$repo:$image-$tag"
+      # ${image} — zsh 에서 $image:l 은 '소문자로'라는 뜻이라 괄호가 필요해요
+      local_docker tag "catchup-${image}:local" "${repo}:${image}-${tag}"
+      local_docker push --quiet "${repo}:${image}-${tag}"
     done
+    # 저장소 로그인(12시간짜리)은 올린 뒤에 지워요
+    local_docker logout "${repo%%/*}" > /dev/null
     # 서버가 읽을 구성과 스크립트(비밀값은 없어요)
     bundle=$(mktemp -t catchup-release).tgz
     tar -czf "$bundle" -C "$ROOT" infra/local/compose.yaml infra/ec2/compose.yaml infra/ec2/host.sh infra/ops/pg.sh

@@ -1,6 +1,6 @@
 #!/bin/bash
 # EC2 호스트에서 도는 쪽(3.5단계). Mac 에서는 infra/ec2/aws.sh 가 이걸 불러요(22번 포트 없이, Systems Manager 로).
-# 쓰는 법: bash /opt/catchup/infra/ec2/host.sh pull <판> | up | status | ops … | backup | restore <s3 열쇠>
+# 쓰는 법: bash /opt/catchup/infra/ec2/host.sh pull <판> | up | status | ops … | backup | restore <s3 열쇠> | wipe
 # 비밀값은 Parameter Store 에만 있고, 뜰 때 /run(메모리)으로 읽어요. 화면에 찍지 않아요.
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -64,6 +64,17 @@ case "${1:-}" in
     [ -f "$ENV_FILE" ] || secrets
     dc run --rm --no-deps -T ops "$@"
     ;;
+  # 시험이 쓰는 두 길(Mac 의 화면 시험을 이 서버에 돌릴 때 — infra/local/local.sh 의 CATCHUP_REMOTE)
+  ops-in)
+    # ops 에 표준 입력을 실어요(카드 넣기). 입력은 base64 로 와요
+    input=${2:?}; shift 2
+    [ -f "$ENV_FILE" ] || secrets
+    printf '%s' "$input" | base64 -d | dc run --rm --no-deps -T ops "$@"
+    ;;
+  sql)
+    [ -f "$ENV_FILE" ] || secrets
+    dc exec -T postgres psql -X -q -U catchup_owner -d catchup -Atc "$(printf '%s' "${2:?}" | base64 -d)"
+    ;;
   backup)
     [ -f "$ENV_FILE" ] || secrets
     file="/var/backups/catchup/catchup-$(date -u +%Y%m%dT%H%M%SZ).dump"
@@ -83,8 +94,18 @@ case "${1:-}" in
     CATCHUP_PG="$COMPOSE exec -T postgres" sh "$ROOT/infra/ops/pg.sh" restore "$file"
     rm -f "$file"
     ;;
+  wipe)
+    # DB 와 작업 폴더를 비우고 처음부터(시험을 돌린 뒤, 쓰기 시작하기 전에). 비밀값과 인증서는 그대로예요
+    [ "${2:-}" = "--yes" ] || { echo "모든 카드 · 기억 · 로그인이 사라져요. 정말이면 wipe --yes" >&2; exit 1; }
+    [ -f "$ENV_FILE" ] || secrets
+    dc down
+    for volume in postgres codex sandbox1-state sandbox1-work sandbox2-state sandbox2-work sandbox3-state sandbox3-work; do
+      docker volume rm "catchup_$volume" > /dev/null
+    done
+    dc up -d --wait --no-build $SERVICES
+    ;;
   *)
-    echo "쓰는 법: host.sh pull <판> | up | status | ops … | backup | restore <s3 열쇠>" >&2
+    echo "쓰는 법: host.sh pull <판> | up | status | ops … | backup | restore <s3 열쇠> | wipe" >&2
     exit 2
     ;;
 esac
