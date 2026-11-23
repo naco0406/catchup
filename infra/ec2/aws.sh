@@ -41,7 +41,8 @@ remote() {
 
 case "${1:-}" in
   who)
-    print "계정 …${$(aws sts get-caller-identity --query Account --output text): -4} · 지역 $AWS_REGION"
+    account=$(aws sts get-caller-identity --query Account --output text)   # 로그인이 없으면 여기서 멈춰요
+    print "계정 …${account: -4} · 지역 $AWS_REGION"
     ;;
   price)
     hour=$(usd AmazonEC2 "$(f instanceType $TYPE)" "$(f location $LOCATION)" "$(f operatingSystem Linux)" "$(f tenancy Shared)" "$(f preInstalledSw NA)" "$(f capacitystatus Used)")
