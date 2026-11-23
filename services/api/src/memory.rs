@@ -112,7 +112,8 @@ pub async fn list(db: &Db, cell: Uuid) -> Result<Vec<Memory>> {
     Ok(rows.into_iter().map(|r| r.into_memory(ko)).collect())
 }
 
-/// 같은 사람 · 같은 일에 대해 아는 것. `except` 는 지금 보고 있는 카드(자기 자신은 빼요)
+/// 같은 사람 · 같은 일에 대해 아는 것. `except` 는 지금 보고 있는 카드(자기 자신은 빼요).
+/// 뺄 카드가 없을 때는 카드에서 나오지 않은 기억(끝난 세션 · 알려 준 것)도 그대로 들어가요
 pub async fn about(conn: &mut PgConnection, subject: &str, except: Option<Uuid>, limit: i64) -> Result<Vec<Memory>> {
     if subject.trim().is_empty() {
         return Ok(vec![]);
@@ -120,7 +121,8 @@ pub async fn about(conn: &mut PgConnection, subject: &str, except: Option<Uuid>,
     let ko = korean(conn).await?;
     let rows: Vec<Row> = sqlx::query_as(&format!(
         "SELECT {COLUMNS} FROM catchup.memories
-         WHERE lower(subject) = lower($1) AND card IS DISTINCT FROM $2 ORDER BY at DESC NULLS LAST, key LIMIT $3"
+         WHERE lower(subject) = lower($1) AND ($2::uuid IS NULL OR card IS DISTINCT FROM $2)
+         ORDER BY at DESC NULLS LAST, key LIMIT $3"
     ))
     .bind(subject.trim())
     .bind(except)
@@ -202,15 +204,17 @@ async fn logged(
     Ok(lines)
 }
 
-/// 모델을 부를 때 넣는 맥락 꾸러미: 그 사람 · 그 일의 기억 + 내가 직접 알려 준 것. 무엇을 넣었는지 남겨요
+/// 모델을 부를 때 넣는 맥락 꾸러미: 그 사람 · 그 일의 기억 + 내가 두루 알려 준 것. 무엇을 넣었는지 남겨요.
+/// 어떤 사람을 두고 알려 준 것은 그 사람의 기억으로만 들어가요
 pub async fn pack(conn: &mut PgConnection, cell: Uuid, purpose: &str, subject: &str, except: Option<Uuid>) -> Result<Vec<String>> {
     let ko = korean(conn).await?;
     let mut found = about(conn, subject, except, IN_PACK).await?;
-    let told: Vec<Row> =
-        sqlx::query_as(&format!("SELECT {COLUMNS} FROM catchup.memories WHERE what = 'told' ORDER BY at DESC, key LIMIT $1"))
-            .bind(IN_PACK)
-            .fetch_all(&mut *conn)
-            .await?;
+    let told: Vec<Row> = sqlx::query_as(&format!(
+        "SELECT {COLUMNS} FROM catchup.memories WHERE what = 'told' AND subject = '' ORDER BY at DESC, key LIMIT $1"
+    ))
+    .bind(IN_PACK)
+    .fetch_all(&mut *conn)
+    .await?;
     found.extend(told.into_iter().map(|r| r.into_memory(ko)));
     logged(conn, cell, purpose, subject, found, PACK_BYTES).await
 }
@@ -222,17 +226,21 @@ fn mentions(words: &str, subject: &str) -> bool {
     !subject.is_empty() && (words.contains(&subject) || (name.chars().count() >= 2 && words.contains(name)))
 }
 
-/// 비서에게 물을 때의 꾸러미: 말에 나온 사람 · 일의 기억이 먼저, 그다음 최근 것
-pub async fn recall(conn: &mut PgConnection, cell: Uuid, words: &str) -> Result<Vec<String>> {
+/// 비서에게 물을 때의 꾸러미: 보고 있던 카드의 사람 · 일(`seen`)과 말에 나온 사람 · 일의 기억이 먼저, 그다음 최근 것
+pub async fn recall(conn: &mut PgConnection, cell: Uuid, words: &str, seen: &str) -> Result<Vec<String>> {
     let ko = korean(conn).await?;
     let rows: Vec<Row> = sqlx::query_as(&format!("SELECT {COLUMNS} FROM catchup.memories ORDER BY at DESC NULLS LAST, key LIMIT 300"))
         .fetch_all(&mut *conn)
         .await?;
     let said = words.to_lowercase();
+    let seen = seen.trim().to_lowercase();
+    let (looking, rows): (Vec<Row>, Vec<Row>) =
+        rows.into_iter().partition(|r| !seen.is_empty() && r.subject.trim().to_lowercase() == seen);
     let (named, rest): (Vec<Row>, Vec<Row>) = rows.into_iter().partition(|r| mentions(&said, &r.subject));
     // 물을 때는 누구 · 어느 일의 기억인지도 같이 줘요(없으면 '누구 일인지 모르겠다'고 답해요 — 2026-11-22 평가 11번)
-    let found = named
+    let found = looking
         .into_iter()
+        .chain(named)
         .chain(rest)
         .take(IN_ASK)
         .map(|r| r.into_memory(ko))

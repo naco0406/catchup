@@ -1821,6 +1821,14 @@
           "text"
         ],
         "properties": {
+          "card": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "말할 때 화면에 있던 카드(덱에서 말했을 때)"
+          },
           "request_key": {
             "type": "string",
             "format": "uuid"

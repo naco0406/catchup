@@ -21,6 +21,10 @@ Pick one `intent`: \"remember\" when the person states a lasting preference or f
 what is known; \"task\" when they want coding work done in a repository; \"card\" when they are answering or giving an instruction \
 about one of `cards_waiting` (put that card's `n` in `card`; if you cannot tell which one, use \"unclear\" and ask); \"unclear\" otherwise. \
 Set `card` to 0 unless the intent is \"card\". You never answer a card yourself. \
+`looking_at`, when present, is the card on the person's screen as they spoke: \"this\", \"this person\", \"they\", \"here\" or \"this repo\" \
+mean that card, its sender (`from`) or its project, and its `n` is the one to use if they are answering it. Set `about_looking_at` to true \
+only when the intent is \"remember\" and what they want kept is specifically about that card's sender or project; a general preference \
+is false, and it is false whenever `looking_at` is absent. \
 For \"ask\", answer in `reply` using only the given data, briefly; if the data does not say, say you don't know. Never invent facts, names, \
 amounts or dates, and never claim to have done anything. For \"task\", write the work order in `task` in the person's words made complete, \
 and put the repository as owner/name in `repo` only if the person named it or it matches one in `repositories`; otherwise leave `repo` empty. \
@@ -35,10 +39,10 @@ otherwise an empty string. At most three.";
 fn route_schema() -> Value {
     let text = json!({ "type": "string" });
     json!({
-        "type": "object", "additionalProperties": false, "required": ["intent", "reply", "task", "repo", "card"],
+        "type": "object", "additionalProperties": false, "required": ["intent", "reply", "task", "repo", "card", "about_looking_at"],
         "properties": {
             "intent": { "type": "string", "enum": ["remember", "ask", "task", "card", "unclear"] },
-            "reply": text, "task": text, "repo": text, "card": { "type": "integer" },
+            "reply": text, "task": text, "repo": text, "card": { "type": "integer" }, "about_looking_at": { "type": "boolean" },
         },
     })
 }
@@ -80,6 +84,12 @@ pub fn routed_from(answer: &str, shown: &[Uuid]) -> Option<Routed> {
     Some(routed)
 }
 
+/// 보고 있던 카드를 모델에 주는 모양. 번호는 정할 수 있는 카드일 때만 붙어요(`cards_waiting` 의 번호와 같아요)
+fn looking(seen: &assistant::Seen, shown: &[Uuid]) -> Value {
+    let n = shown.iter().position(|id| *id == seen.card).filter(|_| seen.open).map(|i| i + 1);
+    json!({ "n": n, "from": seen.subject, "question": seen.question.chars().take(200).collect::<String>() })
+}
+
 async fn call(hub: &Hub, cell: Uuid, instructions: &str, input: Value, name: &str, schema: Value) -> Result<String> {
     let request = gateway::Request {
         model: None,
@@ -104,7 +114,9 @@ async fn answer(hub: &Hub, cell: Uuid) -> Result<()> {
     .fetch_optional(&mut *tx)
     .await?;
     let Some((id, said, lang, today)) = waiting else { return Ok(()) };
-    let remembered = memory::recall(&mut tx, cell, &said).await?;
+    // 덱에서 한 말이면 그때 보고 있던 카드 — 그 사람 · 일의 기억을 먼저 넣어요
+    let seen = assistant::looking_at(&mut tx, id).await?;
+    let remembered = memory::recall(&mut tx, cell, &said, seen.as_ref().map_or("", |s| s.subject.as_str())).await?;
     let running: Vec<(String, String, Option<String>)> = sqlx::query_as(
         "SELECT title, state, repo FROM catchup.agent_sessions WHERE state NOT IN ('done', 'failed', 'cancelled') ORDER BY created_at LIMIT 5",
     )
@@ -119,11 +131,14 @@ async fn answer(hub: &Hub, cell: Uuid) -> Result<()> {
     // 열린 카드(정할 일) — 모델은 번호로만 가리켜요. 질문은 밖에서 온 글이라 자료로만 줘요
     let waiting_cards: Vec<(Uuid, String, serde_json::Value)> = sqlx::query_as(
         "SELECT id, question, source FROM catchup.decision_cards WHERE state = 'open' AND kind <> 'fyi'
-         ORDER BY front_at DESC NULLS LAST, created_at, id LIMIT 12",
+         ORDER BY (id = $1) DESC, front_at DESC NULLS LAST, created_at, id LIMIT 12",
     )
+    .bind(seen.as_ref().map(|s| s.card))
     .fetch_all(&mut *tx)
     .await?;
     tx.commit().await?;
+    let shown: Vec<Uuid> = waiting_cards.iter().map(|c| c.0).collect();
+    let looking_at = seen.as_ref().map(|s| looking(s, &shown));
 
     let input = json!({
         "language": lang, "today": today, "person_said": said, "remembered": remembered,
@@ -132,10 +147,11 @@ async fn answer(hub: &Hub, cell: Uuid) -> Result<()> {
         "cards_waiting": waiting_cards.iter().zip(1..).map(|((_, question, source), n)| json!({
             "n": n, "from": crate::cards::subject(source), "question": question.chars().take(200).collect::<String>(),
         })).collect::<Vec<_>>(),
+        "looking_at": looking_at,
         "earlier": earlier.iter().map(|(said, reply)| json!({ "person": said, "assistant": reply })).collect::<Vec<_>>(),
     });
     match call(hub, cell, ROUTE, input, "route", route_schema()).await {
-        Ok(text) => match routed_from(&text, &waiting_cards.iter().map(|c| c.0).collect::<Vec<_>>()) {
+        Ok(text) => match routed_from(&text, &shown) {
             Some(routed) => assistant::settle(&hub.db, cell, id, &routed).await,
             None => assistant::fail(&hub.db, cell, id, "bad_answer").await,
         },
@@ -197,6 +213,27 @@ mod tests {
             assert_eq!(pick(odd), None, "{odd}");
         }
         assert!(routed_from("not json", &shown).is_none());
+    }
+
+    #[test]
+    fn the_card_on_screen_gets_its_number_only_while_it_can_be_answered() {
+        let shown = [Uuid::from_u128(1), Uuid::from_u128(2)];
+        let seen = |card: u128, open| assistant::Seen {
+            card: Uuid::from_u128(card),
+            subject: "박서연".into(),
+            question: "견적은요?".into(),
+            open,
+        };
+        assert_eq!(looking(&seen(2, true), &shown), json!({ "n": 2, "from": "박서연", "question": "견적은요?" }));
+        assert_eq!(looking(&seen(2, false), &shown)["n"], Value::Null);
+        assert_eq!(looking(&seen(9, true), &shown)["n"], Value::Null);
+        // '이 카드의 사람에 대한 것'은 참 · 거짓만 받아요. 없으면 거짓이에요
+        let about = |extra: &str| {
+            routed_from(&format!(r#"{{"intent":"remember","reply":"","task":"","repo":"","card":0{extra}}}"#), &shown)
+                .map(|r| r.about_seen)
+        };
+        assert_eq!((about(""), about(r#","about_looking_at":true"#)), (Some(false), Some(true)));
+        assert_eq!(about(r#","about_looking_at":"박서연""#), None, "사람 이름을 모델이 정하지 못해요");
     }
 
     #[test]

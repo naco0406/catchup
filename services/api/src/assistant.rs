@@ -7,6 +7,9 @@
 //! - 카드 → 그 카드를 찾아 주기만. 내가 눌러야 내 말이 그 카드의 답(말로 답하기)으로 가고, 그 뒤는 카드의 규칙 그대로예요
 //!
 //! 모델에 닿지 못해도 말은 남고, 그대로 기억해 둘 수 있어요.
+//!
+//! 덱에서 한 말은 그때 보고 있던 카드(`seen_card`)를 같이 남겨요. '이 사람' · '이 카드'를 그 카드로 풀기 위한 것이고,
+//! 그것만으로는 카드에 아무 일도 일어나지 않아요.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -75,12 +78,38 @@ pub struct Routed {
     /// 가리킨 카드(모델은 번호만 고르고, 부르는 쪽이 id 로 바꿔 넣어요)
     #[serde(skip)]
     pub card: Option<Uuid>,
+    /// 기억할 것이 '보고 있던 카드의 사람 · 일'에 대한 것인지. 보고 있던 카드가 없으면 쓰지 않아요
+    #[serde(default, rename = "about_looking_at")]
+    pub about_seen: bool,
 }
 
 #[derive(Deserialize, ToSchema)]
 pub struct SayInput {
     pub request_key: Uuid,
     pub text: String,
+    /// 말할 때 화면에 있던 카드(덱에서 말했을 때)
+    pub card: Option<Uuid>,
+}
+
+/// 말할 때 보고 있던 카드
+pub struct Seen {
+    pub card: Uuid,
+    /// 그 카드의 사람 · 일
+    pub subject: String,
+    pub question: String,
+    /// 지금도 정할 수 있는 카드인지
+    pub open: bool,
+}
+
+pub async fn looking_at(conn: &mut PgConnection, id: Uuid) -> Result<Option<Seen>> {
+    let found: Option<(Uuid, String, serde_json::Value, bool)> = sqlx::query_as(
+        "SELECT d.id, d.question, d.source, d.state = 'open' AND d.kind <> 'fyi'
+         FROM catchup.assistant_messages m JOIN catchup.decision_cards d ON d.cell = m.cell AND d.id = m.seen_card WHERE m.id = $1",
+    )
+    .bind(id)
+    .fetch_optional(conn)
+    .await?;
+    Ok(found.map(|(card, question, source, open)| Seen { card, subject: crate::cards::subject(&source), question, open }))
 }
 
 fn clip(text: &str, max: usize) -> String {
@@ -98,6 +127,11 @@ async fn one(conn: &mut PgConnection, id: Uuid) -> Result<Message> {
 
 /// 말을 받아 둬요. 같은 요청이 다시 와도 하나예요
 pub async fn say(db: &Db, cell: Uuid, request_key: Uuid, text: &str) -> Result<Message> {
+    say_at(db, cell, request_key, text, None).await
+}
+
+/// 덱에서 한 말 — 그때 보고 있던 카드를 같이 남겨요. 이 칸의 카드가 아니면 없는 것으로 쳐요
+pub async fn say_at(db: &Db, cell: Uuid, request_key: Uuid, text: &str, on_screen: Option<Uuid>) -> Result<Message> {
     let text = text.trim();
     if text.is_empty() || text.chars().count() > MAX_WORDS || text.contains('\0') {
         return Err(Error::Invalid("bad_words"));
@@ -117,11 +151,13 @@ pub async fn say(db: &Db, cell: Uuid, request_key: Uuid, text: &str) -> Result<M
                 return Err(Error::Conflict("still_thinking"));
             }
             let id = sqlx::query_scalar(
-                "INSERT INTO catchup.assistant_messages (cell, request_key, said) VALUES ($1, $2, $3) RETURNING id",
+                "INSERT INTO catchup.assistant_messages (cell, request_key, said, seen_card)
+                 VALUES ($1, $2, $3, (SELECT d.id FROM catchup.decision_cards d WHERE d.id = $4)) RETURNING id",
             )
             .bind(cell)
             .bind(request_key)
             .bind(text)
+            .bind(on_screen)
             .fetch_one(&mut *tx)
             .await?;
             emit(&mut tx, "assistant", None).await?;
@@ -186,22 +222,31 @@ async fn hold(conn: &mut PgConnection, id: Uuid) -> Result<Held> {
     .ok_or(Error::NotFound)
 }
 
-/// 내 말 그대로 기억에. 같은 말은 한 번만 남아요
-async fn remember(conn: &mut PgConnection, cell: Uuid, id: Uuid, said: &str) -> Result<Uuid> {
+/// 내 말 그대로 기억에. 같은 말은 한 번만 남아요. `subject` 는 누구 · 어느 일에 대한 것인지(비면 두루 쓰는 것)
+async fn remember(conn: &mut PgConnection, cell: Uuid, id: Uuid, said: &str, subject: &str) -> Result<Uuid> {
     let text: String = said.chars().take(MAX_NOTE).collect();
     sqlx::query(
-        "INSERT INTO catchup.memory_notes (cell, request_key, text) VALUES ($1, $2, $3) ON CONFLICT (cell, request_key) DO NOTHING",
+        "INSERT INTO catchup.memory_notes (cell, request_key, text, subject) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (cell, request_key) DO NOTHING",
     )
     .bind(cell)
     .bind(id)
     .bind(text)
+    .bind(subject.chars().take(200).collect::<String>())
     .execute(&mut *conn)
     .await?;
     Ok(sqlx::query_scalar("SELECT id FROM catchup.memory_notes WHERE request_key = $1").bind(id).fetch_one(conn).await?)
 }
 
-fn remembered(ko: bool) -> &'static str {
-    if ko { "기억했어요. 다음 초안과 맡긴 일에 써요." } else { "Got it. I'll use this in future drafts and tasks." }
+/// 기억했다는 말은 서버가 써요. 누구의 것으로 남겼는지도 말해요
+fn remembered(ko: bool, subject: &str) -> String {
+    let subject = visible(subject.trim());
+    match (ko, subject.is_empty()) {
+        (true, true) => "기억했어요. 다음 초안과 맡긴 일에 써요.".to_owned(),
+        (false, true) => "Got it. I'll use this in future drafts and tasks.".to_owned(),
+        (true, false) => format!("{subject}에 대한 것으로 기억했어요. 다음 초안과 맡긴 일에 써요."),
+        (false, false) => format!("Got it. I'll keep this for {subject} and use it in future drafts and tasks."),
+    }
 }
 
 async fn finish(
@@ -248,8 +293,13 @@ pub async fn settle(db: &Db, cell: Uuid, id: Uuid, routed: &Routed) -> Result<()
     let task = clip(&routed.task, MAX_WORDS);
     match routed.intent.as_str() {
         "remember" => {
-            let note = remember(&mut tx, cell, id, &held.said).await?;
-            finish(&mut tx, id, "remember", remembered(held.ko), None, None, Some(note)).await?;
+            // 누구의 것인지는 서버가 아는 카드에서만 와요. 모델은 '보고 있던 카드의 것인지'만 골라요
+            let subject = match routed.about_seen {
+                true => looking_at(&mut tx, id).await?.map(|seen| seen.subject).unwrap_or_default(),
+                false => String::new(),
+            };
+            let note = remember(&mut tx, cell, id, &held.said, &subject).await?;
+            finish(&mut tx, id, "remember", &remembered(held.ko, &subject), None, None, Some(note)).await?;
         }
         "card" if open_card(&mut tx, routed.card).await? => {
             let reply = if held.ko { "이 카드에 그렇게 답할까요?" } else { "Answer this card that way?" };
@@ -306,8 +356,10 @@ pub async fn keep(db: &Db, cell: Uuid, id: Uuid) -> Result<Message> {
         return Err(Error::Conflict("nothing_to_keep"));
     }
     if held.note.is_none() {
-        let note = remember(&mut tx, cell, id, &held.said).await?;
-        finish(&mut tx, id, "remember", remembered(held.ko), None, None, Some(note)).await?;
+        // 갈래를 모르는 채로 남기는 말이에요. 카드를 보며 한 말이면 그 사람의 것으로 둬요 — '이 사람은…'이 모두에게 퍼지지 않게
+        let subject = looking_at(&mut tx, id).await?.map(|seen| seen.subject).unwrap_or_default();
+        let note = remember(&mut tx, cell, id, &held.said, &subject).await?;
+        finish(&mut tx, id, "remember", &remembered(held.ko, &subject), None, None, Some(note)).await?;
     }
     let message = one(&mut tx, id).await?;
     tx.commit().await?;

@@ -907,7 +907,7 @@ async fn a_context_pack_carries_what_is_known_and_is_logged() {
 // ─── 3.6단계: 비서에게 말하기(명령이 들어오는 셋째 길) · 약속
 
 fn routed(intent: &str, reply: &str, task: &str, repo: &str) -> Routed {
-    Routed { intent: intent.into(), reply: reply.into(), task: task.into(), repo: repo.into(), card: None }
+    Routed { intent: intent.into(), reply: reply.into(), task: task.into(), repo: repo.into(), card: None, about_seen: false }
 }
 
 /// 비서에게 말하면 먼저 받아 두고(생각 중), 갈래가 정해지면 그대로 처리해요. '기억해'로 남는 것은 내 말 그대로예요
@@ -979,6 +979,16 @@ async fn a_task_from_words_starts_only_when_i_accept() {
     let odd = assistant::say(&w.db, cell, Uuid::new_v4(), "뭔가 해 줘").await.unwrap();
     assistant::settle(&w.db, cell, odd.id, &routed("task", "", "뭔가 해요", "../../etc")).await.unwrap();
     assert_eq!(assistant::list(&w.db, cell).await.unwrap().iter().find(|m| m.id == odd.id).unwrap().repo, None);
+
+    // 끝난 세션의 요약은 같은 저장소의 다음 세션에 맥락으로 들어가요(카드에서 나온 기억이 아니어도)
+    sqlx::query("UPDATE catchup.agent_sessions SET state = 'done', outcome = 'done', finished_at = now(), summary = '재시도를 결제 서버로 옮겼어요'")
+        .execute(&mut w.owner)
+        .await
+        .unwrap();
+    let mut tx = w.db.cell_tx(cell).await.unwrap();
+    let next = memory::pack(&mut tx, cell, "session", "octocat/shop", None).await.unwrap();
+    tx.commit().await.unwrap();
+    assert!(next.iter().any(|l| l.contains("재시도를 결제 서버로 옮겼어요")), "{next:?}");
 }
 
 /// 모델에 닿지 못해도 내 말은 남고, 그대로 기억해 둘 수 있어요
@@ -1048,7 +1058,7 @@ async fn a_question_gets_the_memories_it_mentions_first() {
     memory::tell(&w.db, cell, Uuid::new_v4(), "메일은 짧게 써 주세요").await.unwrap();
 
     let mut tx = w.db.cell_tx(cell).await.unwrap();
-    let lines = memory::recall(&mut tx, cell, "박서연 님 견적은 어떻게 하기로 했지?").await.unwrap();
+    let lines = memory::recall(&mut tx, cell, "박서연 님 견적은 어떻게 하기로 했지?", "").await.unwrap();
     tx.commit().await.unwrap();
     assert_eq!(lines.len(), 3, "{lines:?}");
     assert!(lines[0].starts_with("[박서연] ") && lines[0].contains("B안으로 진행해요"), "{lines:?}");
@@ -1056,6 +1066,69 @@ async fn a_question_gets_the_memories_it_mentions_first() {
     let logged: Vec<(String, i32)> =
         sqlx::query_as("SELECT purpose, cardinality(keys) FROM catchup.context_packs").fetch_all(&mut w.owner).await.unwrap();
     assert_eq!(logged, vec![("ask".to_owned(), 3)]);
+}
+
+/// 덱에서 한 말은 보고 있던 카드를 알아요. '이 사람'에 대한 기억은 그 사람의 것으로만 남고, 물을 때는 그 사람의 기억이 먼저예요
+#[tokio::test]
+async fn words_in_the_deck_know_the_card_on_screen() {
+    let mut w = World::new().await;
+    let (cell, other) = (w.cell().await, w.cell().await);
+    for (person, question, label) in
+        [("박서연", "견적은 어느 안으로 할까요?", "B안으로 진행해요"), ("이도현", "리뷰는 몇 시에 할까요?", "11시로 해요")]
+    {
+        let id = cards::create(&w.db, cell, &from(person, question, label, label)).await.unwrap();
+        let card = opened(&w, cell, id).await;
+        cards::answer(&w.db, cell, id, &input(&card)).await.unwrap();
+    }
+    let seen =
+        cards::create(&w.db, cell, &from("박서연", "계약서는 어느 안 기준인가요?", "B안 기준이에요", "B안 기준이에요")).await.unwrap();
+    let theirs = cards::create(&w.db, other, &from("남의 사람", "남의 질문", "네", "네")).await.unwrap();
+
+    // 다른 칸의 카드는 '보고 있던 카드'가 되지 못해요
+    let stray = assistant::say_at(&w.db, cell, Uuid::new_v4(), "이 사람은 누구지?", Some(theirs)).await.unwrap();
+    let mut tx = w.db.cell_tx(cell).await.unwrap();
+    assert!(assistant::looking_at(&mut tx, stray.id).await.unwrap().is_none());
+    tx.commit().await.unwrap();
+
+    let words = "이 사람에게는 늘 세 문장 안으로 써 줘";
+    let said = assistant::say_at(&w.db, cell, Uuid::new_v4(), words, Some(seen)).await.unwrap();
+    let mut tx = w.db.cell_tx(cell).await.unwrap();
+    let at = assistant::looking_at(&mut tx, said.id).await.unwrap().unwrap();
+    assert_eq!((at.card, at.subject.as_str(), at.open), (seen, "박서연", true));
+    // 말에 이름이 없어도 보고 있는 사람의 기억이 먼저 와요
+    let lines = memory::recall(&mut tx, cell, "이 사람과 지난번에 뭘 정했지?", &at.subject).await.unwrap();
+    tx.commit().await.unwrap();
+    assert!(lines[0].starts_with("[박서연] ") && lines[0].contains("B안으로 진행해요"), "{lines:?}");
+
+    // '이 카드의 사람에 대한 것'이면 그 사람의 기억으로 남아요. 글은 내 말 그대로예요
+    assistant::settle(&w.db, cell, said.id, &Routed { about_seen: true, ..routed("remember", "", "", "") }).await.unwrap();
+    let note = |all: Vec<memory::Memory>, text: &str| all.into_iter().find(|m| m.text == text).unwrap();
+    let kept = note(memory::list(&w.db, cell).await.unwrap(), words);
+    assert_eq!((kept.kind.as_str(), kept.subject.as_str()), ("preference", "박서연"));
+    let reply = assistant::list(&w.db, cell).await.unwrap().into_iter().find(|m| m.id == said.id).unwrap().reply.unwrap();
+    assert!(reply.contains("박서연"), "누구의 것으로 기억했는지 말해요: {reply}");
+    let mut tx = w.db.cell_tx(cell).await.unwrap();
+    let (hers, his) = (
+        memory::pack(&mut tx, cell, "draft", "박서연", None).await.unwrap(),
+        memory::pack(&mut tx, cell, "draft", "이도현", None).await.unwrap(),
+    );
+    tx.commit().await.unwrap();
+    assert!(hers.iter().any(|l| l == words), "{hers:?}");
+    assert!(his.iter().all(|l| l != words), "다른 사람의 초안에는 넣지 않아요: {his:?}");
+
+    // 두루 쓰는 선호는 카드를 보고 말했어도 사람이 붙지 않아요
+    let general = assistant::say_at(&w.db, cell, Uuid::new_v4(), "메일은 늘 존댓말로 써 줘", Some(seen)).await.unwrap();
+    assistant::settle(&w.db, cell, general.id, &routed("remember", "", "", "")).await.unwrap();
+    assert_eq!(note(memory::list(&w.db, cell).await.unwrap(), "메일은 늘 존댓말로 써 줘").subject, "");
+    // 보고 있던 카드가 없으면 모델이 '이 카드 것'이라 해도 사람이 붙지 않아요
+    let nowhere = assistant::say_at(&w.db, cell, Uuid::new_v4(), "회의는 오전에 잡아 줘", None).await.unwrap();
+    assistant::settle(&w.db, cell, nowhere.id, &Routed { about_seen: true, ..routed("remember", "", "", "") }).await.unwrap();
+    assert_eq!(note(memory::list(&w.db, cell).await.unwrap(), "회의는 오전에 잡아 줘").subject, "");
+    // 모델에 닿지 못해 그대로 기억해 둘 때는 보고 있던 카드의 사람 것으로 둬요(모두에게 퍼지지 않게)
+    let offline = assistant::say_at(&w.db, cell, Uuid::new_v4(), "이 분은 반말로 써도 돼", Some(seen)).await.unwrap();
+    assistant::fail(&w.db, cell, offline.id, "signed_out").await.unwrap();
+    assistant::keep(&w.db, cell, offline.id).await.unwrap();
+    assert_eq!(note(memory::list(&w.db, cell).await.unwrap(), "이 분은 반말로 써도 돼").subject, "박서연");
 }
 
 /// 약속은 내가 보낸 글에서만 뽑아요. 나간 뒤 한 번만 살피고, 같은 사람의 다음 카드에 보여요
@@ -1285,7 +1358,7 @@ async fn memory_at_scale() {
         assert_eq!(memory::pack(&mut tx, cell, "draft", &format!("사람{n}"), None).await.unwrap().len(), 12);
         packs.push(at.elapsed());
         let at = Instant::now();
-        assert_eq!(memory::recall(&mut tx, cell, &format!("사람{n} 님 일은 어떻게 됐지?")).await.unwrap().len(), 30);
+        assert_eq!(memory::recall(&mut tx, cell, &format!("사람{n} 님 일은 어떻게 됐지?"), "").await.unwrap().len(), 30);
         asks.push(at.elapsed());
         tx.commit().await.unwrap();
     }

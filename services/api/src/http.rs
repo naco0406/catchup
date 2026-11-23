@@ -326,7 +326,7 @@ async fn assistant_thread(State(app): State<App>, session: Session) -> Result<Js
 #[utoipa::path(post, path = "/v1/me/assistant", request_body = assistant::SayInput,
     responses((status = 200, body = Message), (status = 409), (status = 422)))]
 async fn tell_assistant(State(app): State<App>, session: Session, Json(input): Json<assistant::SayInput>) -> Result<Json<Message>> {
-    Ok(Json(assistant::say(&app.db, session.cell, input.request_key, &input.text).await?))
+    Ok(Json(assistant::say_at(&app.db, session.cell, input.request_key, &input.text, input.card).await?))
 }
 
 /// 제안한 일을 맡겨요(코딩 세션이 생겨요)
