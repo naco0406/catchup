@@ -43,6 +43,8 @@ export const ko: Messages = {
     card: '이 카드를 말씀하시나요?', cardSay: '이 말로 답해요', cardSaid: '카드에 전했어요. 선택지를 고르면 돼요', seeCard: '카드 보기', cardGone: '이 카드는 이제 없어요',
     proposal: '코딩 세션 제안', noRepo: '빈 작업 폴더', start: '맡겨요', started: '맡겼어요', seeSession: '세션 보기',
     promise: '말은 기억해 · 물어봐 · 일 맡겨 · 카드 찾기로만 받아요. 일은 눌러야 시작하고, 밖으로 나가는 일은 카드에서 정해요.',
+    seen: '보고 있는 카드 · {{who}}', deckEmpty: '카드를 보면서 바로 말해 보세요. ‘이 분’ · ‘이 카드’라고 하면 지금 보는 카드로 알아들어요. 카드의 답은 카드에서 골라요.', all: '주고받은 것 모두 보기',
+    deckExamples: { person: ['이 분과 지난번에 뭘 정했지?', '이 분께는 늘 세 문장 안으로 써 줘'], project: ['이 프로젝트에서 지난번에 뭘 정했지?', '이 저장소는 늘 pnpm으로 해 줘'] },
     why: { signed_out: 'Codex(ChatGPT)가 연결돼 있지 않아요', limit_reached: 'ChatGPT 한도가 찼어요', still_thinking: '앞의 말에 먼저 답하고 있어요. 잠시 뒤에 다시 보내 주세요.', card_not_open: '그 카드는 이미 정했거나 미뤄 뒀어요', other: '처리하지 못했어요' } },
   swipe: { read: '읽음으로 표시해요', readArmed: '놓으면 읽음으로 표시해요', readSub: '덱에서 빠지고 처리 기록에 남아요', later: '나중에 다시 봐요', laterArmed: '놓으면 나중에 다시 봐요', laterSub: '읽음으로 치지 않아요', lastOne: '미룰 다른 소식이 없어요', send: '답장을 보내요 · {{to}}', sendArmed: '놓으면 보내요 · {{to}}', tell: '{{to}}에게 전해요', tellArmed: '놓으면 {{to}}에게 전해요', copy: '답장을 복사해요', copyArmed: '놓으면 답장을 복사해요', change: '바로 실행해요', changeArmed: '놓으면 실행해요', none: '적어 둬요', noneArmed: '놓으면 적어 둬요', snooze: '미뤄 둬요', snoozeArmed: '놓으면 미뤄요', blocked: '밀어서 정할 수 없어요', tap: '눌러서 골라 주세요' },
   toast: { read: '읽음으로 표시했어요', snoozedUndo: '5초 안에 되돌릴 수 있어요', runsSend: '{{s}}초 뒤에 보내요', runsTell: '{{s}}초 뒤에 전해요', runsNone: '{{s}}초 뒤에 기록해요', copyFailed: '복사하지 못해서 카드를 다시 열었어요.', runsDo: '{{s}}초 뒤에 실행해요', copied: '답장을 복사했어요. {{to}}에 붙여 넣으면 돼요.', snoozed: '오후 2시에 다시 올려요', handed: '직접 하실 일로 남겨 뒀어요', undone: '되돌렸어요. 아무것도 나가지 않았어요.' },

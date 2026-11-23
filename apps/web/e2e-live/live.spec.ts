@@ -306,6 +306,52 @@ test('비서에게 말한 카드는 눌러야 그 말이 전해지고, 답은 �
   await expect.poll(me.sent, { timeout: 20_000 }).toBe('견적은 B안으로 한다고 해 줘');
 });
 
+test('덱에서 바로 비서에게 말하면 보고 있던 카드가 같이 가고, 카드에는 아무 일도 없어요', async ({ page }) => {
+  const me = await signIn(page, [card('계약서는 어느 안 기준인가요?', [option('B안 기준이에요', send('B안 기준이에요'))])]);
+  await expect(question(page)).toHaveText('계약서는 어느 안 기준인가요?');
+  await page.locator('[data-talk-open]').click();
+  const sheet = page.getByRole('dialog', { name: '비서에게 말하기' });
+  // 지금 보는 카드를 알려 주고, 입력창에 바로 쓸 수 있어요
+  await expect(sheet.locator('.talk-seen')).toContainText('서연');
+  await expect(sheet.locator('.talk-seen')).toContainText('계약서는 어느 안 기준인가요?');
+  await expect(sheet.getByRole('textbox')).toBeFocused();
+  await noOverflow(page);
+  const box = await sheet.boundingBox();
+  const view = page.viewportSize()!;
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(view.width);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+
+  await sheet.getByRole('textbox').fill('이 분께는 늘 세 문장 안으로 써 줘');
+  await sheet.getByRole('button', { name: '보내기' }).click();
+  const turn = sheet.locator('[data-talk]');
+  // 시험 계정은 모델에 연결돼 있지 않아요 — 말과 보고 있던 카드는 남아요
+  await expect(turn).toHaveAttribute('data-talk', 'failed', { timeout: 20_000 });
+  expect(sql(`SELECT d.question FROM catchup.assistant_messages m JOIN catchup.decision_cards d ON d.cell = m.cell AND d.id = m.seen_card WHERE m.cell = '${me.cell}'`)).toBe('계약서는 어느 안 기준인가요?');
+  await turn.getByRole('button', { name: '그대로 기억해 둬요' }).click();
+  await expect(turn).toContainText('서연에 대한 것으로 기억했어요');
+  expect(sql(`SELECT subject || '|' || text FROM catchup.memory_notes WHERE cell = '${me.cell}'`)).toBe('서연|이 분께는 늘 세 문장 안으로 써 줘');
+  await noOverflow(page);
+
+  // Esc 로 닫으면 덱 그대로예요. 카드에는 말이 가지 않았고, 아무것도 나가지 않았어요
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+  await expect(page.locator('[data-talk-open]')).toBeFocused();
+  await expect(question(page)).toHaveText('계약서는 어느 안 기준인가요?');
+  await expect(page.locator('[data-card] .cu-said')).toHaveCount(0);
+  expect(await me.sent()).toBe('');
+  // A 로 다시 열면 방금 주고받은 것이 그대로 있어요. 열려 있는 동안 덱의 단축키는 쉬어요
+  await page.keyboard.press('a');
+  await expect(sheet.locator('[data-talk]')).toContainText('세 문장 안으로');
+  await sheet.getByRole('button', { name: '닫기' }).focus();
+  await page.keyboard.press('1');
+  await page.keyboard.press('ArrowRight');
+  await expect(question(page)).toHaveText('계약서는 어느 안 기준인가요?');
+  await sheet.getByRole('button', { name: '주고받은 것 모두 보기' }).click();
+  await expect(page.locator('.talk [data-talk]')).toContainText('세 문장 안으로');
+  await expect(sheet).toHaveCount(0);
+});
+
 test('약속한 날이 되면 카드로 올라오고, 아무것도 보내지 않아요', async ({ page }) => {
   const me = await signIn(page, [card('견적서는 언제 주실 수 있나요?', [option('오늘 보내요', send('오늘까지 견적서 보내 드릴게요'))])]);
   await opt(page, 0).click();

@@ -49,6 +49,27 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .talk-dock .cu-foot { margin-top: 10px; align-items: flex-start; }
 .talk-dock .cu-foot svg { flex: none; margin-top: 2px; }
 
+/* 덱에서 비서에게 말하기 — 덱 위에 뜨는 시트. 넓은 화면은 본문 아래 가운데, 아이폰은 아래에 붙어요 */
+.talk-sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 24px; margin: 0 auto; width: min(560px, calc(100vw - 48px)); max-height: min(640px, calc(100dvh - 96px)); display: flex; flex-direction: column; padding: 20px 24px; border-radius: var(--cu-r-card); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-pop); animation: rise var(--cu-dur) var(--cu-ease); }
+@media (min-width: 1024px) { .talk-sheet { left: 264px; } }
+.talk-sheet-head { flex: none; display: flex; align-items: center; gap: 10px; }
+.talk-sheet-head > svg { width: 20px; height: 20px; flex: none; color: var(--cu-fg-2); }
+.talk-sheet-head h2 { flex: 1; min-width: 0; margin: 0; font: var(--cu-t-title); }
+.talk-sheet-head .cu-ib { margin-right: -8px; }
+.talk-seen { flex: none; margin-top: 4px; min-width: 0; }
+.talk-seen svg { flex: none; }
+.talk-seen span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.talk-sheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 8px -24px 0; padding: 0 24px; }
+.talk-sheet-body .talk-empty { padding: 12px 0 8px; }
+.talk-sheet-body .talk-turn:last-of-type { padding-bottom: 8px; }
+.talk-sheet-foot { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.talk-sheet-foot .cu-composer { margin-top: 8px; width: 100%; }
+.talk-sheet-foot .cu-fail { margin: 8px 0 -4px; }
+@media (max-width: 599px) {
+  .talk-sheet { bottom: 0; width: 100%; max-height: calc(100dvh - 64px); padding: 16px 16px calc(12px + env(safe-area-inset-bottom)); border-radius: 28px 28px 0 0; }
+  .talk-sheet-body { margin: 8px -16px 0; padding: 0 16px; }
+}
+
 /* 비서가 아는 것 */
 .memory .cu-composer { margin: 8px 0 4px; }
 .memory .cu-row .t, .memory .cu-row .s { white-space: normal; overflow: visible; }

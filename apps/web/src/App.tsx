@@ -9,6 +9,7 @@ import { Connections } from './live/Connections';
 import { Sessions } from './live/Sessions';
 import { Memory } from './live/Memory';
 import { Assistant } from './live/Assistant';
+import { TalkSheet } from './live/TalkSheet';
 import { MemoryView } from './screens/Memory';
 import { turnOnNotifications } from './live/notifications';
 import { copyText } from './clipboard';
@@ -44,12 +45,17 @@ export function App() {
   /** 알려만 드려요에서 '나중에'로 넘긴 것 — 앱을 연 동안만 기억해요 */
   const [fyiLater, setFyiLater] = useState<string[]>([]);
   const leaveRef = useRef<((dir: 1 | -1, filled?: boolean) => void) | null>(null);
+  /** 덱에서 비서에게 말하는 시트(실제 모드) · 이번에 덱에서 한 말들 — 닫았다 열어도 보여요 */
+  const [talk, setTalk] = useState(false);
+  const [talkMine, setTalkMine] = useState<string[]>([]);
+  const talkBtn = useRef<HTMLButtonElement | null>(null);
+  const closeTalk = useCallback(() => { setTalk(false); setTimeout(() => talkBtn.current?.focus(), 0); }, []);
 
   const open = openIds(s);
   const card = open.length ? getCard(open[0]!) : undefined;
 
-  useEffect(() => { const f = () => setRoute(routeOf()); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
-  const nav = (r: Route) => { location.hash = `#/${r}`; setRoute(r); setDrawer(false); };
+  useEffect(() => { const f = () => { setRoute(routeOf()); setTalk(false); }; addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
+  const nav = (r: Route) => { location.hash = `#/${r}`; setRoute(r); setDrawer(false); setTalk(false); };
 
   // 서랍은 Esc 로 닫아요 · 언어를 바꾸면 떠 있던 토스트를 지워요(예전 언어로 남지 않게)
   useEffect(() => {
@@ -109,7 +115,7 @@ export function App() {
   // 키보드 — 1~4 · ↵ · → 추천대로 · ← 미루기 · S · D · Z · /
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || !s.started || route !== 'catchup' || !card || list || drawer) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || !s.started || route !== 'catchup' || !card || list || drawer || talk) return;
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       const k = e.key.toLowerCase();
@@ -126,10 +132,11 @@ export function App() {
       else if (k === 'd') handoff();
       else if (k === 'z') undo();
       else if (k === '/') { e.preventDefault(); composerRef.current?.focus(); }
+      else if (k === 'a' && live && !e.repeat) { e.preventDefault(); setTalk(true); }
     };
     addEventListener('keydown', onKey);
     return () => removeEventListener('keydown', onKey);
-  }, [s.started, route, card, pick, optsOf, snooze, handoff, undo, list, drawer]);
+  }, [s.started, route, card, pick, optsOf, snooze, handoff, undo, list, drawer, talk, live]);
 
   const counts = useMemo(() => ({ open: open.length, fyi: ds.fyi.filter(f => stateOf(s, f.id) === 'open' && !s.deck.includes(`p-${f.id}`)).length, snoozed: snoozedIds(s).length }), [open.length, ds, s]);
   const more = () => act({ type: 'more', ids: ds.cards.map(c => c.id).filter(id => !ds.today.includes(id)) });
@@ -164,6 +171,7 @@ export function App() {
     );
   }
 
+  const talkOpen = talk && live && route === 'catchup';
   let main: React.ReactNode;
   if (!s.started) main = <First s={s} onConnect={id => act({ type: 'connect', id })} onStart={() => { act({ type: 'start' }); nav('catchup'); }} />;
   else if (live && route === 'connections') main = <Connections onMenu={menu} />;
@@ -176,14 +184,17 @@ export function App() {
   else if (route === 'activity') main = <Activity s={s} ds={ds} getCard={getCard} onMenu={menu} onUndo={id => act({ type: 'undoEntry', entryId: id })} onUndoPending={undo} onUndoAuto={id => act({ type: 'undoAuto', id })} onRoutine={id => act({ type: 'routine', id })} />;
   else if (card) main = <Catchup s={s} card={card} getCard={getCard} onPick={pick} onSay={text => act({ type: 'say', cardId: card.id, text })} onDraft={(key, text) => act({ type: 'draft', cardId: card.id, key, text })}
     onFocus={id => act({ type: 'focus', cardId: id })} onUnsnooze={id => act({ type: 'unsnooze', cardId: id })} list={list} setList={setList} searchRef={searchRef}
-    onSnooze={snooze} onHandoff={handoff} onUndo={() => undo()} onMenu={menu} composerRef={composerRef} toast={view} leaveRef={leaveRef} />;
+    onSnooze={snooze} onHandoff={handoff} onUndo={() => undo()} onMenu={menu} composerRef={composerRef} toast={view} leaveRef={leaveRef}
+    talk={live ? { open: () => setTalk(true), ref: talkBtn } : undefined} />;
   else main = <Done s={s} ds={ds} onMenu={menu} onNav={nav} onMore={more} onUndoAuto={id => act({ type: 'undoAuto', id })} />;
 
   return (
     <div className="shell">
       <Sprite />
-      {s.started && <Sidebar {...sideProps} />}
-      <main className="cu-main">{main}</main>
+      {s.started && <Sidebar {...sideProps} inert={talkOpen} />}
+      <main className="cu-main" inert={talkOpen}>{main}</main>
+      {/* 덱 위의 시트 — 목록 보기에서는 '보고 있는 카드'가 없어요 */}
+      {talkOpen && <TalkSheet card={list ? undefined : card} mine={talkMine} onSaid={id => setTalkMine(ids => [...ids, id])} onClose={closeTalk} onNav={nav} />}
       {drawer && <><div className="drawer-bg" onClick={() => setDrawer(false)} /><Sidebar {...sideProps} drawer onClose={() => setDrawer(false)} /></>}
       {/* 덱에서는 토스트가 덱 안의 제자리에 서요(Catchup). 다른 화면에서는 아래 가운데예요 */}
       {!onDeck && <div className="toasts" aria-live="polite">{view && <Toast key={toast && !latest && !snoozedNow ? toast.n : 'now'} v={view} />}</div>}

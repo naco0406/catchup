@@ -15,7 +15,7 @@ const ICON: Record<Effect['kind'], NonNullable<ToastView['icon']>> = { send: 'se
 /** 캐치업 — 카드 한 장씩(방향 A). 넓을 땐 위에 동그라미 진행, 좁을 땐 막대 진행과 아래 단추.
  *  오른쪽으로 밀면 추천대로, 왼쪽으로 밀면 미루기예요. 아래 단추의 자리가 미는 방향이라, 밀지 않아도 같은 일을 눌러서 해요.
  *  ≡ 로 목록 보기(방향 B)로 바꾸면 남은 카드를 훑어보고 찾아서 먼저 정할 수 있어요. */
-export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, onHandoff, onUndo, onMenu, onFocus, onUnsnooze, composerRef, toast, list, setList, searchRef, leaveRef }: {
+export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, onHandoff, onUndo, onMenu, onFocus, onUnsnooze, composerRef, toast, list, setList, searchRef, leaveRef, talk }: {
   s: State; card: Card; getCard: (id: string) => Card | undefined;
   onPick: (i: number, risky: boolean) => void; onSay: (text: string) => void; onDraft: (key: string, text: string) => void;
   onSnooze: () => void; onHandoff: () => void; onUndo: () => void; onMenu: () => void;
@@ -26,6 +26,8 @@ export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, on
   list: boolean; setList: (v: boolean) => void; searchRef: React.RefObject<HTMLInputElement | null>;
   /** 카드가 덱에서 빠지기 직전에 App 이 불러요 — 나가는 모습을 남겨요 */
   leaveRef: React.RefObject<((dir: 1 | -1, filled?: boolean) => void) | null>;
+  /** 덱에서 바로 비서에게 말하기(실제 모드에만 있어요). 시트는 App 이 띄우고, 닫히면 이 단추로 초점이 돌아와요 */
+  talk?: { open: () => void; ref: React.RefObject<HTMLButtonElement | null> };
 }) {
   const { t } = useTranslation();
   const total = s.deck.length;
@@ -66,6 +68,7 @@ export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, on
           {total > MAX && <span className="more">+{total - MAX}</span>}
         </div>}
         <span className="tools">
+        {talk && <button ref={talk.ref} type="button" className="cu-ib" data-talk-open onClick={talk.open} aria-haspopup="dialog" aria-label={t('nav.assistant')} aria-keyshortcuts="A"><I.chat aria-hidden /></button>}
         <button type="button" className="cu-ib" onClick={onUndo} disabled={!s.pending.length} aria-label={t('top.undo')} aria-keyshortcuts="Z"><I.undo aria-hidden /></button>
         <button type="button" className="cu-ib" onClick={() => setList(!list)} aria-pressed={list} aria-label={list ? t('top.deck') : t('top.list')}>{list ? <I.cards aria-hidden /> : <I.rows aria-hidden />}</button>
         </span>

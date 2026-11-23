@@ -689,6 +689,11 @@ export interface components {
         /** @enum {string} */
         Risk: "low" | "money" | "production" | "irreversible";
         SayInput: {
+            /**
+             * Format: uuid
+             * @description 말할 때 화면에 있던 카드(덱에서 말했을 때)
+             */
+            card?: string | null;
             /** Format: uuid */
             request_key: string;
             text: string;

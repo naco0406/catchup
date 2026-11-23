@@ -7,9 +7,11 @@ import { canNotify } from '../live/notifications';
 export type Route = 'catchup' | 'fyi' | 'snoozed' | 'activity' | 'connections' | 'sessions' | 'memory' | 'assistant';
 
 /** <Sidebar> — 넓은 화면에선 늘 보이고, 좁은 화면에선 서랍이에요 */
-export function Sidebar({ ds, route, counts, onNav, onMore, onReset, onSearch, moreAdded, account, drawer, onClose }: {
+export function Sidebar({ ds, route, counts, onNav, onMore, onReset, onSearch, moreAdded, account, drawer, onClose, inert }: {
   ds: Dataset; route: Route; counts: { open: number; fyi: number; snoozed: number };
   onNav: (r: Route) => void; onMore: () => void; onReset: () => void; onSearch: () => void; moreAdded: boolean; account?: { logout: () => void; notify: () => void }; drawer?: boolean; onClose?: () => void;
+  /** 위에 시트가 떠 있는 동안 */
+  inert?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -21,7 +23,7 @@ export function Sidebar({ ds, route, counts, onNav, onMore, onReset, onSearch, m
     </button>
   );
   return (
-    <aside className={`cu-side${drawer ? ' drawer' : ''}`} aria-label={t('side.menu')}>
+    <aside className={`cu-side${drawer ? ' drawer' : ''}`} aria-label={t('side.menu')} inert={inert}>
       <div className="cu-side-head">
         <span className="cu-logo"><Mark /></span><span className="name">CatchUp</span>
         {drawer ? <button ref={closeRef} type="button" className="cu-ib" onClick={onClose} aria-label={t('side.close')}><I.close aria-hidden /></button>
