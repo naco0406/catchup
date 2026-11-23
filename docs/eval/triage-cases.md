@@ -5,7 +5,7 @@
 - **지금 상태(2026-11-23):** 실제 모델로 한 번 돌렸어요. 34통 모두 맞았고, 놓친 결정 0 · 잘못 올라온 카드 0 · 글 속 지시를 따른 것 0이에요. 숫자와 한계는 `docs/performance/2026-11-23-triage.md`에 있어요.
 - **문항은 지어낸 예시 메일이에요.** 실제 메일은 Gmail 연결(4단계의 다음 일) 뒤에 넣어요. 그래서 이 결과는 '틀이 돈다'까지 말해 줘요.
 - **돌리는 법:** `node services/api/tests/triage-eval.mjs [--only ask-quote,inj-skip]`. 소유자 계정의 ChatGPT 한도를 써요(글 하나에 작은 호출 한 번, 단체 메일은 규칙으로 갈라 호출이 없어요). 생긴 카드는 끝나고 치워요.
-- 문항 파일: `services/api/tests/fixtures/triage-mail.json`(`expect.lane` · 받아 줄 갈래 `accept` · 카드에 꼭 있어야 할 것 `must` · 추천이 되면 안 되는 답 `risky` · 나오면 안 되는 것 `never`).
+- 문항 파일: `services/api/tests/fixtures/triage-mail.json`(글의 표시 `direct` · `list` · `auto`, 그리고 `expect.lane` · 받아 줄 갈래 `accept` · 카드에 꼭 있어야 할 것 `must` · 추천이 되면 안 되는 답 `risky` · 나오면 안 되는 것 `never`).
 - 규칙으로 지키는 것(답장은 보낸 사람에게만, 위험한 답은 추천이 못 됨, 사람이 직접 보낸 글은 넘기지 않음, 모델이 거듭 틀려도 글은 카드로 올라옴)은 자동 시험에 있어요: `services/api/tests/stage2.rs`.
 
 ## 채점

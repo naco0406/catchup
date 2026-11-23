@@ -8,7 +8,7 @@
 //! 모델은 글과 갈래만 정해요. 서버가 지키는 것:
 //! - 답장은 **보낸 사람에게만** 가요. 모델은 받는 사람을 고를 수 없어요
 //! - 추천은 위험하지 않은 답에만 서요. 돈을 보낸다는 글은 모델이 낮다고 해도 위험으로 올려요
-//! - 사람이 나에게 직접 보낸 글은 조용히 넘기지 않아요(적어도 알려만 드려요)
+//! - 사람이 나에게 직접 보낸 글은 조용히 넘기지 않아요(적어도 알려만 드려요). 자동으로 온 글은 모델의 판단대로 넘겨요
 //! - 모델이 거듭 엉뚱하게 답해도 글은 사라지지 않아요 — 있는 그대로 카드로 올려요
 //! - 원문은 가를 때까지만 두고, 가른 뒤에는 짧은 발췌만 남겨요
 
@@ -49,6 +49,9 @@ pub struct Incoming {
     pub direct: bool,
     #[serde(default)]
     pub list: bool,
+    /// 사람이 쓴 것이 아니라 자동으로 온 글(영수증 · 알림 · 발신 전용 주소)
+    #[serde(default)]
+    pub auto: bool,
     #[serde(default)]
     pub subject: String,
     pub text: String,
@@ -70,6 +73,7 @@ pub struct Item {
     pub org: String,
     pub direct: bool,
     pub list: bool,
+    pub auto: bool,
     pub subject: String,
     pub text: String,
     pub received_at: DateTime<Utc>,
@@ -143,8 +147,8 @@ pub async fn receive(db: &Db, cell: Uuid, connector: &str, items: &[Incoming]) -
         }
         let thread = item.thread.as_deref().filter(|t| !t.trim().is_empty()).unwrap_or(&item.id);
         let added = sqlx::query(
-            "INSERT INTO catchup.inbox_items (cell, connector, ref, thread, sender, org, direct, list, subject, text, received_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, COALESCE($11, now())) ON CONFLICT (cell, connector, ref) DO NOTHING",
+            "INSERT INTO catchup.inbox_items (cell, connector, ref, thread, sender, org, direct, list, auto, subject, text, received_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, COALESCE($12, now())) ON CONFLICT (cell, connector, ref) DO NOTHING",
         )
         .bind(cell)
         .bind(connector)
@@ -154,6 +158,7 @@ pub async fn receive(db: &Db, cell: Uuid, connector: &str, items: &[Incoming]) -
         .bind(clip(&item.org, 200))
         .bind(item.direct)
         .bind(item.list)
+        .bind(item.auto)
         .bind(clip(&item.subject, 500))
         .bind(text)
         .bind(item.received_at)
@@ -165,7 +170,7 @@ pub async fn receive(db: &Db, cell: Uuid, connector: &str, items: &[Incoming]) -
     Ok(fresh)
 }
 
-const ITEM: &str = "id, connector, thread, sender, org, direct, list, subject, text, received_at, tries";
+const ITEM: &str = "id, connector, thread, sender, org, direct, list, auto, subject, text, received_at, tries";
 
 /// 가장 오래 기다린 글
 pub async fn next(db: &Db, cell: Uuid) -> Result<Option<Item>> {
@@ -311,6 +316,7 @@ struct Held {
     org: String,
     direct: bool,
     list: bool,
+    auto: bool,
     subject: String,
     text: Option<String>,
     excerpt: String,
@@ -323,7 +329,7 @@ struct Held {
 
 async fn hold(conn: &mut PgConnection, id: Uuid) -> Result<Held> {
     sqlx::query_as(
-        "SELECT i.connector, i.thread, i.ref AS reference, i.sender, i.org, i.direct, i.list, i.subject, i.text, i.excerpt, i.state, i.card,
+        "SELECT i.connector, i.thread, i.ref AS reference, i.sender, i.org, i.direct, i.list, i.auto, i.subject, i.text, i.excerpt, i.state, i.card,
                 i.lane, c.lang = 'ko' AS ko, c.time_zone
          FROM catchup.inbox_items i JOIN catchup.cells c ON c.cell = i.cell WHERE i.id = $1 FOR UPDATE OF i",
     )
@@ -446,11 +452,11 @@ pub async fn settle(db: &Db, cell: Uuid, item: Uuid, sorted: &Sorted, by: &str) 
         return Ok(held.card);
     }
     let excerpt = clip(held.text.as_deref().unwrap_or_default(), EXCERPT);
-    let person = held.direct && !held.list;
+    let person = held.direct && !held.list && !held.auto;
     let lane = match sorted.lane.as_str() {
         "ask" => "ask",
         "fyi" => "fyi",
-        // 사람이 나에게 직접 보낸 글은 조용히 넘기지 않아요
+        // 사람이 나에게 직접 보낸 글은 조용히 넘기지 않아요(자동으로 온 영수증 · 알림은 모델의 판단대로 넘겨요)
         "skip" if person => "fyi",
         "skip" => "skip",
         // 모르는 갈래는 올려요
@@ -561,6 +567,7 @@ mod tests {
             org: String::new(),
             direct,
             list,
+            auto: false,
             subject: String::new(),
             text: text.into(),
             received_at: Utc::now(),

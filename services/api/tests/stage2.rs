@@ -1775,6 +1775,7 @@ fn mail(id: &str, from: &str, text: &str) -> Incoming {
         org: "한빛 디자인".into(),
         direct: true,
         list: false,
+        auto: false,
         subject: "견적".into(),
         text: text.into(),
         received_at: None,
@@ -1956,6 +1957,12 @@ async fn nothing_from_a_person_is_silently_dropped() {
         assert!(inbox::by_rule(&item).is_none(), "{text}");
         inbox::settle(&w.db, cell, item.id, &skip, "model").await.unwrap();
     }
+    // 자동으로 온 글(영수증 · 알림)은 나에게 직접 왔어도 모델의 판단대로 넘겨요. 규칙으로 넘기지는 않아요
+    let receipt = Incoming { auto: true, ..mail("a1", "Notion", "플러스 요금제 11월 요금 10달러가 처리됐습니다.") };
+    inbox::receive(&w.db, cell, "local", &[receipt]).await.unwrap();
+    let item = inbox::next(&w.db, cell).await.unwrap().unwrap();
+    assert!(item.auto && inbox::by_rule(&item).is_none());
+    assert_eq!(inbox::settle(&w.db, cell, item.id, &skip, "model").await.unwrap(), None, "자동 알림은 넘겨요");
     // 사람이 직접 보낸 글은 규칙으로 가르지 않아요
     inbox::receive(&w.db, cell, "local", &[mail("d2", "박서연", "자료 잘 받았습니다.")]).await.unwrap();
     assert!(inbox::by_rule(&inbox::next(&w.db, cell).await.unwrap().unwrap()).is_none());
