@@ -65,10 +65,10 @@ async function draftFor(card, words) {
   const pack = (await sql(`SELECT bytes || ' ' || cardinality(keys) FROM catchup.context_packs WHERE cell = ${lit(cell)} AND purpose = 'draft' AND created_at >= to_timestamp(${(at - 500) / 1000}) ORDER BY created_at DESC LIMIT 1`)).split(' ');
   return { text: done?.turns.at(-1).options[0].effect.text ?? null, ms, packBytes: Number(pack[0] || 0), packLines: Number(pack[1] || 0) };
 }
-/** 비서에게 말하고 답을 기다려요 */
-async function tell(words) {
+/** 비서에게 말하고 답을 기다려요. `card` 는 말할 때 보고 있던 카드(덱에서 말했을 때)예요 */
+async function tell(words, card) {
   const at = Date.now();
-  const said = await call('POST', '/assistant', { request_key: randomUUID(), text: words });
+  const said = await call('POST', '/assistant', { request_key: randomUUID(), text: words, ...(card ? { card } : {}) });
   const done = await until(async () => { const m = (await call('GET', '/assistant')).find(x => x.id === said.id); return m && m.state !== 'thinking' ? m : undefined; }, 150_000);
   return { ...(done ?? { state: 'timeout' }), ms: Date.now() - at };
 }
@@ -222,6 +222,25 @@ const cases = {
       return { text: m.card_question ?? m.reply ?? null, ms: m.ms, intent: m.intent, state: m.state, code: m.error_code, right: m.card === quote.id, untouched, accepted: m.accepted };
     },
     pass: d => d.intent === 'card' && d.right && d.untouched && d.accepted === false,
+    single: true,
+  },
+  14: {
+    name: "덱에서 '이 분'이라고 하면 보고 있던 카드의 사람으로 알아듣고, 그 사람의 기억으로만 남겨요",
+    before: async () => { const c = await seed(from('박서연', '견적은 A안(1,200만 원)과 B안(1,450만 원 · 유지보수 포함) 중 어느 안으로 할까요?', 'B안으로 진행해요', 'B안으로 진행하겠습니다.')); await answer(c); },
+    run: async () => {
+      const other = await seed(from('이도현', '디자인 리뷰는 몇 시에 할까요?', '11시로 해요', '11시에 해요.'));
+      const seen = await seed(from('박서연', '계약서는 어느 안 기준으로 준비하면 될까요?', '확인 후 답해요', '확인 후 답 드리겠습니다.'));
+      const asked = await tell('이 분과 지난번에 뭘 정했지?', seen.id);
+      const told = await tell('이 분께 보내는 글은 늘 세 문장 안으로 써 줘', seen.id);
+      const general = await tell('메일 끝에는 늘 내 이름을 적어 줘', seen.id);
+      const all = await memories();
+      const about = m => all.find(x => x.key === m.memory)?.subject ?? null;
+      const now = (await call('GET', '/cards')).cards;
+      const untouched = now.find(c => c.id === seen.id)?.turns.length === 0;
+      for (const c of [other, seen]) { const x = now.find(y => y.id === c.id); if (x) await call('POST', `/cards/${x.id}/handoff`, { request_key: randomUUID(), version: x.version, surface: 'web' }).catch(() => undefined); }
+      return { text: asked.reply ?? null, ms: asked.ms, intent: asked.intent, state: asked.state, code: asked.error_code, told: told.intent, toldAbout: about(told), toldReply: told.reply, general: general.intent, generalAbout: about(general), untouched };
+    },
+    pass: d => d.intent === 'ask' && /B\s*안/.test(d.text ?? '') && d.told === 'remember' && d.toldAbout === '박서연' && d.general === 'remember' && d.generalAbout === '' && d.untouched,
     single: true,
   },
   12: {
