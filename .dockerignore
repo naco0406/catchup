@@ -8,3 +8,7 @@
 !services/api/src
 !services/api/migrations
 !infra/codex/*.sha256
+# 앞단(web) 이미지: 구운 웹 앱과 Caddy 설정
+!infra/ec2/Caddyfile
+!infra/ec2/*.caddy
+!apps/web/dist-live

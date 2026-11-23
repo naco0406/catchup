@@ -1,0 +1,39 @@
+# CatchUp 앞단 — 주소 하나에서 웹 앱과 서버를 같이 내요(쿠키가 같은 출처에 남게).
+#   CATCHUP_SITE      사이트 주소(예: app.example.com). 인증서는 Caddy 가 알아서 받아요
+#   CATCHUP_TLS_MODE  auto(기본) · internal(로컬에서 돌려 볼 때 — 스스로 만든 인증서)
+{
+	admin off
+}
+
+{$CATCHUP_SITE} {
+	import /etc/caddy/tls-{$CATCHUP_TLS_MODE:auto}.caddy
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		# 스크립트 · 연결은 이 주소만. 글꼴과 그림은 번들에 든 것(data:)까지
+		Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+
+	# 서버로 가는 것은 /v1 뿐이에요. 상태 확인(/health)은 밖에 내지 않아요
+	handle /v1/* {
+		reverse_proxy api:4320 {
+			# 카드 흐름(SSE)이 모이지 않고 바로 나가게
+			flush_interval -1
+		}
+	}
+
+	handle {
+		root * /srv/web
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@fresh path / /index.html /sw.js /manifest.webmanifest
+		header @fresh Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

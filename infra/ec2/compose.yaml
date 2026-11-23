@@ -1,0 +1,53 @@
+# EC2(3.5단계) — 로컬 구성 위에 얹어요. 이미지는 로컬과 같은 것이에요.
+#   docker compose -f infra/local/compose.yaml -f infra/ec2/compose.yaml …
+# 달라지는 것: 밖에 여는 문은 앞단(web)의 80 · 443 뿐 · HTTPS 쿠키 · 서비스 주소 · Postgres 와 서버의 포트를 호스트에 내지 않아요.
+#   CATCHUP_SITE      사이트 주소(예: app.example.com)
+#   CATCHUP_ORIGIN    브라우저가 보내는 출처(기본 https://CATCHUP_SITE)
+#   CATCHUP_HTTP_BIND · CATCHUP_HTTPS_BIND   호스트의 주소:포트(기본 0.0.0.0:80 · 0.0.0.0:443)
+services:
+  postgres:
+    ports: !reset []
+
+  api:
+    ports: !reset []
+    environment:
+      CATCHUP_ORIGINS: ${CATCHUP_ORIGIN:-https://${CATCHUP_SITE:?missing}}
+      CATCHUP_INSECURE_COOKIE: "0"
+      CATCHUP_PUSH_CONTACT: ${CATCHUP_ORIGIN:-https://${CATCHUP_SITE}}
+
+  worker:
+    environment:
+      CATCHUP_PUSH_CONTACT: ${CATCHUP_ORIGIN:-https://${CATCHUP_SITE}}
+
+  # 앞단: 인증서 · 웹 앱 · /v1 넘기기. 비밀값과 DB 를 모르고, 서버에만 닿아요
+  web:
+    image: catchup-web:local
+    build:
+      context: ../..
+      dockerfile: infra/docker/web.Dockerfile
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      CATCHUP_SITE: ${CATCHUP_SITE:?missing}
+      CATCHUP_TLS_MODE: ${CATCHUP_TLS_MODE:-auto}
+    ports:
+      - "${CATCHUP_HTTP_BIND:-0.0.0.0:80}:80"
+      - "${CATCHUP_HTTPS_BIND:-0.0.0.0:443}:443"
+    volumes:
+      - caddy-data:/data       # 인증서. 지우면 다시 받아요(발급 한도가 있어요)
+      - caddy-config:/config
+    tmpfs:
+      - /tmp:size=16m
+    mem_limit: 128m
+    depends_on:
+      api: { condition: service_healthy }
+    logging:
+      driver: local
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  caddy-data:
+  caddy-config:
