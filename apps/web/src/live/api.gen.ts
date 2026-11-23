@@ -4,6 +4,39 @@
  */
 
 export interface paths {
+    "/v1/auth/passkey": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["passkey_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/passkey/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 패스키 로그인의 물음. 누구인지는 묻지 않아요 */
+        post: operations["passkey_ask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/session": {
         parameters: {
             query?: never;
@@ -381,6 +414,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/passkeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["passkeys"];
+        put?: never;
+        post: operations["passkey_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/passkeys/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 패스키 등록의 물음(로그인한 기기에서만) */
+        post: operations["passkey_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/passkeys/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["passkey_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/push": {
         parameters: {
             query?: never;
@@ -602,9 +684,15 @@ export interface components {
             kind: "none";
         };
         LoginInput: {
-            code: string;
-            email: string;
+            authenticator_data: string;
+            client_data: string;
+            credential: string;
             label?: string;
+            signature: string;
+        };
+        LoginOptions: {
+            challenge: string;
+            rp_id: string;
         };
         Me: {
             /** Format: uuid */
@@ -658,6 +746,15 @@ export interface components {
             /** @description 맡길 일의 제안. `session` 이 없으면 아직 맡기지 않은 것이에요 */
             task?: string | null;
         };
+        Passkey: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            label: string;
+            /** Format: date-time */
+            last_used_at?: string | null;
+        };
         PushDevice: {
             /** Format: uuid */
             id: string;
@@ -685,6 +782,25 @@ export interface components {
             run_after: string;
             state: string;
             undoable: boolean;
+        };
+        /** @description 모두 base64url 이에요 */
+        RegisterInput: {
+            authenticator_data: string;
+            client_data: string;
+            credential: string;
+            label?: string;
+            /** @description 브라우저의 getPublicKey()(SPKI) */
+            public_key: string;
+        };
+        /** @description 등록할 때 화면에 주는 것(navigator.credentials.create 의 재료) */
+        RegisterOptions: {
+            challenge: string;
+            /** @description 이미 등록한 열쇠 — 같은 기기에 두 번 만들지 않게 */
+            exclude: string[];
+            /** @description 열쇠가 묶이는 주소(사이트의 호스트) */
+            rp_id: string;
+            user_id: string;
+            user_name: string;
         };
         /** @enum {string} */
         Risk: "low" | "money" | "production" | "irreversible";
@@ -740,6 +856,52 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    passkey_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginInput"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    passkey_ask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginOptions"];
+                };
+            };
+        };
+    };
     login: {
         parameters: {
             query?: never;
@@ -1489,6 +1651,104 @@ export interface operations {
             header?: never;
             path: {
                 key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    passkeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Passkey"][];
+                };
+            };
+        };
+    };
+    passkey_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Passkey"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    passkey_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisterOptions"];
+                };
+            };
+        };
+    };
+    passkey_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
             };
             cookie?: never;
         };

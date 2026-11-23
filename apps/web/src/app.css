@@ -97,6 +97,9 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .login .cu-big { margin-top: 8px; }
 .login .cu-composer { width: 420px; max-width: 100%; margin: 0; }
 .login-bad { margin: 0; min-height: 20px; font: var(--cu-t-caption); color: var(--cu-danger); }
+.login-or { margin: 4px 0 -4px; font: var(--cu-t-caption); color: var(--cu-fg-3); }
+.login .cu-btn svg { width: 18px; height: 18px; }
+.passkeys-h { margin-top: 32px; }
 
 /* 서랍(중간 · 좁음) */
 .drawer-bg { position: fixed; inset: 0; background: rgb(28 26 24 / .32); z-index: 40; animation: fade var(--cu-dur) var(--cu-ease); }

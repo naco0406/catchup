@@ -31,7 +31,7 @@ async function signIn(page: Page, cards: object[]) {
   await page.goto('/?lang=ko');
   await page.getByRole('textbox', { name: '이메일' }).fill(email);
   await page.getByRole('textbox', { name: '코드' }).fill(code);
-  await page.getByRole('button', { name: '로그인' }).click();
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
   const sent = () => sql(`SELECT coalesce(string_agg(effect->>'text', '|' ORDER BY created_at), '') FROM catchup.local_effects WHERE cell = '${cell}' AND NOT reverted`);
   return { cell, seed, sent };
 }
@@ -365,4 +365,58 @@ test('약속한 날이 되면 카드로 올라오고, 아무것도 보내지 않
   await page.waitForTimeout(11_000);
   expect(await me.sent()).toBe('오늘까지 견적서 보내 드릴게요');
   expect(sql(`SELECT count(*) FROM catchup.decision_cards WHERE cell = '${me.cell}' AND dedupe_key LIKE 'promise:%'`)).toBe('1');
+});
+
+// 패스키는 https 나 localhost 에서만 돼요(IP 주소에는 묶을 수 없어요). 로컬에서는 localhost 로 열어요
+test.describe('패스키', () => {
+  test.use({ baseURL: process.env.CATCHUP_WEB ?? 'http://localhost:5181' });
+
+  test('패스키를 등록하면 코드 없이 로그인하고, 지우면 그 열쇠로는 못 들어와요', async ({ page }) => {
+    // 브라우저의 가짜 인증 장치 — 얼굴 · 지문 확인을 늘 통과시켜요
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('WebAuthn.enable');
+    await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+    const count = (cell: string) => sql(`SELECT count(*) FROM front.passkeys WHERE cell = '${cell}'`);
+
+    // 등록한 패스키가 없을 때 눌러도 들어가지지 않아요
+    await page.goto('/?lang=ko');
+    await expect(page.getByRole('button', { name: '패스키로 로그인' })).toBeVisible();
+    await noOverflow(page);
+
+    const me = await signIn(page, [card('패스키로 들어와도 보이나요?', [option('네', send('네'))])]);
+    await expect(question(page)).toHaveText('패스키로 들어와도 보이나요?');
+    await page.evaluate(() => { location.hash = '#/connections'; });
+    await expect(page.getByText('얼굴 · 지문으로 로그인해요')).toBeVisible();
+    await page.getByRole('button', { name: '패스키 추가' }).click();
+    const row = page.locator('[data-passkey]');
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText('아직 쓰지 않았어요');
+    expect(count(me.cell)).toBe('1');
+    await noOverflow(page);
+    // 같은 기기에 두 번 만들지 않아요
+    await page.getByRole('button', { name: '패스키 추가' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: '이미 등록돼 있어요' })).toBeVisible();
+    expect(count(me.cell)).toBe('1');
+
+    // 로그아웃한 것처럼 쿠키를 지우고 — 이메일도 코드도 없이 들어와요
+    await page.context().clearCookies();
+    await page.reload();
+    await expect(page.getByRole('textbox', { name: '코드' })).toBeVisible();
+    await page.getByRole('button', { name: '패스키로 로그인' }).click();
+    // 새로 고쳐도 보던 화면(연결)으로 돌아와요
+    await expect(row).toContainText('마지막 사용');
+    await page.evaluate(() => { location.hash = '#/catchup'; });
+    await expect(question(page)).toHaveText('패스키로 들어와도 보이나요?');
+    await page.evaluate(() => { location.hash = '#/connections'; });
+
+    // 지우면 그 열쇠로는 못 들어와요
+    await row.getByRole('button', { name: '지우기' }).click();
+    await expect(row).toHaveCount(0);
+    expect(count(me.cell)).toBe('0');
+    await page.context().clearCookies();
+    await page.reload();
+    await page.getByRole('button', { name: '패스키로 로그인' }).click();
+    await expect(page.getByRole('alert')).toContainText('패스키를 찾지 못했어요');
+    await expect(page.getByRole('textbox', { name: '코드' })).toBeVisible();
+  });
 });

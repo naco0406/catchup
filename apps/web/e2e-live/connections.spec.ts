@@ -22,7 +22,7 @@ test('연결에서 진짜 기기 코드를 받고 취소해요', async ({ page }
   await page.goto('/?lang=ko');
   await page.getByRole('textbox', { name: '이메일' }).fill(email);
   await page.getByRole('textbox', { name: '코드' }).fill(code);
-  await page.getByRole('button', { name: '로그인' }).click();
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
   await expect(page.getByText('다 봤어요')).toBeVisible();
   await page.evaluate(() => { location.hash = '#/connections'; });
 
