@@ -10,6 +10,49 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/v1/auth/passkey": {
+      "post": {
+        "tags": [],
+        "operationId": "passkey_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/auth/passkey/options": {
+      "post": {
+        "tags": [],
+        "summary": "패스키 로그인의 물음. 누구인지는 묻지 않아요",
+        "operationId": "passkey_ask",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginOptions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/auth/session": {
       "post": {
         "tags": [],
@@ -816,6 +859,103 @@
         }
       }
     },
+    "/v1/me/passkeys": {
+      "get": {
+        "tags": [],
+        "operationId": "passkeys",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Passkey"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [],
+        "operationId": "passkey_add",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Passkey"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": ""
+          },
+          "422": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/me/passkeys/options": {
+      "post": {
+        "tags": [],
+        "summary": "패스키 등록의 물음(로그인한 기기에서만)",
+        "operationId": "passkey_start",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterOptions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/passkeys/{id}": {
+      "delete": {
+        "tags": [],
+        "operationId": "passkey_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/v1/me/push": {
       "get": {
         "tags": [],
@@ -1545,17 +1685,40 @@
       "LoginInput": {
         "type": "object",
         "required": [
-          "email",
-          "code"
+          "credential",
+          "client_data",
+          "authenticator_data",
+          "signature"
         ],
         "properties": {
-          "code": {
+          "authenticator_data": {
             "type": "string"
           },
-          "email": {
+          "client_data": {
+            "type": "string"
+          },
+          "credential": {
             "type": "string"
           },
           "label": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginOptions": {
+        "type": "object",
+        "required": [
+          "challenge",
+          "rp_id"
+        ],
+        "properties": {
+          "challenge": {
+            "type": "string"
+          },
+          "rp_id": {
             "type": "string"
           }
         }
@@ -1724,6 +1887,34 @@
           }
         }
       },
+      "Passkey": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "PushDevice": {
         "type": "object",
         "required": [
@@ -1802,6 +1993,67 @@
           },
           "undoable": {
             "type": "boolean"
+          }
+        }
+      },
+      "RegisterInput": {
+        "type": "object",
+        "description": "모두 base64url 이에요",
+        "required": [
+          "credential",
+          "client_data",
+          "authenticator_data",
+          "public_key"
+        ],
+        "properties": {
+          "authenticator_data": {
+            "type": "string"
+          },
+          "client_data": {
+            "type": "string"
+          },
+          "credential": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "public_key": {
+            "type": "string",
+            "description": "브라우저의 getPublicKey()(SPKI)"
+          }
+        }
+      },
+      "RegisterOptions": {
+        "type": "object",
+        "description": "등록할 때 화면에 주는 것(navigator.credentials.create 의 재료)",
+        "required": [
+          "challenge",
+          "rp_id",
+          "user_id",
+          "user_name",
+          "exclude"
+        ],
+        "properties": {
+          "challenge": {
+            "type": "string"
+          },
+          "exclude": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "이미 등록한 열쇠 — 같은 기기에 두 번 만들지 않게"
+          },
+          "rp_id": {
+            "type": "string",
+            "description": "열쇠가 묶이는 주소(사이트의 호스트)"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
           }
         }
       },

@@ -15,6 +15,7 @@ pub mod local;
 pub mod memory;
 pub mod model;
 pub mod ops;
+pub mod passkeys;
 pub mod promises;
 pub mod push;
 pub mod vault;

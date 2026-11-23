@@ -21,6 +21,7 @@ use catchup_api::{
     executor::{Action, Executor, Found, Outcome, Revision, Source, Task},
     memory,
     model::{AnswerInput, Card, CardOption, Effect, NewCard, Receipt, Risk, Surface},
+    passkeys,
     promises::{self, Promise},
     push::{self, Delivery, Notifier, Subscription},
     worker::{Timing, Worker},
@@ -1560,4 +1561,205 @@ async fn cancelling_a_re_login_does_not_pretend_to_be_connected() {
     assert!(account::load_auth(&w.db, &master, cell).await.unwrap().is_none());
     stop.send(true).unwrap();
     working.await.unwrap();
+}
+
+// ─── 패스키 로그인(3.5단계) — 시험 안의 가짜 인증 장치로 등록과 로그인을 끝까지 돌려요
+
+const SITE: &str = "https://app.example.test";
+
+/// P-256 열쇠 하나를 가진 인증 장치. 진짜 장치가 내는 것과 같은 모양의 바이트를 만들어요
+struct Authenticator {
+    key: ring::signature::EcdsaKeyPair,
+    credential: Vec<u8>,
+    count: u32,
+}
+
+fn b64(bytes: &[u8]) -> String {
+    use base64::Engine;
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
+}
+
+impl Authenticator {
+    fn new() -> Self {
+        let rng = ring::rand::SystemRandom::new();
+        let alg = &ring::signature::ECDSA_P256_SHA256_ASN1_SIGNING;
+        let pkcs8 = ring::signature::EcdsaKeyPair::generate_pkcs8(alg, &rng).unwrap();
+        Self {
+            key: ring::signature::EcdsaKeyPair::from_pkcs8(alg, pkcs8.as_ref(), &rng).unwrap(),
+            credential: Uuid::new_v4().as_bytes().to_vec(),
+            count: 0,
+        }
+    }
+
+    fn point(&self) -> &[u8] {
+        use ring::signature::KeyPair;
+        self.key.public_key().as_ref()
+    }
+
+    /// 브라우저의 getPublicKey() 가 주는 모양(SPKI)
+    fn spki(&self) -> Vec<u8> {
+        let mut out = vec![
+            0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d,
+            0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
+        ];
+        out.extend_from_slice(self.point());
+        out
+    }
+
+    /// rpIdHash · flags · signCount (· 등록할 때는 열쇠까지)
+    fn auth_data(&self, site: &str, flags: u8, attested: bool) -> Vec<u8> {
+        let host = site.split("://").nth(1).unwrap().split(':').next().unwrap();
+        let mut out = catchup_api::crypto::sha256(host.as_bytes());
+        out.push(flags | if attested { 0x40 } else { 0 });
+        out.extend_from_slice(&self.count.to_be_bytes());
+        if attested {
+            out.extend_from_slice(&[0; 16]);
+            out.extend_from_slice(&(self.credential.len() as u16).to_be_bytes());
+            out.extend_from_slice(&self.credential);
+            // COSE EC2 열쇠: {1: 2, 3: -7, -1: 1, -2: x, -3: y}
+            out.extend_from_slice(&[0xa5, 0x01, 0x02, 0x03, 0x26, 0x20, 0x01, 0x21, 0x58, 0x20]);
+            out.extend_from_slice(&self.point()[1..33]);
+            out.extend_from_slice(&[0x22, 0x58, 0x20]);
+            out.extend_from_slice(&self.point()[33..65]);
+        }
+        out
+    }
+
+    fn client(kind: &str, challenge: &str, site: &str) -> Vec<u8> {
+        json!({ "type": kind, "challenge": challenge, "origin": site, "crossOrigin": false }).to_string().into_bytes()
+    }
+
+    fn enroll(&self, challenge: &str, site: &str) -> passkeys::RegisterInput {
+        passkeys::RegisterInput {
+            credential: b64(&self.credential),
+            client_data: b64(&Self::client("webauthn.create", challenge, site)),
+            authenticator_data: b64(&self.auth_data(site, 0x05, true)),
+            public_key: b64(&self.spki()),
+            label: "시험 장치".into(),
+        }
+    }
+
+    /// 얼굴 · 지문을 확인하고(flags 0x05) 서명해요
+    fn assert_with(&self, challenge: &str, site: &str, flags: u8) -> passkeys::LoginInput {
+        let client = Self::client("webauthn.get", challenge, site);
+        let auth = self.auth_data(site, flags, false);
+        let mut signed = auth.clone();
+        signed.extend_from_slice(&catchup_api::crypto::sha256(&client));
+        let signature = self.key.sign(&ring::rand::SystemRandom::new(), &signed).unwrap();
+        passkeys::LoginInput {
+            credential: b64(&self.credential),
+            client_data: b64(&client),
+            authenticator_data: b64(&auth),
+            signature: b64(signature.as_ref()),
+            label: "시험 장치".into(),
+        }
+    }
+
+    fn assert(&self, challenge: &str, site: &str) -> passkeys::LoginInput {
+        self.assert_with(challenge, site, 0x05)
+    }
+}
+
+async fn account(w: &mut World, email: &str) -> Uuid {
+    let cell = w.cell().await;
+    sqlx::query("INSERT INTO front.accounts (cell, email) VALUES ($1, $2)")
+        .bind(cell)
+        .bind(email)
+        .execute(&mut w.owner)
+        .await
+        .unwrap();
+    cell
+}
+
+/// 패스키를 등록하면 코드 없이 로그인해요. 로그인은 그 열쇠의 주인 칸으로만 들어가요
+#[tokio::test]
+async fn a_passkey_signs_me_in_without_a_code() {
+    let mut w = World::new().await;
+    let (mine, other) = (account(&mut w, "me@example.test").await, account(&mut w, "other@example.test").await);
+    let sites = [SITE.to_owned()];
+    let device = Authenticator::new();
+
+    let options = passkeys::begin_register(&w.db, mine, SITE).await.unwrap();
+    assert_eq!((options.rp_id.as_str(), options.user_name.as_str()), ("app.example.test", "me@example.test"));
+    assert!(options.exclude.is_empty());
+    let added = passkeys::register(&w.db, mine, &sites, &device.enroll(&options.challenge, SITE)).await.unwrap();
+    assert_eq!(added.label, "시험 장치");
+    assert_eq!(passkeys::list(&w.db, mine).await.unwrap().len(), 1);
+    assert!(passkeys::list(&w.db, other).await.unwrap().is_empty());
+    // 다음에 등록할 때는 이미 있는 열쇠를 빼라고 알려 줘요
+    assert_eq!(passkeys::begin_register(&w.db, mine, SITE).await.unwrap().exclude, vec![b64(&device.credential)]);
+
+    // 로그인: 이메일도 코드도 없이, 서명만으로
+    let ask = passkeys::begin_login(&w.db, SITE).await.unwrap();
+    let token = passkeys::login(&w.db, &sites, &device.assert(&ask.challenge, SITE)).await.unwrap();
+    let session = catchup_api::auth::resolve(&w.db, &token).await.unwrap();
+    assert_eq!(session.cell, mine);
+    assert!(passkeys::list(&w.db, mine).await.unwrap()[0].last_used_at.is_some());
+
+    // 지우면 그 열쇠로는 더 못 들어와요. 남의 열쇠는 못 지워요
+    assert!(matches!(passkeys::remove(&w.db, other, added.id).await, Err(Error::NotFound)));
+    passkeys::remove(&w.db, mine, added.id).await.unwrap();
+    let ask = passkeys::begin_login(&w.db, SITE).await.unwrap();
+    assert!(matches!(passkeys::login(&w.db, &sites, &device.assert(&ask.challenge, SITE)).await, Err(Error::Unauthorized)));
+    // 이미 들어온 기기는 그대로예요(기기 세션은 따로 끊어요)
+    assert!(catchup_api::auth::resolve(&w.db, &token).await.is_ok());
+}
+
+/// 물음(challenge)은 한 번만, 그 사이트의 것만, 얼굴 · 지문을 확인한 서명만 받아요
+#[tokio::test]
+async fn a_passkey_login_refuses_replays_other_sites_and_bad_signatures() {
+    let mut w = World::new().await;
+    let (mine, other) = (account(&mut w, "me@example.test").await, account(&mut w, "other@example.test").await);
+    let sites = [SITE.to_owned()];
+    let device = Authenticator::new();
+    let options = passkeys::begin_register(&w.db, mine, SITE).await.unwrap();
+    passkeys::register(&w.db, mine, &sites, &device.enroll(&options.challenge, SITE)).await.unwrap();
+    let refused = |r: Result<String, Error>| matches!(r, Err(Error::Unauthorized));
+
+    // 같은 서명을 두 번 쓸 수 없어요
+    let ask = passkeys::begin_login(&w.db, SITE).await.unwrap();
+    let once = device.assert(&ask.challenge, SITE);
+    passkeys::login(&w.db, &sites, &once).await.unwrap();
+    assert!(refused(passkeys::login(&w.db, &sites, &once).await), "같은 물음은 한 번만");
+    // 서버가 내지 않은 물음
+    assert!(refused(passkeys::login(&w.db, &sites, &device.assert(&b64(&[7; 32]), SITE)).await));
+    // 다른 사이트(피싱)에서 받은 서명 — 출처도, 열쇠가 묶인 주소도 달라요
+    let ask = passkeys::begin_login(&w.db, SITE).await.unwrap();
+    assert!(refused(passkeys::login(&w.db, &sites, &device.assert(&ask.challenge, "https://evil.example")).await));
+    // 얼굴 · 지문을 확인하지 않은 서명(flags 0x01 = 있기만 함)
+    let ask = passkeys::begin_login(&w.db, SITE).await.unwrap();
+    assert!(refused(passkeys::login(&w.db, &sites, &device.assert_with(&ask.challenge, SITE, 0x01)).await));
+    // 다른 열쇠로 한 서명을 내 열쇠의 이름으로
+    let ask = passkeys::begin_login(&w.db, SITE).await.unwrap();
+    let forged = passkeys::LoginInput { credential: b64(&device.credential), ..Authenticator::new().assert(&ask.challenge, SITE) };
+    assert!(refused(passkeys::login(&w.db, &sites, &forged).await));
+    // 등록용 물음으로는 로그인할 수 없어요
+    let enroll = passkeys::begin_register(&w.db, mine, SITE).await.unwrap();
+    assert!(refused(passkeys::login(&w.db, &sites, &device.assert(&enroll.challenge, SITE)).await));
+    // 시간이 지난 물음
+    let ask = passkeys::begin_login(&w.db, SITE).await.unwrap();
+    sqlx::query("UPDATE front.passkey_challenges SET expires_at = now() - interval '1 second'").execute(&mut w.owner).await.unwrap();
+    assert!(refused(passkeys::login(&w.db, &sites, &device.assert(&ask.challenge, SITE)).await));
+
+    // 등록: 남의 물음 · 다른 사이트 · 열쇠와 장치 기록이 안 맞는 것 · 같은 열쇠 두 번은 안 돼요
+    let bad = |r: Result<passkeys::Passkey, Error>| matches!(r, Err(Error::Invalid("bad_passkey")));
+    let second = Authenticator::new();
+    let theirs = passkeys::begin_register(&w.db, other, SITE).await.unwrap();
+    assert!(bad(passkeys::register(&w.db, mine, &sites, &second.enroll(&theirs.challenge, SITE)).await), "남의 물음");
+    let fresh = passkeys::begin_register(&w.db, mine, SITE).await.unwrap();
+    assert!(bad(passkeys::register(&w.db, mine, &sites, &second.enroll(&fresh.challenge, "https://evil.example")).await));
+    let fresh = passkeys::begin_register(&w.db, mine, SITE).await.unwrap();
+    let swapped = passkeys::RegisterInput { public_key: b64(&Authenticator::new().spki()), ..second.enroll(&fresh.challenge, SITE) };
+    assert!(bad(passkeys::register(&w.db, mine, &sites, &swapped).await), "보낸 열쇠가 장치 기록의 열쇠와 달라요");
+    let fresh = passkeys::begin_register(&w.db, other, SITE).await.unwrap();
+    assert!(
+        matches!(
+            passkeys::register(&w.db, other, &sites, &device.enroll(&fresh.challenge, SITE)).await,
+            Err(Error::Conflict("passkey_exists"))
+        ),
+        "한 열쇠는 한 계정에만"
+    );
+    assert_eq!(passkeys::list(&w.db, mine).await.unwrap().len(), 1);
+    // 앱 역할은 열쇠 표를 직접 읽지 못해요(좁은 문으로만)
+    assert!(sqlx::query("SELECT 1 FROM front.passkeys").execute(w.db.pool()).await.is_err());
 }

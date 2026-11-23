@@ -57,6 +57,7 @@ pnpm test:codex
 |---|---|
 | `src/memory.rs` | 기억 읽기 · 고치기 · 지우기 · 알려 주기, 모델에 넣는 맥락 꾸러미(초안 · 세션 · 묻기)와 그 기록 |
 | `src/promises.rs` | 내가 보낸 글의 약속(낌새가 있을 때만 모델에 물어요), 약속한 날이 되면 카드로 올리기 |
+| `src/passkeys.rs` | 패스키(WebAuthn) 등록과 로그인. 공개 열쇠만 두고, 물음은 한 번만 · 이 사이트의 서명만 · 사람을 확인한 서명만 받아요 |
 | `src/assistant.rs` | 비서에게 말하기: 기억해 · 물어봐 · 일 맡겨 · 카드 찾기. 일과 카드는 내가 눌러야 실행돼요. 덱에서 한 말은 보고 있던 카드를 같이 남겨요 |
 | `src/codex/talk.rs` | 위 둘의 모델 호출(글만, 도구 없음) |
 
@@ -126,6 +127,6 @@ node services/api/tests/resilience.mjs
 |---|---|
 | 바깥 열쇠가 `.local/secrets` 파일 | 관리형 키 보관소 |
 | 포트를 127.0.0.1에 엶(서버 4320 · DB 55433) | 밖에 여는 문은 앞단의 80 · 443뿐(`infra/ec2/compose.yaml`) |
-| 로그인 코드를 CLI로 받음 | 메일 · Google · Apple |
+| 로그인 코드를 CLI로 받음 | 처음 한 번만 코드로 들어와 패스키를 등록해요(그 뒤로는 얼굴 · 지문). 메일 · Google · Apple은 신청이 필요해서 나중 |
 | `CATCHUP_INSECURE_COOKIE=1` | 빼요(HTTPS) |
 | 푸시 연락처 `https://localhost` | 서비스 주소 |

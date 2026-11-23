@@ -32,6 +32,7 @@ use crate::{
     error::{Error, Result},
     events::{self, Hub},
     model::{AnswerInput, Card, CardOption, Effect, Receipt, Surface, Turn},
+    passkeys,
     push::{self, Subscription},
 };
 
@@ -56,6 +57,11 @@ pub fn router(app: App) -> Router {
         .route("/health/ready", get(ready))
         .route("/v1/openapi.json", get(|| async { Json(Api::openapi()) }))
         .route("/v1/auth/session", post(login).delete(logout))
+        .route("/v1/auth/passkey/options", post(passkey_ask))
+        .route("/v1/auth/passkey", post(passkey_login))
+        .route("/v1/me/passkeys/options", post(passkey_start))
+        .route("/v1/me/passkeys", get(passkeys).post(passkey_add))
+        .route("/v1/me/passkeys/{id}", axum::routing::delete(passkey_remove))
         .route("/v1/me", get(me))
         .route("/v1/me/cards", get(list_cards))
         .route("/v1/me/cards/{id}/answer", post(answer))
@@ -125,6 +131,50 @@ async fn logout(State(app): State<App>, headers: HeaderMap) -> Result<Response> 
         auth::logout(&app.db, token).await?;
     }
     Ok((StatusCode::NO_CONTENT, [(header::SET_COOKIE, auth::set_cookie("", app.settings.secure_cookie))]).into_response())
+}
+
+/// 요청을 보낸 화면의 주소. 쓰기 요청은 이미 `same_origin` 이 아는 주소인지 봤어요
+fn origin_of(headers: &HeaderMap) -> Result<&str> {
+    headers.get(header::ORIGIN).and_then(|v| v.to_str().ok()).ok_or(Error::Invalid("bad_origin"))
+}
+
+/// 패스키 로그인의 물음. 누구인지는 묻지 않아요
+#[utoipa::path(post, path = "/v1/auth/passkey/options", responses((status = 200, body = passkeys::LoginOptions)))]
+async fn passkey_ask(State(app): State<App>, headers: HeaderMap) -> Result<Json<passkeys::LoginOptions>> {
+    Ok(Json(passkeys::begin_login(&app.db, origin_of(&headers)?).await?))
+}
+
+#[utoipa::path(post, path = "/v1/auth/passkey", request_body = passkeys::LoginInput, responses((status = 204), (status = 401)))]
+async fn passkey_login(State(app): State<App>, Json(input): Json<passkeys::LoginInput>) -> Result<Response> {
+    let token = passkeys::login(&app.db, &app.settings.origins, &input).await?;
+    Ok((StatusCode::NO_CONTENT, [(header::SET_COOKIE, auth::set_cookie(&token, app.settings.secure_cookie))]).into_response())
+}
+
+#[utoipa::path(get, path = "/v1/me/passkeys", responses((status = 200, body = Vec<passkeys::Passkey>)))]
+async fn passkeys(State(app): State<App>, session: Session) -> Result<Json<Vec<passkeys::Passkey>>> {
+    Ok(Json(passkeys::list(&app.db, session.cell).await?))
+}
+
+/// 패스키 등록의 물음(로그인한 기기에서만)
+#[utoipa::path(post, path = "/v1/me/passkeys/options", responses((status = 200, body = passkeys::RegisterOptions)))]
+async fn passkey_start(State(app): State<App>, session: Session, headers: HeaderMap) -> Result<Json<passkeys::RegisterOptions>> {
+    Ok(Json(passkeys::begin_register(&app.db, session.cell, origin_of(&headers)?).await?))
+}
+
+#[utoipa::path(post, path = "/v1/me/passkeys", request_body = passkeys::RegisterInput,
+    responses((status = 200, body = passkeys::Passkey), (status = 409), (status = 422)))]
+async fn passkey_add(
+    State(app): State<App>,
+    session: Session,
+    Json(input): Json<passkeys::RegisterInput>,
+) -> Result<Json<passkeys::Passkey>> {
+    Ok(Json(passkeys::register(&app.db, session.cell, &app.settings.origins, &input).await?))
+}
+
+#[utoipa::path(delete, path = "/v1/me/passkeys/{id}", params(("id" = Uuid, Path)), responses((status = 204), (status = 404)))]
+async fn passkey_remove(State(app): State<App>, session: Session, Path(id): Path<Uuid>) -> Result<StatusCode> {
+    passkeys::remove(&app.db, session.cell, id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[derive(Serialize, sqlx::FromRow, ToSchema)]
@@ -441,6 +491,12 @@ async fn session_patch(State(app): State<App>, session: Session, Path(id): Path<
     paths(
         login,
         logout,
+        passkey_ask,
+        passkey_login,
+        passkeys,
+        passkey_start,
+        passkey_add,
+        passkey_remove,
         me,
         list_cards,
         answer,
