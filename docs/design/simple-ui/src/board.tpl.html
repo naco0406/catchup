@@ -266,16 +266,35 @@
 
 <section class="bd-chapter" id="s-rows">
   <div class="bd-kicker">06 답 줄, 여러 줄이 될 때</div>
-  <h2>알약에는 이름 한 줄만 담고, 이유는 그 아래에 둬요</h2>
-  <p class="bd-lead">답 줄은 알약 안에 번호, 이름, 이유를 모두 넣고 세로 가운데에 맞춰요. 넓은 화면에서는 늘 두 줄이라 반원으로 보이는데, 아이폰에서는 글이 서너 줄이 돼서 반지름 30짜리 덩어리 셋이 높이가 제각각으로 쌓여요. ChatGPT, Gemini, Perplexity를 열어 재 보니 셋 다 같은 규칙이었어요. <b>완전히 둥근 모양은 한 줄짜리에만 쓰고, 제목과 설명이 같이 들어가는 칸에는 쓰지 않아요.</b> 그래서 아이폰에서는 알약에 번호와 이름만 담고, 이유는 알약 아래로 내려요.</p>
+  <h2>알약에는 이름 한 줄만 담고, 이름은 한 줄에 들어오게 써요</h2>
+  <p class="bd-lead">답 줄은 알약 안에 번호, 이름, 이유를 모두 넣고 세로 가운데에 맞춰요. 넓은 화면에서는 늘 두 줄이라 반원으로 보이는데, 아이폰에서는 글이 서너 줄이 돼서 반지름 30짜리 덩어리 셋이 높이가 제각각으로 쌓여요. ChatGPT, Gemini, Perplexity를 열어 재 보니 셋 다 같은 규칙이었어요. <b>완전히 둥근 모양은 한 줄짜리에만 쓰고, 제목과 설명이 같이 들어가는 칸에는 쓰지 않아요.</b> 그래서 아이폰에서는 알약에 번호와 이름만 담고, 이유는 알약 아래로 내려요. 이름이 길어 두 줄이 되는 것은 모양이 아니라 글 길이로 풀어요. 예시 카드의 답 이름 55개를 재 보니 한 줄을 넘는 것이 영어 5개, 한국어 1개뿐이었어요. 반원은 포기하지 않아도 돼요.</p>
   <div class="bd-row">
     <div class="bd-cell"><h3 class="bd-sub" style="margin:0 0 16px">지금</h3><div class="sk-now"><img src="shots/deck-phone-c02.png" alt=""></div></div>
     <div class="bd-cell"><h3 class="bd-sub" style="margin:0 0 16px">시안, 같은 카드</h3><div class="bd-frame-wrap"><!--@p rows--></div>
       <ol class="bd-notes">
-        <li><b>알약에는 번호와 이름만 있어요.</b> 높이 48에 반지름 24라서 한 줄일 때 반원이에요. 번호 동그라미가 왼쪽 끝 곡선과 같은 중심에 앉아요. 굵은 이름만 훑어도 고를 수 있어요.</li>
+        <li><b>알약에는 번호와 이름만 있어요.</b> 높이 48에 끝은 반원이에요. 번호 동그라미가 왼쪽 끝 곡선과 같은 중심에 앉아요. 굵은 이름만 훑어도 고를 수 있어요.</li>
         <li><b>이유는 알약 아래의 작은 글이에요.</b> 테두리 밖이라 두 줄이 돼도 알약의 모양을 건드리지 않아요. 이름과 같은 자리에서 시작해요.</li>
-        <li><b>이름이 두 줄이 되면 알약이 아래로 길어져요.</b> 반지름은 24 그대로예요. ChatGPT와 Gemini의 입력창이 여러 줄이 될 때와 같은 규칙이에요. 번호는 첫 줄 옆에 그대로 있어요.</li>
+        <li><b>이름은 한 줄에 들어오게 써요.</b> 앱의 예시는 “Stop here and write up both options”(35자)라서 두 줄이 됐어요. 32자 안쪽인 “Stop and write up both options”로 쓰면 한 줄이에요. 토마토가 카드를 쓸 때 이 길이를 지키게 해요.</li>
       </ol></div>
+  </div>
+  <h3 class="bd-sub">이름이 정말 길어야 할 때</h3>
+  <div class="bd-row">
+    <div class="bd-cell"><div class="bd-frame-wrap"><!--@p rows-long--></div>
+      <ol class="bd-notes">
+        <li><b>알약이 두 줄 높이로 커지고, 끝은 반원 그대로예요.</b> 반지름을 높이의 반으로 두기 때문이에요. 번호는 세로 가운데에 있어요. 지금 넓은 화면의 두 줄짜리 답과 같은 모양이에요. 글 길이 규칙을 지키면 나오지 않는 모습이고, 세 줄이 되는 이름은 서버가 받지 않아요.</li>
+      </ol></div>
+    <div class="bd-cell grow"><div class="bd-card" style="margin-top:4px"><h3>답 이름 55개를 재 봤어요</h3><p class="bd-small bd-muted">앱의 예시 카드 20장에 있는 답 이름을 모두, 앱과 같은 글꼴(16, 굵게)로 쟀어요. 아이폰 폭 375에서 알약 안의 글 칸은 249예요.</p>
+      <table class="bd-table"><tr><th>무엇</th><th>영어</th><th>한국어</th></tr>
+        <tr><td class="k2">한 줄을 넘는 이름</td><td>55개 가운데 5개</td><td>55개 가운데 1개</td></tr>
+        <tr><td class="k2">세 줄이 되는 이름</td><td>없어요</td><td>없어요</td></tr>
+        <tr><td class="k2">한 줄에 들어가는 길이</td><td>32자쯤(한 글자 7.6)</td><td>21자쯤(한 글자 11.5)</td></tr>
+        <tr><td class="k2">글자를 15로 줄이면</td><td>4개가 여전히 넘쳐요</td><td>1개 그대로</td></tr>
+        <tr><td class="k2">번호 동그라미를 빼면</td><td>3개가 여전히 넘쳐요</td><td>1개 그대로</td></tr>
+        <tr><td class="k2">폭 430인 큰 아이폰</td><td>2개가 넘쳐요</td><td>1개 그대로</td></tr>
+      </table>
+      <p class="bd-small bd-muted" style="margin-top:12px">글자를 줄이거나 번호를 빼는 것으로는 풀리지 않아요. 넘치는 이름은 모두 뒤쪽을 이유로 옮기면 한 줄이 돼요. 예를 들어 “Ask to move the investor meeting to Fri 10 AM”은 “Ask to move it to Fri 10 AM”으로 줄어요. 다른 디자인 시스템도 같은 길을 가요. Material은 단추 글을 한 낱말에서 세 낱말로, Carbon은 20자 아래로 쓰라고 해요.</p>
+      <p class="bd-src" style="margin-top:12px">services/api/src/codex/sort.rs:26 — 지금 프롬프트는 "label is a short action"뿐이고 길이 검사가 없어요</p>
+    </div></div>
   </div>
   <h3 class="bd-sub">다른 제품에서 잰 것</h3>
   <div class="bd-grid2" style="margin-top:20px">
@@ -308,8 +327,8 @@
     <div class="bd-card"><h3>같이 정한 것과 대가</h3>
       <div class="bd-rule"><span class="no">1</span><div><b>넓은 화면은 지금 그대로예요.</b> 이름과 이유가 알약 안에 두 줄로 있고 반원이에요. 폭이 넉넉해서 줄이 늘지 않아요. 드물게 늘면 번호를 왼쪽 위에 둔 채 아래로 길어져요.</div></div>
       <div class="bd-rule"><span class="no">2</span><div><b>밀 때와 꾹 누를 때는 알약이 차올라요.</b> 꾹 누르는 동안의 안내(Hold to run, Keep holding)는 알약 아래 이유 자리에 나와요.</div></div>
-      <div class="bd-rule"><span class="no">3</span><div><b>대가는 높이예요.</b> 답 셋이 차지하는 높이가 아이폰에서 50쯤 늘어요. 셋째 답의 이유가 입력창 뒤로 가려질 수 있어요.</div></div>
-      <div class="bd-rule"><span class="no">4</span><div><b>아이폰과 넓은 화면의 구조가 달라져요.</b> 아이폰은 이유가 알약 밖, 넓은 화면은 알약 안이에요. 하나로 맞추려면 Q11에서 다른 모양을 고르면 돼요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>대가는 높이와 글쓰기 규칙이에요.</b> 답 셋이 차지하는 높이가 아이폰에서 50쯤 늘어요. 그리고 답의 이름을 짧게 쓰는 규칙을 토마토의 프롬프트와 서버 검사에 넣어야 해요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>아이폰과 넓은 화면의 구조가 달라져요.</b> 아이폰은 이유가 알약 밖, 넓은 화면은 알약 안이에요. 넓은 화면은 폭이 넉넉해서 지금 모양으로도 줄이 늘지 않아요.</div></div>
       <div class="bd-rule"><span class="no">5</span><div><b>이 모양을 그대로 권한 문서는 없어요.</b> Material, Apple, OpenAI의 문서는 알약에 한 줄만 넣으라고 할 뿐이에요. 문서의 근거가 가장 많은 쪽은 반지름을 16에서 28로 낮추는 것과 한 묶음인데, 둘 다 반원을 포기해요. 이 시안은 반원을 남기려고 고른 길이에요.</div></div>
     </div>
   </div>
@@ -317,7 +336,7 @@
   <div class="sk-three">
     <figure><div class="bd-frame-wrap"><!--@pn rows-inset--></div><figcaption><b>번호를 작게 줄여 이름 줄 안에</b>이름과 이유를 알약 안에 두되, 번호를 24로 줄이고 글을 왼쪽 여백에서 한 덩어리로 내려요. 가장 빽빽하게 들어가고 두 줄일 때는 반원이에요. 대신 번호가 눈에 덜 띄고, 세 줄이 넘으면 여전히 큰 덩어리예요.</figcaption></figure>
     <figure><div class="bd-frame-wrap"><!--@pn rows-group--></div><figcaption><b>한 묶음</b>답 셋을 큰 둥근 칸 하나 안의 줄로 그려요. 줄마다 높이가 달라도 바깥 모양은 하나라 가장 차분해요. 대신 답 하나하나가 알약이 아니게 돼서, 이 제품의 누르는 모양과 달라져요.</figcaption></figure>
-    <figure><div class="bd-frame-wrap"><!--@pn rows-v2--></div><figcaption><b>아래로만 길어지기</b>앞서 그렸던 모양이에요. 지금 구조에서 세로 맞춤만 위로 바꿨어요. 바꿀 것이 가장 적어요. 대신 반지름 30짜리 키 큰 덩어리가 그대로 쌓여서, 소유자가 보기 좋지 않다고 했어요.</figcaption></figure>
+    <figure><div class="bd-frame-wrap"><!--@pn rows-v2--></div><figcaption><b>아래로만 길어지기</b>앞서 그렸던 모양이에요. 여기 셋은 앱의 긴 이름을 그대로 넣었어요. 지금 구조에서 세로 맞춤만 위로 바꿨어요. 바꿀 것이 가장 적어요. 대신 반지름 30짜리 키 큰 덩어리가 그대로 쌓여서, 소유자가 보기 좋지 않다고 했어요.</figcaption></figure>
   </div>
 </section>
 
@@ -478,7 +497,7 @@
       <table class="bd-table"><tr><th>부품</th><th>쓰임</th></tr>
         <tr><td class="k2">&lt;MenuButton&gt;</td><td>아이콘 단추와 점. 모든 화면 왼쪽 위 같은 자리</td></tr>
         <tr><td class="k2">&lt;EvidenceLine&gt;</td><td>근거 알약 대신 한 줄. 넘치면 말줄임</td></tr>
-        <tr><td class="k2">&lt;OptionRow&gt;의 여러 줄 모양</td><td>아이폰: 알약 높이 48, 반지름 <code>--cu-r-panel</code> 24, 번호 32, 이유는 알약 아래 <code>--cu-t-caption</code>. 넓은 화면: 지금 그대로(높이 64, 반지름 32), 세로 맞춤만 위로</td></tr>
+        <tr><td class="k2">&lt;OptionRow&gt;의 여러 줄 모양</td><td>아이폰: 알약 높이 48, 끝은 늘 반원(<code>--cu-r-full</code>), 번호 32는 세로 가운데, 이유는 알약 아래 <code>--cu-t-caption</code>. 넓은 화면: 지금 그대로(높이 64, 반지름 32)</td></tr>
         <tr><td class="k2">&lt;OptionRow&gt;의 hold 상태</td><td>지금의 <code>.cu-fill</code>(밀 때 차오르는 줄)과 같은 방법, 색만 잉크</td></tr>
         <tr><td class="k2">&lt;Popover&gt;</td><td>ⓘ의 설명과 <code>?</code>의 키 목록. 바깥을 누르거나 Esc로 닫아요</td></tr>
       </table>
@@ -498,7 +517,7 @@
       <div class="bd-rule"><span class="no">5</span><div><b>설명이 필요하면 그 순간, 그 자리에 둬요.</b> 미는 동안의 토스트, 짧게 눌렀을 때의 Hold to run, 연결하는 동안의 카드, 지운 직후의 토스트, ⓘ예요. 두 번 넘게 눌러야 닿는 곳에는 두지 않아요.</div></div>
       <div class="bd-rule"><span class="no">6</span><div><b>안전에 필요한 말은 숨기지 않아요.</b> Risky 낱말, 10초 되돌리기, “Only enter a code you got on this screen”은 도구 설명, 흐린 글, 빈 화면으로 옮기지 않아요.</div></div>
       <div class="bd-rule"><span class="no">7</span><div><b>꾹 누르기는 위험한 답에만 써요.</b> 포인터에는 꾹 누르기, 키보드와 화면 읽기 프로그램에는 한 번 더 누르기를 줘요. 채움은 잉크색이에요.</div></div>
-      <div class="bd-rule"><span class="no">8</span><div><b>여러 줄이 될 수 있는 줄은 가운데에 맞추지 않아요.</b> 완전히 둥근 알약에는 한 줄만 담아요. 덧붙는 글은 알약 밖에 두고, 글을 자르지 않아요. 반지름은 한 줄일 때의 높이로 정하고 줄이 늘어도 바꾸지 않아요.</div></div>
+      <div class="bd-rule"><span class="no">8</span><div><b>여러 줄이 될 수 있는 줄은 가운데에 맞추지 않아요.</b> 완전히 둥근 알약에는 이름 한 줄만 담고, 덧붙는 글은 알약 밖에 둬요. 답의 이름은 영어 32자, 한국어 20자 안쪽으로 써요. 글을 자르지 않아요. 넘치면 알약이 두 줄 높이로 커지고 끝은 반원 그대로예요.</div></div>
       <div class="bd-rule"><span class="no">9</span><div><b>메뉴 단추는 모든 화면에서 같은 자리예요.</b> 기본은 숨김이고, 고정은 기기마다 기억해요. 신호는 잉크 점 하나예요.</div></div>
       <div class="bd-rule"><span class="no">10</span><div><b>덱의 손맛은 건드리지 않아요.</b> 한 장씩, 밀기, 번호 키, 10초 되돌리기, 단추의 자리가 미는 방향인 것은 그대로예요.</div></div>
     </div>
@@ -536,7 +555,7 @@
       <div class="bd-rule"><span class="no">2</span><div><b>이름과 글</b> — 토마토로 이름을 바꾸고, 표의 지움과 줄임, 가운뎃점 빼기를 <code>en.ts</code>에 먼저, <code>ko.ts</code>에 이어서 반영해요. 배치는 그대로라 바로 보여요.</div></div>
       <div class="bd-rule"><span class="no">3</span><div><b>패널을 메뉴로</b> — 넓은 화면에도 메뉴 단추, 고정 단추와 <code>[</code> 키, 메뉴 안 정리. <code>App.tsx</code>, <code>Sidebar.tsx</code>, <code>app.css</code>와 <code>e2e/layout.spec.ts</code>가 바뀌어요.</div></div>
       <div class="bd-rule"><span class="no">4</span><div><b>덱의 위 막대</b> — 출처 동그라미를 가는 막대로, 되돌리기 단추 빼기, “7 left”. <code>Catchup.tsx</code>, <code>FyiDeck.tsx</code>.</div></div>
-      <div class="bd-rule"><span class="no">5</span><div><b>카드 줄이기</b> — 아이폰의 답 줄(알약에는 이름만), 근거 한 줄, 나갈 글의 머리, 키 표시 빼기와 <code>?</code> 키 목록. <code>DecisionCard.tsx</code>와 디자인 시스템의 <code>.cu-opt</code>.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>카드 줄이기</b> — 아이폰의 답 줄(알약에는 이름만)과 답 이름의 길이 규칙(<code>codex/sort.rs</code>, <code>drafts.rs</code>의 프롬프트와 서버 검사), 근거 한 줄, 나갈 글의 머리, 키 표시 빼기와 <code>?</code> 키 목록. <code>DecisionCard.tsx</code>와 디자인 시스템의 <code>.cu-opt</code>.</div></div>
       <div class="bd-rule"><span class="no">6</span><div><b>꾹 눌러 확인</b> — 위험한 답 줄의 hold 상태. 아이폰 실제 기기에서 돋보기와 스크롤을 확인한 뒤 올려요. 키보드의 한 번 더 누르기는 지금 코드를 그대로 써요.</div></div>
       <div class="bd-rule"><span class="no">7</span><div><b>필요한 순간으로 옮기기</b> — 기억의 ⓘ, 연결의 코드 카드 글과 남은 시간, 패스키를 지운 뒤 토스트, 다 봤어요의 순서.</div></div>
     </div>
@@ -551,7 +570,7 @@
       <div class="bd-rule q"><div><b>Q8 처음 화면의 약속 글</b> — (가) “It asks about everything at first.” 한 줄로 (나) 그대로. 시안은 (가)예요.</div></div>
       <div class="bd-rule q"><div><b>Q9 꾹 누르기의 세부</b> — 누르는 시간은 (가) 1초 (나) 더 짧게 0.6초쯤. 실행은 (가) 다 찬 뒤 놓을 때 (나) 다 차는 순간 바로. 그리고 Settings에 한 번 더 누르기로 바꾸는 선택을 (가) 두지 않아요, 키보드에만 남겨요 (나) 둬요. 시안은 모두 (가)예요.</div></div>
       <div class="bd-rule q"><div><b>Q10 문구의 결</b> — (가) A 이름표 (나) B 한 문장 (다) 따로 본보기를 주세요. 시안은 (가)예요. 11장의 표 아래에 견본이 있어요.</div></div>
-      <div class="bd-rule q"><div><b>Q11 아이폰의 답 줄</b> — (가) 알약에는 번호와 이름만, 이유는 아래 (나) 번호를 작게 줄여 이름 줄 안에 (다) 한 묶음 (라) 지금 구조에서 아래로만 길어지기. 시안은 (가)예요. 6장에 넷을 같은 카드로 그려 뒀어요.</div></div>
+      <div class="bd-rule q"><div><span class="bd-decided">결정됨</span> <b>Q11 아이폰의 답 줄</b> — 알약에는 번호와 이름만 담고, 이유는 그 아래에 둬요. 반원은 그대로예요. 이름은 한 줄에 들어오게 쓰고, 넘치면 두 줄 높이의 반원으로 커져요(소유자, 2026-11-23). 같은 날 앱에 넣었어요: 아이폰의 답 줄, 예시 카드의 이름, 토마토의 프롬프트와 서버의 길이 한도.</div></div>
     </div>
   </div>
 </section>

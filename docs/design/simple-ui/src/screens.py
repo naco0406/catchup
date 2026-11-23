@@ -22,8 +22,14 @@ CARDS = {
         ask="Where should payment retries happen?",
         sum=[("", "Making failed payments retry up to 3 times.", 0), ("", "Right now retries only exist on the checkout page, so failed subscriptions just stop.", 0)],
         ev="6 steps so far, 12 files read, 38 tests passing",
-        opts=[("Retry in the payment service", "Covers subscriptions too, 4 files, about 10 min", 0), ("Retry on the checkout page only", "Smallest change, 1 file, subscriptions stay as they are", 0), ("Stop here and write up both options", "No code changes. I’ll look later.", 0)],
+        opts=[("Retry in the payment service", "Covers subscriptions too, 4 files, about 10 min", 0), ("Retry on the checkout page only", "Smallest change, 1 file, subscriptions stay as they are", 0), ("Stop and write up both options", "No code changes. I’ll look later.", 0)],
         code=("Code change", "services/payments/retry.ts", ["- return charge(order)", "+ return withRetry(() => charge(order), { times: 3 })"])),
+    # 이름이 길이 규칙을 넘었을 때의 모습을 보여 주는 카드(앱의 예시 글 그대로)
+    "c02long": dict(icon="terminal-window", who="Claude Code", meta="shop repo, Add payment retries", due="Waiting 12 min",
+        ask="Where should payment retries happen?",
+        sum=[("", "Making failed payments retry up to 3 times.", 0), ("", "Right now retries only exist on the checkout page, so failed subscriptions just stop.", 0)],
+        ev="6 steps so far, 12 files read, 38 tests passing",
+        opts=[("Retry in the payment service", "Covers subscriptions too, 4 files, about 10 min", 0), ("Retry on the checkout page only", "Smallest change, 1 file", 0), ("Stop here and write up both options for me", "No code changes. I’ll look later.", 0)]),
     "c05": dict(icon="code", who="Codex", meta="shop repo, Add a column to orders", due="Changes production data", risk=1,
         ask="Run this command on the production database?", cmd="$ pnpm db:migrate --env production",
         sum=[("", "Adds a “retry count” column to the orders table. Nothing is deleted.", 0), ("", "A rollback script is included. It hasn’t run on staging yet.", 1)],
@@ -248,8 +254,9 @@ def phones():
     P["rest"] = pdeck()
     P["menu"] = pdeck(dot=False, over='<div class="sk-scrim"></div>' + side(settings=True))
     P["rows"] = pdeck("c02", n=2, nxt="", dot=False)                    # 시안: 알약엔 이름만
-    for k in ("inset", "group", "v2"):                                   # 견줘 본 모양
-        P[f"rows-{k}"] = pdeck("c02", n=2, nxt="", dot=False, rows=k)
+    P["rows-long"] = pdeck("c02long", n=2, nxt="", dot=False)           # 이름이 규칙을 넘었을 때
+    for k in ("inset", "group", "v2"):                                   # 견줘 본 모양(앱의 긴 이름 그대로)
+        P[f"rows-{k}"] = pdeck("c02long", n=2, nxt="", dot=False, rows=k)
     P["hold-hint"] = pdeck("c05", n=5, nxt="", dot=False, hold="hint")
     P["hold"] = pdeck("c05", n=5, nxt="", dot=False, hold=.62)
     P["hold-full"] = pdeck("c05", n=5, nxt="", dot=False, hold=1)
@@ -278,7 +285,8 @@ def phones():
 ANCHORS = {
     "rest": [(1, 70, "l"), (2, 70, "r"), (3, 418, "l"), (4, 742, "r"), (5, 500, "r")],
     "menu": [(1, 320, "r"), (2, 640, "l")],
-    "rows": [(1, 402, "l"), (2, 455, "r"), (3, 620, "l")],
+    "rows": [(1, 402, "l"), (2, 455, "r"), (3, 610, "l")],
+    "rows-long": [(1, 630, "l")],
     "talk": [(1, 620, "l"), (2, 684, "r"), (3, 556, "r")],
     "memory": [(1, 70, "r"), (2, 640, "l")],
 }
