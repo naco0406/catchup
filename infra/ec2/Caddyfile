@@ -3,6 +3,10 @@
 #   CATCHUP_TLS_MODE  auto(기본) · internal(로컬에서 돌려 볼 때 — 스스로 만든 인증서)
 {
 	admin off
+	# HTTP/3(UDP 443)은 열지 않아요 — 여는 문은 TCP 80 · 443 뿐이에요
+	servers {
+		protocols h1 h2
+	}
 }
 
 {$CATCHUP_SITE} {

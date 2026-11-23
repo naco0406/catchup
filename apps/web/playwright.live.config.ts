@@ -8,8 +8,8 @@ export default defineConfig({
   workers: 3,
   timeout: 90_000,
   reporter: [['list']],
-  // CATCHUP_WEB: 이미 떠 있는 주소로(예: EC2 구성을 로컬에서 돌려 볼 때의 https://localhost:8443 — infra/ec2/try-local.sh)
-  use: { baseURL: front ?? 'http://127.0.0.1:5181', ignoreHTTPSErrors: Boolean(front), trace: 'retain-on-failure' },
+  // CATCHUP_WEB: 이미 떠 있는 주소로(EC2 구성을 로컬에서 돌려 볼 때의 https://localhost:8443, 또는 진짜 서버). 스스로 만든 인증서는 localhost 에서만 봐줘요
+  use: { baseURL: front ?? 'http://127.0.0.1:5181', ignoreHTTPSErrors: Boolean(front?.includes('//localhost')), trace: 'retain-on-failure' },
   webServer: front ? undefined : { command: 'pnpm dev:live', url: 'http://127.0.0.1:5181', reuseExistingServer: true, timeout: 60_000 },
   projects: [
     { name: 'ipad', use: { ...devices['iPad Pro 11 landscape'], viewport: { width: 1194, height: 834 }, browserName: 'chromium' } },

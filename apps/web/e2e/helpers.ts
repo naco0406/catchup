@@ -25,7 +25,7 @@ export async function noOverflow(page: Page) {
     if (document.documentElement.scrollWidth > cw) out.push(`document ${document.documentElement.scrollWidth} > ${cw}`);
     for (const e of document.querySelectorAll<HTMLElement>('body *')) {
       const s = getComputedStyle(e);
-      if (s.display === 'none' || !e.getClientRects().length || e.closest('.cu-seg, .cu-steps, .deck-ghost')) continue; // 나가는 카드의 본은 잠깐 화면 밖으로 날아가요(스크롤 칸이 잘라요)
+      if (s.display === 'none' || !e.getClientRects().length || e.closest('.cu-seg, .cu-steps, .deck-ghost, [data-nudge] .deck-top, [data-pull] .deck-top')) continue; // 나가는 카드의 본은 잠깐 화면 밖으로 날아가요(스크롤 칸이 잘라요). 밀리는 중인 카드(끌기 · 처음 한 번 살짝 밀어 보이기)도 일부러 움직이는 거예요
       const r = e.getBoundingClientRect();
       if (r.right > cw + 1 && !e.closest('.drawer')) out.push(`${e.className || e.tagName} right=${Math.round(r.right)}`);
       if (e.children.length === 0 && e.scrollWidth > e.clientWidth + 1 && (s.overflow === 'hidden' || s.overflowX === 'hidden') && s.textOverflow !== 'ellipsis') out.push(`clipped ${e.className}: ${e.textContent?.slice(0, 30)}`);
