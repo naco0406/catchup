@@ -1,0 +1,206 @@
+# CatchUp 3.5단계 — ARM 인스턴스 한 대 · 고정 IP · 백업 버킷 · 이미지 저장소.
+# 만들기 · 지우기는 infra/ec2/aws.sh 로 해요. 돈이 드는 자원이에요: 인스턴스 · 디스크 · 고정 IP(버킷 · 저장소는 몇 센트).
+# 비밀값은 여기에 없어요. 인스턴스가 처음 뜰 때 스스로 만들어 Parameter Store 에 잠가 두고, 자기만 읽어요.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CatchUp - one ARM instance, a fixed address, a backup bucket and an image repository.
+
+Parameters:
+  Site:
+    Type: String
+    Description: 사이트 주소(예 app.example.com). DNS 의 A 레코드를 고정 IP 로 가리켜야 인증서가 나와요
+  InstanceType:
+    Type: String
+    Default: t4g.medium
+  VolumeGb:
+    Type: Number
+    Default: 30
+  Ami:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+  ComposeVersion:
+    Type: String
+    Default: v5.6.1
+  ComposeSha256:
+    Type: String
+    Default: 42cfa75f51ad0ccf290bad37899e0038a8c10a0069e85233ecc1d53e3ff1347d
+
+Resources:
+  # 백업(30일 보관)과 올릴 묶음. 밖에서 볼 수 없어요. 스택을 지워도 버킷은 남겨요
+  Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - { Id: backups, Status: Enabled, Prefix: backups/, ExpirationInDays: 30 }
+          - { Id: releases, Status: Enabled, Prefix: releases/, ExpirationInDays: 30 }
+
+  BucketTls:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource: [!GetAtt Bucket.Arn, !Sub '${Bucket.Arn}/*']
+            Condition: { Bool: { 'aws:SecureTransport': 'false' } }
+
+  # 이미지는 꼬리표로 나눠요(api-<판> · agent-<판> · sandbox-<판> · codehost-<판> · web-<판>)
+  Images:
+    Type: AWS::ECR::Repository
+    Properties:
+      EmptyOnDelete: true
+      ImageScanningConfiguration: { ScanOnPush: true }
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          { "rules": [ { "rulePriority": 1, "description": "꼬리표 없는 것은 일주일 뒤에 지워요",
+              "selection": { "tagStatus": "untagged", "countType": "sinceImagePushed", "countUnit": "days", "countNumber": 7 },
+              "action": { "type": "expire" } } ] }
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - { Effect: Allow, Principal: { Service: ec2.amazonaws.com }, Action: 'sts:AssumeRole' }
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore   # 22번을 열지 않고 관리해요
+      Policies:
+        - PolicyName: catchup
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # 자기 비밀값만: 처음에 만들고(덮어쓰지 않아요), 뜰 때 읽어요
+              - Effect: Allow
+                Action: ['ssm:GetParametersByPath', 'ssm:GetParameter', 'ssm:GetParameters', 'ssm:PutParameter']
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/catchup/${AWS::StackName}
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/catchup/${AWS::StackName}/*
+              - Effect: Allow
+                Action: ['s3:PutObject', 's3:GetObject']
+                Resource: !Sub '${Bucket.Arn}/*'
+              - Effect: Allow
+                Action: 's3:ListBucket'
+                Resource: !GetAtt Bucket.Arn
+              - Effect: Allow
+                Action: 'ecr:GetAuthorizationToken'
+                Resource: '*'
+              - Effect: Allow
+                Action: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer', 'ecr:BatchCheckLayerAvailability']
+                Resource: !GetAtt Images.Arn
+
+  Profile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref Role]
+
+  # 밖에 여는 문은 80(인증서 확인 · https 로 넘기기)과 443 뿐이에요
+  Firewall:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: CatchUp - http and https only
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0 }
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0 }
+
+  Server:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref Ami
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref Profile
+      SecurityGroupIds: [!GetAtt Firewall.GroupId]
+      # 크레딧을 다 써도 값이 더 붙지 않게(느려질 뿐이에요)
+      CreditSpecification: { CPUCredits: standard }
+      # 컨테이너에서는 인스턴스 역할에 닿지 못해요(한 칸 건너면 끊겨요)
+      MetadataOptions: { HttpTokens: required, HttpPutResponseHopLimit: 1 }
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs: { VolumeType: gp3, VolumeSize: !Ref VolumeGb, Encrypted: true, DeleteOnTermination: true }
+      Tags:
+        - { Key: Name, Value: !Ref 'AWS::StackName' }
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          dnf install -y docker
+          install -d /usr/local/lib/docker/cli-plugins
+          curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
+            https://github.com/docker/compose/releases/download/${ComposeVersion}/docker-compose-linux-aarch64
+          echo "${ComposeSha256}  /usr/local/lib/docker/cli-plugins/docker-compose" | sha256sum -c -
+          chmod 0755 /usr/local/lib/docker/cli-plugins/docker-compose
+          systemctl enable --now docker
+          install -d -m 0755 /opt/catchup
+          install -d -m 0700 /var/backups/catchup
+          # 비밀값이 아닌 것만. 비밀값은 뜰 때 Parameter Store 에서 /run 으로 읽어요
+          cat > /etc/catchup.env <<'ENV'
+          CATCHUP_SITE=${Site}
+          CATCHUP_REGION=${AWS::Region}
+          CATCHUP_BUCKET=${Bucket}
+          CATCHUP_REPO=${Images.RepositoryUri}
+          CATCHUP_PARAMS=/catchup/${AWS::StackName}
+          ENV
+          cat > /etc/systemd/system/catchup.service <<'UNIT'
+          [Unit]
+          Description=CatchUp
+          After=docker.service network-online.target
+          Wants=network-online.target
+          ConditionPathExists=/opt/catchup/infra/ec2/host.sh
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecStart=/bin/bash /opt/catchup/infra/ec2/host.sh up
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          cat > /etc/systemd/system/catchup-backup.service <<'UNIT'
+          [Unit]
+          Description=CatchUp backup
+          ConditionPathExists=/opt/catchup/infra/ec2/host.sh
+          [Service]
+          Type=oneshot
+          ExecStart=/bin/bash /opt/catchup/infra/ec2/host.sh backup
+          UNIT
+          cat > /etc/systemd/system/catchup-backup.timer <<'UNIT'
+          [Unit]
+          Description=CatchUp backup, every night
+          [Timer]
+          OnCalendar=*-*-* 18:30:00 UTC
+          RandomizedDelaySec=600
+          Persistent=true
+          [Install]
+          WantedBy=timers.target
+          UNIT
+          systemctl daemon-reload
+          systemctl enable catchup.service catchup-backup.timer
+          systemctl start catchup-backup.timer
+
+  Address:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref Server
+
+Outputs:
+  Address:
+    Description: DNS 의 A 레코드가 가리킬 고정 IP
+    Value: !Ref Address
+  Instance:
+    Value: !Ref Server
+  Bucket:
+    Value: !Ref Bucket
+  Repo:
+    Value: !GetAtt Images.RepositoryUri

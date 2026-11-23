@@ -38,7 +38,8 @@ check_space() {
   fi
 }
 
-dc() { docker compose --env-file "$ENV_FILE" -f "$ROOT/infra/local/compose.yaml" "$@"; }
+# CATCHUP_COMPOSE_EXTRA: 구성을 더 얹거나 다른 묶음으로 띄울 때(예: EC2 구성을 로컬에서 돌려 보기 — infra/ec2/try-local.sh)
+dc() { docker compose --env-file "$ENV_FILE" -f "$ROOT/infra/local/compose.yaml" ${=CATCHUP_COMPOSE_EXTRA:-} "$@"; }
 
 case "${1:-}" in
   up)
