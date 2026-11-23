@@ -93,6 +93,7 @@ node services/api/tests/resilience.mjs
 | `tests/memory-eval.mjs` | 실제 모델로 기억이 초안 · 답 · 세션에 반영되는지(문항은 `docs/eval/memory-cases.md`) |
 | `tests/live.mjs` | 실제 컨테이너를 HTTP로: 로그인 · SSE · 10초 · 강제 종료 · 측정 |
 | `tests/resilience.mjs` | 칸 200개 · Postgres 강제 종료 |
+| `tests/backup.mjs` | 백업(`infra/ops/pg.sh`)을 빈 새 Postgres에 되살리고 서버를 붙여, 열린 카드와 영수증이 그대로 보이는지(3.5단계 끝 기준) |
 | `apps/web/e2e-live` | 실제 서버에 붙은 화면(아이패드 · 아이폰 · 데스크톱) |
 
 ## 구조
@@ -124,6 +125,7 @@ node services/api/tests/resilience.mjs
 | 로컬 | EC2에서 바꿀 것 |
 |---|---|
 | 바깥 열쇠가 `.local/secrets` 파일 | 관리형 키 보관소 |
+| 포트를 127.0.0.1에 엶(서버 4320 · DB 55433) | 밖에 여는 문은 앞단의 80 · 443뿐(`infra/ec2/compose.yaml`) |
 | 로그인 코드를 CLI로 받음 | 메일 · Google · Apple |
 | `CATCHUP_INSECURE_COOKIE=1` | 빼요(HTTPS) |
 | 푸시 연락처 `https://localhost` | 서비스 주소 |

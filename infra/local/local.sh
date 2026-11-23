@@ -1,6 +1,6 @@
 #!/bin/zsh
 # CatchUp 전용 로컬 환경. AI1 · ~/.colima · ~/.ssh/config · Docker 기본 컨텍스트를 건드리지 않아요.
-# 쓰는 법: zsh infra/local/local.sh up | stop | status | ops … | compose …
+# 쓰는 법: zsh infra/local/local.sh up | stop | status | ops … | compose … | docker …
 set -euo pipefail
 ROOT="${0:A:h:h:h}"
 L="$ROOT/.local"
@@ -61,7 +61,11 @@ case "${1:-}" in
   compose)
     shift; prepare; dc "$@"
     ;;
+  docker)
+    # 이 환경의 Docker 로 바로(복구 시험처럼 compose 밖의 컨테이너를 띄울 때)
+    shift; prepare; docker "$@"
+    ;;
   *)
-    print -u2 "쓰는 법: zsh infra/local/local.sh up | stop | status | ops … | compose …"; exit 2
+    print -u2 "쓰는 법: zsh infra/local/local.sh up | stop | status | ops … | compose … | docker …"; exit 2
     ;;
 esac
