@@ -21,6 +21,11 @@ describe.each([['en', en], ['ko', ko]] as const)('%s 예시 카드', (_, ds) => 
       expect(new Set(texts).size, c.id).toBe(texts.length);
     }
   });
+  it('답의 이름은 아이폰의 알약 한 줄에 들어오는 길이예요', () => {
+    // 폭 375 에서 알약 안의 글 칸은 249 — 영어는 32자쯤, 한국어는 21자쯤(docs/design/simple-ui 6장)
+    const max = ds === en ? 32 : 21;
+    for (const c of ds.cards) for (const o of [...c.options, ...(c.followUp?.options ?? [])]) expect([...o.label].length, `${c.id} ${o.label}`).toBeLessThanOrEqual(max);
+  });
   it('추천은 위험한 답이 아니에요', () => {
     for (const c of ds.cards) expect(c.options[c.recommended]?.risk ?? 'low', c.id).toBe('low');
   });

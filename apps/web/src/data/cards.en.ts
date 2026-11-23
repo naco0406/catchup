@@ -22,7 +22,7 @@ export const en: Dataset = {
       followUp: {
         work: 'Checked the quote and the Q4 budget again', workIcon: 'file', reply: 'Adding one more round of edits should still fit the budget. Here are new options.', recommended: 0,
         options: [
-          { label: 'Ask to add one more round of edits to plan B', detail: 'Usually under $800 extra', done: 'Asked Seoyeon to add a round of edits to plan B', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, could you add one more round of edits to plan B? Please include the extra cost if there is one.' } },
+          { label: 'Ask for one more round of edits', detail: 'Usually under $800 extra', done: 'Asked Seoyeon to add a round of edits to plan B', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, could you add one more round of edits to plan B? Please include the extra cost if there is one.' } },
           { label: 'Go with plan B as is', detail: 'Same as the first suggestion', done: 'Told Seoyeon you’re going with plan B', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, we’ll go with plan B as is. Could you send over the contract draft?' } },
         ],
       },
@@ -35,7 +35,7 @@ export const en: Dataset = {
       options: [
         { label: 'Retry in the payment service', detail: 'Covers subscriptions too · 4 files · about 10 min', done: 'Told Claude Code to retry in the payment service', effect: { kind: 'tell', to: 'Claude Code', code: { file: 'services/payments/retry.ts', add: 18, del: 2, files: 4, lines: [{ t: 'del', s: '- return charge(order)' }, { t: 'add', s: '+ return withRetry(() => charge(order), { times: 3, onlyWhen: isTemporaryFailure })' }] } } },
         { label: 'Retry on the checkout page only', detail: 'Smallest change · 1 file · subscriptions stay as they are', done: 'Told Claude Code to retry on the checkout page only', effect: { kind: 'tell', to: 'Claude Code' } },
-        { label: 'Stop here and write up both options', detail: 'No code changes. I’ll look later.', done: 'Told Claude Code to stop and write up both options', effect: { kind: 'tell', to: 'Claude Code' } },
+        { label: 'Stop and write up both options', detail: 'No code changes. I’ll look later.', done: 'Told Claude Code to stop and write up both options', effect: { kind: 'tell', to: 'Claude Code' } },
       ],
       recommended: 0,
     },
@@ -45,7 +45,7 @@ export const en: Dataset = {
       summary: [],
       options: [
         { label: 'Move the sync to 4:30', detail: 'All six are free then', done: 'Moved the weekly product sync to Thu 4:30 and sent updated invites to 6 people', effect: { kind: 'change', undo: true } },
-        { label: 'Ask to move the investor meeting to Fri 10 AM', detail: 'You’ll hear back when Taeho replies', done: 'Asked Taeho if the investor meeting can move to Fri 10 AM', effect: { kind: 'send', to: 'Taeho', text: 'Hi Taeho, I have a team sync Thursday at 3. Could we move the investor meeting to Friday at 10 AM?' } },
+        { label: 'Ask to move it to Fri 10 AM', detail: 'You’ll hear back when Taeho replies', done: 'Asked Taeho if the investor meeting can move to Fri 10 AM', effect: { kind: 'send', to: 'Taeho', text: 'Hi Taeho, I have a team sync Thursday at 3. Could we move the investor meeting to Friday at 10 AM?' } },
         { label: 'Skip the sync this week', detail: 'Ask Dohyun to run it', done: 'Asked Dohyun to run this week’s sync', effect: { kind: 'send', to: 'Dohyun', text: 'Dohyun, I have to miss this week’s product sync. Could you run it?' } },
       ],
       recommended: 0,
@@ -120,9 +120,9 @@ export const en: Dataset = {
       question: 'Share the IR folder with the investor?',
       summary: [{ text: 'He’d like to see metrics and financials before Thursday’s meeting.' }, { text: 'The IR folder mixes material from before and after an NDA.', dim: true }],
       options: [
-        { label: 'Share the public deck only, view-only', detail: 'Financials after the NDA', done: 'Gave Jihoon view access to the public IR deck', effect: { kind: 'change' } },
+        { label: 'Share the public deck only', detail: 'View-only. Financials after the NDA', done: 'Gave Jihoon view access to the public IR deck', effect: { kind: 'change' } },
         { label: 'Share the whole folder', detail: 'No NDA signed yet', risk: 'irreversible', done: 'Shared the whole IR folder with Jihoon', effect: { kind: 'change' } },
-        { label: 'Say you’ll walk through it in the meeting', detail: 'Nothing gets shared', done: 'Told Jihoon you’ll walk through it in the meeting', effect: { kind: 'send', to: 'Jihoon', text: 'Hi Jihoon, I’ll walk you through the metrics and financials in Thursday’s meeting.' } },
+        { label: 'Walk through it in the meeting', detail: 'Nothing gets shared', done: 'Told Jihoon you’ll walk through it in the meeting', effect: { kind: 'send', to: 'Jihoon', text: 'Hi Jihoon, I’ll walk you through the metrics and financials in Thursday’s meeting.' } },
       ],
       recommended: 0,
     },
@@ -164,7 +164,7 @@ export const en: Dataset = {
       summary: [{ text: 'They fail depending on the time zone. The cause is date math.' }],
       evidence: ['11 failures', '2 files'],
       options: [
-        { label: 'Fix them by pinning the time zone', detail: '2 files · about 5 min', done: 'Told Claude Code to pin the time zone in the tests', effect: { kind: 'tell', to: 'Claude Code' } },
+        { label: 'Pin the time zone to fix them', detail: '2 files · about 5 min', done: 'Told Claude Code to pin the time zone in the tests', effect: { kind: 'tell', to: 'Claude Code' } },
         { label: 'Skip them and file an issue', detail: 'Doesn’t block today’s release', done: 'Told Claude Code to skip the 3 tests and file an issue', effect: { kind: 'tell', to: 'Claude Code' } },
       ],
       recommended: 0,
