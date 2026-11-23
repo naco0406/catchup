@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { hold } from '../e2e/helpers';
 import { fileURLToPath } from 'node:url';
 import { fakeClipboard, noOverflow } from '../e2e/helpers';
 
@@ -69,12 +70,12 @@ test('답 둘이 각자 10초를 기다리고, 새로 고쳐도 되돌릴 수 �
   await expect.poll(() => me.sent(), { timeout: 20_000 }).toBe('둘째 글');
 });
 
-test('위험한 답은 두 번 눌러야 서버까지 가요', async ({ page }) => {
+test('위험한 답은 꾹 눌러야 서버까지 가요', async ({ page }) => {
   const me = await signIn(page, [card('운영에 돌릴까요?', [option('거절해요', { kind: 'none' }), option('한 번 허용해요', send('허용'), 'production')], { risk: 'production' })]);
   await opt(page, 1).click();
   await expect(opt(page, 1)).toHaveClass(/confirm/);
   expect(sql(`SELECT count(*) FROM catchup.card_answers WHERE cell = '${me.cell}'`)).toBe('0');
-  await opt(page, 1).click();
+  await hold(page, opt(page, 1));
   await expect(page.getByText('다 봤어요')).toBeVisible();
   await expect.poll(() => sql(`SELECT count(*) FROM catchup.card_answers WHERE cell = '${me.cell}'`)).toBe('1');
 });

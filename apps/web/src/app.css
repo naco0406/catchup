@@ -259,12 +259,14 @@ button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); bord
   .cu-opt > .r { grid-row: 1; }
   .cu-opt > .d { grid-row: 2; grid-column: 2 / -1; display: block; overflow: visible; width: auto; text-wrap: pretty; }
   .cu-opt > .d:empty { display: none; }
-  .cu-opt.rec, .cu-opt.confirm, .cu-opt.picked { background: transparent; box-shadow: none; }
+  .cu-opt.rec, .cu-opt.confirm, .cu-opt.picked, .cu-opt.held { background: transparent; box-shadow: none; }
   .cu-opt.rec::before { background: var(--cu-accent-soft); box-shadow: inset 0 0 0 2px var(--cu-accent); }
   .cu-opt.confirm::before { box-shadow: inset 0 0 0 2px var(--cu-fg); }
   .cu-opt.picked::before { background: var(--cu-accent); box-shadow: none; }
   /* 차오르는 줄: 알약만 차올라요 — 겹친 줄의 이유는 숨기고 아래 줄의 것이 그대로 보여요 */
-  .cu-opt.picked > .d { visibility: hidden; }
+  .cu-opt.picked > .d, .cu-opt.held > .d { visibility: hidden; }
+  .cu-opt.held { --held-r: 24px; }
+  .cu-opt.held::before { background: var(--cu-bg-inverse); box-shadow: none; }
   .cu-fill > .cu-opt.picked { clip-path: inset(0 calc((1 - var(--f, 0)) * 100%) 0 0 round 24px); }
   button.cu-opt:not(.rec):not(.confirm):hover { box-shadow: none; }
   .cu-opt .r .cu-rec, .cu-opt .r .cu-kbd { display: none; }
@@ -319,6 +321,10 @@ button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); bord
 .cu-pbar { display: none; padding: 0 12px 12px; }
 @media (max-width: 599px) { .cu-pbar { display: flex; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) and (max-width: 599px) {
+  .cu-fill.hold[data-press="holding"] > button.cu-opt { background: transparent; }
+  .cu-fill.hold[data-press="holding"] > button.cu-opt::before { background: var(--cu-bg-soft); }
+}
 
 /* 소개 페이지 안(?embed=1) — 스크롤을 바깥으로 넘겨요 */
 .embed .scroll, .embed .cu-page, .embed .shell > .cu-side { overscroll-behavior: auto; }

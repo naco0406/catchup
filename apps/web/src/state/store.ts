@@ -33,7 +33,7 @@ export interface State {
 export type Action =
   | { type: 'start' }
   | { type: 'connect'; id: string }
-  | { type: 'pick'; cardId: string; pick: number; risky: boolean; undoable?: boolean; now: number }
+  | { type: 'pick'; cardId: string; pick: number; risky: boolean; /** 꾹 눌러서 이미 확인한 답 */ confirmed?: boolean; undoable?: boolean; now: number }
   | { type: 'commit'; now: number }
   | { type: 'undo'; cardId?: string }
   | { type: 'say'; cardId: string; text: string }
@@ -100,8 +100,8 @@ export function reduce(s: State, a: Action): State {
     case 'pick': {
       const cur = s.progress[a.cardId] ?? { state: 'open' as const };
       if (cur.state !== 'open') return s;
-      // 위험한 답은 두 번 눌러야 해요 — 첫 번째는 확인만 띄워요
-      if (a.risky && cur.confirm !== a.pick) return { ...s, progress: { ...s.progress, [a.cardId]: { ...cur, confirm: a.pick } } };
+      // 위험한 답은 꾹 누르거나(confirmed) 두 번 눌러야 해요 — 첫 번째는 확인만 띄워요
+      if (a.risky && !a.confirmed && cur.confirm !== a.pick) return { ...s, progress: { ...s.progress, [a.cardId]: { ...cur, confirm: a.pick } } };
       const t = flush(s, a.now);
       return {
         ...t,

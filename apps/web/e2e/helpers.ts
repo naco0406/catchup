@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /** 시험이 이 Mac 의 실제 클립보드를 건드리지 않게 — 복사한 글은 window.copied 에 모여요 */
 export async function fakeClipboard(page: Page, works = true) {
@@ -56,4 +56,14 @@ export async function drag(page: Page, selector: string, dx: number, end: 'relea
   if (end === 'hold') return () => send('touchCancel');
   await send(end === 'cancel' ? 'touchCancel' : 'touchEnd');
   return undefined;
+}
+
+/** 위험한 답 줄을 꾹 눌러요 — 다 찰 때까지 누르고 있다가 놓아요 */
+export async function hold(page: Page, option: Locator) {
+  await option.scrollIntoViewIfNeeded();
+  const box = (await option.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + Math.min(24, box.height / 2));
+  await page.mouse.down();
+  await expect(option.locator('xpath=..')).toHaveAttribute('data-press', 'full');
+  await page.mouse.up();
 }

@@ -34,7 +34,7 @@ export const ko: Messages = {
   card: {
     recall: '지난번 · {{text}}', previews: '번호마다 나갈 글', previewOf: '{{n}}번의 글 보기', ifPickTell: '{{n}}번을 고르면 {{to}}에게 이렇게 전해요', edit: '고치기', editDone: '완료', edited: '고쳤어요', mic: '음성', micStop: '받아쓰기 멈추기', listening: '듣고 있어요…',
     suggested: '추천', ifPick: '{{n}}번을 고르면 이렇게 보내요 · {{to}}', ifPickCopy: '{{n}}번을 고르면 답장을 복사해 드려요',
-    codeIf: '{{n}}번을 고르면 이렇게 바꿔요', files_one: '파일 {{count}}개', files_other: '파일 {{count}}개', riskWord: '위험', command: '실행하려는 명령', confirm: '한 번 더 누르면 실행해요', confirmHint: '위험한 선택이에요. 한 번 더 누르면 진행해요.',
+    codeIf: '{{n}}번을 고르면 이렇게 바꿔요', files_one: '파일 {{count}}개', files_other: '파일 {{count}}개', riskWord: '위험', command: '실행하려는 명령', confirm: '한 번 더 누르면 실행해요', confirmHint: '한 번 더 누르면 실행해요', holdHint: '꾹 누르면 실행해요', holding: '계속 눌러 주세요', holdFull: '손을 떼면 실행해요',
     composer: '다르게 답하기 — 비서에게 말로 알려 주세요', composerShort: '다르게 답하기', more: '더 말하기', send: '보내기',
     firstOptions: '처음 선택지 {{n}}개 — {{list}}', risky: '이런 카드는 밀어서 넘길 수 없고, 시간이 지나도 저절로 정해지지 않아요.', riskyNoSwipe: '이런 카드는 시간이 지나도 저절로 정해지지 않아요.', snooze: '미루기', myself: '내가 직접 할게요', myselfShort: '내가 직접',
     asSuggested: '추천대로', asSuggestedShort: '추천대로', options: '답',

@@ -17,6 +17,7 @@ import { Sidebar, type Route } from './components/Sidebar';
 import { Sprite } from './components/icons';
 import { Toast, type ToastView } from './components/Toast';
 import { Catchup } from './screens/Catchup';
+import type { PickHow } from './components/DecisionCard';
 import { Activity, Done, First, Snoozed } from './screens/Pages';
 import { FyiDeck } from './screens/FyiDeck';
 
@@ -84,14 +85,17 @@ export function App() {
     return p?.alt && turns.length ? altOptions(c, t, turns) : { options: c.options, recommended: c.recommended };
   }, [s.progress, t]);
 
-  const pick = useCallback((i: number) => {
+  const pick = useCallback((i: number, how?: PickHow) => {
     if (!card) return;
     const { options, recommended } = optsOf(card); const o = options[i]; if (!o) return;
     const risky = Boolean(o.risk && o.risk !== 'low'), prog = sRef.current.progress[card.id];
     const effect = withDraft(o.effect, prog?.drafts?.[draftKey(prog, i)]);
-    if (!risky || prog?.confirm === i) leaveRef.current?.(1, i === recommended); // 위험한 답의 첫 번째 누르기는 카드가 그대로예요
-    act({ type: 'pick', cardId: card.id, pick: i, risky, undoable: undoableAfterRun(o.effect), now: Date.now() });
-    if (effect.kind !== 'copy' || (risky && prog?.confirm !== i)) return;
+    // 위험한 답은 꾹 눌러 다 채우거나(held), 키보드로 두 번 눌러야 나가요. 짧게 누르면(hint) 안내만 띄워요
+    if (how === 'hint' && (!risky || prog?.confirm === i)) return;
+    const sure = !risky || how === 'held' || (how !== 'hint' && prog?.confirm === i);
+    if (sure) leaveRef.current?.(1, i === recommended);
+    act({ type: 'pick', cardId: card.id, pick: i, risky, confirmed: how === 'held', undoable: undoableAfterRun(o.effect), now: Date.now() });
+    if (effect.kind !== 'copy' || !sure) return;
     // 복사는 밖으로 나가는 일이 아니라서 기다리지 않아요. 누르는 순간이 아니면 Safari 가 막기도 해요
     void copyText(effect.text).then(ok => { if (!ok) { act({ type: 'undo', cardId: card.id }); say(t('toast.copyFailed')); } });
   }, [card, optsOf, act, say, t]);

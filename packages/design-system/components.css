@@ -1,5 +1,5 @@
 /*
-  CatchUp 컴포넌트 — v0.7 · 2026-11-23 (답 줄: 이름과 이유를 따로 놓는 칸 배치 — 좁은 화면에서는 알약에 이름만)
+  CatchUp 컴포넌트 — v0.8, 2026-11-23 (위험한 답은 꾹 눌러 확인해요. 답 줄은 이름과 이유를 따로 놓는 칸 배치)
   값은 모두 tokens.css 의 변수예요. 여기서 새 색 · 크기 숫자를 지어내지 않아요(격자 안의 배치 값만 예외).
   클래스 이름 = 만들 컴포넌트 이름이에요. 목록과 쓰임은 README.md 의 '컴포넌트' 표에 있어요.
     .cu-card = <DecisionCard>   .cu-opt = <OptionRow>   .cu-composer = <Composer>   .cu-btn = <Button> …
@@ -361,7 +361,30 @@ button.cu-ib.listening { background: var(--cu-fg); color: var(--cu-fg-on-inverse
 /* 문턱을 넘으면 숫자가 체크로 바뀌어요 — '조금 더 진하게'가 아니라 모양이 달라져요 */
 [data-pull="right"][data-armed] .cu-fill .ck, .filled .cu-fill .ck { display: block; }
 [data-pull="right"][data-armed] .cu-fill .cu-opt.picked .num, .filled .cu-fill .cu-opt.picked .num { display: none; }
-.cu-opts > .cu-opt, [data-pull="left"] .cu-fill { opacity: calc(1 - .55 * var(--d, 0)); }
+.cu-opts > .cu-opt, .cu-opts > .cu-fill.hold, [data-pull="left"] .cu-fill { opacity: calc(1 - .55 * var(--d, 0)); }
+
+/* <OptionRow> 꾹 눌러 확인(v0.8). 시안: docs/design/simple-ui 7장
+   위험한 답은 누르고 있는 동안(data-press) 잉크색이 왼쪽에서 차올라요. 다 차면(full) 번호가 체크로 바뀌고, 놓으면 실행해요.
+   빨강은 추천에만 써요. 차오르는 시간은 --press-ms 로 받아요. */
+.cu-fill.hold > button.cu-opt { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.cu-fill.hold > button.cu-opt:active { transform: none; }
+.cu-opt.held { --held-r: var(--cu-r-card); position: absolute; inset: 0; pointer-events: none; background: var(--cu-bg-inverse); color: var(--cu-fg-on-inverse); box-shadow: none;
+  clip-path: inset(0 100% 0 0 round var(--held-r)); transition: clip-path 160ms var(--cu-ease); }
+.cu-opt.held [data-t]::before { content: attr(data-t); }
+.cu-opt.held .d { color: inherit; opacity: .82; }
+.cu-opt.held .key { background: var(--cu-fg-on-inverse); color: var(--cu-bg-inverse); }
+.cu-opt.held .key svg { width: 16px; height: 16px; }
+.cu-opt.held .key .ck { display: none; }
+.cu-fill.hold[data-press] > .cu-opt.held { clip-path: inset(0 0 0 0 round var(--held-r)); transition: clip-path var(--press-ms, 880ms) linear; }
+/* 다 됐다는 표시는 시계가 정해요: 화면이 느려서 덜 찼어도 full 이면 끝까지 채워요 */
+.cu-fill.hold[data-press="full"] > .cu-opt.held { transition-duration: 80ms; }
+.cu-fill.hold[data-press="full"] .held .ck { display: block; }
+.cu-fill.hold[data-press="full"] .held .num { display: none; }
+/* 움직임 줄이기: 쓸고 지나가지 않아요. 누르는 동안 줄이 한 단계 어두워지고, 다 되면 잉크색이 돼요 */
+@media (prefers-reduced-motion: reduce) {
+  .cu-fill.hold[data-press="holding"] > .cu-opt.held { clip-path: inset(0 100% 0 0 round var(--held-r)); }
+  .cu-fill.hold[data-press="holding"] > button.cu-opt { background: var(--cu-bg-soft); }
+}
 
 /* <Toast> 두 줄과 고리: 미는 동안 '놓으면 일어날 일'이 미리 서고, 놓으면 그 자리에서 되돌리기가 돼요 */
 .cu-toast .tx { flex: 1; min-width: 0; display: grid; }

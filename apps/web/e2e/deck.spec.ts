@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { currentCard, noOverflow, start } from './helpers';
+import { currentCard, hold, noOverflow, start } from './helpers';
 
 test('키보드 없이 카드 7장을 끝까지 넘겨요(누르기만)', async ({ page }, info) => {
   test.skip(info.project.name === 'desktop', '터치 기기 기준');
@@ -40,7 +40,7 @@ test('10초 안에 되돌리면 아무것도 나가지 않아요 · 지나면 �
   await expect(page.getByText('박서연 님께 B안으로 진행한다고 답장했어요')).toHaveCount(1);
 });
 
-test('위험한 답은 두 번 눌러야 정해져요', async ({ page }) => {
+test('위험한 답은 꾹 눌러야 정해져요. 짧게 누르면 안내만 떠요', async ({ page }) => {
   await start(page);
   for (let i = 0; i < 4; i++) await page.locator('[data-card] button.cu-opt.rec').click();
   await expect(page.locator('[data-card]')).toHaveAttribute('data-card', 'c05');
@@ -48,7 +48,36 @@ test('위험한 답은 두 번 눌러야 정해져요', async ({ page }) => {
   await risky.click();
   await expect(risky).toHaveClass(/confirm/);
   await expect(page.locator('[data-card]')).toHaveAttribute('data-card', 'c05');
-  await risky.click();
+  await expect(risky).toContainText('꾹 누르면 실행해요');
+  await risky.click(); // 짧게 여러 번 눌러도 나가지 않아요
+  await expect(page.locator('[data-card]')).toHaveAttribute('data-card', 'c05');
+  await hold(page, risky);
+  await expect(page.locator('[data-card]')).toHaveAttribute('data-card', 'c06');
+});
+
+test('위험한 답: 다 차기 전에 떼면 취소돼요', async ({ page }) => {
+  await start(page);
+  for (let i = 0; i < 4; i++) await page.locator('[data-card] button.cu-opt.rec').click();
+  const risky = page.locator('[data-card] button.cu-opt[data-opt="1"]');
+  const box = (await risky.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 24);
+  await page.mouse.down();
+  await expect(risky.locator('xpath=..')).toHaveAttribute('data-press', 'holding');
+  await expect(risky).toContainText('계속 눌러 주세요');
+  await page.mouse.up();
+  await expect(risky.locator('xpath=..')).not.toHaveAttribute('data-press', /./);
+  await expect(page.locator('[data-card]')).toHaveAttribute('data-card', 'c05');
+});
+
+test('위험한 답: 키보드로는 번호를 두 번 눌러요', async ({ page }, info) => {
+  test.skip(info.project.name === 'iphone', '키보드가 있는 화면만');
+  await start(page);
+  for (let i = 0; i < 4; i++) await page.locator('[data-card] button.cu-opt.rec').click();
+  const risky = page.locator('[data-card] button.cu-opt[data-opt="1"]');
+  await page.keyboard.press('2');
+  await expect(risky).toContainText('한 번 더 누르면 실행해요');
+  await expect(page.locator('[data-card]')).toHaveAttribute('data-card', 'c05');
+  await page.keyboard.press('2');
   await expect(page.locator('[data-card]')).toHaveAttribute('data-card', 'c06');
 });
 

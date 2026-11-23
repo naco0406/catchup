@@ -32,7 +32,7 @@ export const en = {
   card: {
     recall: 'Last time · {{text}}', previews: 'Text for each answer', previewOf: 'Show the text for {{n}}', ifPickTell: 'If you pick {{n}}, {{to}} is told this', edit: 'Edit', editDone: 'Done', edited: 'edited', mic: 'Voice', micStop: 'Stop listening', listening: 'Listening…',
     suggested: 'Suggested', ifPick: 'If you pick {{n}}, {{to}} gets this', ifPickCopy: 'Pick {{n}} and the reply is copied for you',
-    codeIf: 'If you pick {{n}}', files_one: '{{count}} file', files_other: '{{count}} files', riskWord: 'Risky', command: 'Command it wants to run', confirm: 'Press again to confirm', confirmHint: 'This one is risky. Press it again to go ahead.',
+    codeIf: 'If you pick {{n}}', files_one: '{{count}} file', files_other: '{{count}} files', riskWord: 'Risky', command: 'Command it wants to run', confirm: 'Press again to confirm', confirmHint: 'Press again to run', holdHint: 'Hold to run', holding: 'Keep holding', holdFull: 'Release to run',
     composer: 'Answer differently — tell the assistant in your own words', composerShort: 'Answer differently', more: 'Say more', send: 'Send',
     firstOptions: 'First {{n}} options — {{list}}', risky: 'Cards like this can’t be swiped away and never decide themselves.', riskyNoSwipe: 'Cards like this never decide themselves, however long you wait.', snooze: 'Snooze', myself: 'I’ll do it myself', myselfShort: 'Myself',
     asSuggested: 'Go with suggestion', asSuggestedShort: 'Suggested', options: 'Answers',

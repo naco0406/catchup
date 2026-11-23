@@ -67,6 +67,10 @@ describe('위험한 답', () => {
     s = reduce(s, { type: 'pick', cardId: 'c01', pick: 1, risky: true, now: 2 });
     expect(openIds(s)).not.toContain('c01');
   });
+  it('꾹 눌러 확인한 답은 한 번에 정해져요', () => {
+    const s = run(initial(today), { type: 'pick', cardId: 'c01', pick: 1, risky: true, confirmed: true, now: 1 });
+    expect(openIds(s)).not.toContain('c01');
+  });
   it('다른 답을 누르면 확인이 그 답으로 옮겨 가요', () => {
     const s = run(initial(today), { type: 'pick', cardId: 'c01', pick: 1, risky: true, now: 1 }, { type: 'pick', cardId: 'c01', pick: 2, risky: true, now: 2 });
     expect(s.progress.c01?.confirm).toBe(2);

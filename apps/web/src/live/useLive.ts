@@ -88,7 +88,7 @@ export function useLive(): Backend {
         const c = find(a.cardId); if (!c) return;
         const key = localKey(c);
         const local = deviceRef.current;
-        if (a.risky && local.confirm[key] !== a.pick) { setDevice(d => ({ ...d, confirm: { ...d.confirm, [key]: a.pick } })); return; }
+        if (a.risky && !a.confirmed && local.confirm[key] !== a.pick) { setDevice(d => ({ ...d, confirm: { ...d.confirm, [key]: a.pick } })); return; }
         const said = c.turns.map(x => x.said);
         const draft = local.drafts[key]?.[draftKey({ state: 'open', turns: said }, a.pick)];
         const body = { request_key: newKey(), version: c.version, turn_seq: c.turns.at(-1)?.seq ?? 0, option: a.pick, draft, confirmed: a.risky, surface: surface() };

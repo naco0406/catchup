@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Card, Effect, Option } from '../data/types';
 import { altOptions, swipeRules, turnsOf, withDraft } from '../data';
 import { draftKey, openIds, snoozedIds, stateOf, type State } from '../state/store';
-import { Composer, DecisionCard } from '../components/DecisionCard';
+import { Composer, DecisionCard, type PickHow } from '../components/DecisionCard';
 import { I, SourceIcon } from '../components/icons';
 import { Toast, type ToastView } from '../components/Toast';
 import { useDeck, type Pull } from '../components/useDeck';
@@ -17,7 +17,7 @@ const ICON: Record<Effect['kind'], NonNullable<ToastView['icon']>> = { send: 'se
  *  ≡ 로 목록 보기(방향 B)로 바꾸면 남은 카드를 훑어보고 찾아서 먼저 정할 수 있어요. */
 export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, onHandoff, onUndo, onMenu, onFocus, onUnsnooze, composerRef, toast, list, setList, searchRef, leaveRef, talk }: {
   s: State; card: Card; getCard: (id: string) => Card | undefined;
-  onPick: (i: number, risky: boolean) => void; onSay: (text: string) => void; onDraft: (key: string, text: string) => void;
+  onPick: (i: number, how?: PickHow) => void; onSay: (text: string) => void; onDraft: (key: string, text: string) => void;
   onSnooze: () => void; onHandoff: () => void; onUndo: () => void; onMenu: () => void;
   onFocus: (id: string) => void; onUnsnooze: (id: string) => void;
   composerRef: React.RefObject<HTMLInputElement | null>;
@@ -43,7 +43,7 @@ export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, on
   const { options, recommended } = prog?.alt && turns.length ? altOptions(card, t, turns) : card;
   const can = swipeRules(card, options, recommended);
   const best = options[recommended];
-  const pickBest = () => onPick(recommended, false);
+  const pickBest = () => onPick(recommended);
   const deck = useDeck({ cardId: card.id, can, onLeft: onSnooze, onRight: pickBest, rightKey: JSON.stringify([turns.length, recommended, best]) });
   leaveRef.current = deck.capture;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- 카드가 바뀔 때 한 번만 정해요

@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card, Option } from '../data/types';
 import { altOptions, evidenceIcon, previewable, turnsOf, type EvidenceIcon } from '../data';
 import { draftKey, type Progress } from '../state/store';
 import { I, SourceIcon } from './icons';
 
+/** 답을 어떻게 눌렀는지 — held: 위험한 답을 꾹 눌러 다 채우고 놓았어요. hint: 짧게 눌러서 안내만 띄워요. 없으면 키보드나 화면 읽기 프로그램이에요 */
+export type PickHow = 'held' | 'hint';
+
 /** <DecisionCard> — 질문 한 줄, 요약, 선택지, 고르면 일어나는 일, 다르게 답하기.
  *  밀기는 덱(useDeck)이 맡아요. 카드는 추천 답이 차오를 자리(fill)와, 미는 동안 보여 줄 글(pulling)만 알아요. */
 export function DecisionCard({ card, prog, onPick, onSay, onDraft, composerRef, fill, pulling, preview }: {
   card: Card; prog?: Progress;
-  onPick: (i: number, risky: boolean) => void;
+  onPick: (i: number, how?: PickHow) => void;
   onSay: (text: string) => void;
   onDraft: (key: string, text: string) => void;
   composerRef?: React.RefObject<HTMLInputElement | null>;
@@ -90,23 +93,81 @@ function useTouch() {
   return touch;
 }
 
-function OptionRow({ o, i, rec, confirm, onPick, fill }: { o: Option; i: number; rec: boolean; confirm: boolean; onPick: (i: number, risky: boolean) => void; fill?: boolean }) {
+/** 위험한 답을 꾹 누르는 시간. 누르자마자가 아니라 조금 뒤(PRESS_WAIT)부터 차올라요 — 읽으려고 스크롤하는 손가락에는 반응하지 않게요 */
+const PRESS_MS = 1000, PRESS_WAIT = 120, PRESS_SLOP = 10;
+type Press = 'idle' | 'holding' | 'full';
+
+/** 꾹 눌러 확인하기 — 다 찬 뒤에 놓으면 run, 그 전에 떼거나 줄 밖으로 나가면 취소예요.
+ *  키를 누르고 있어야만 되는 조작은 만들지 않아요(WCAG 2.1.1): 키보드와 화면 읽기 프로그램은 두 번 누르기로 가요. */
+function usePress({ run, hint, twice }: { run: () => void; hint: () => void; twice: () => void }) {
+  const [press, setPress] = useState<Press>('idle');
+  const at = useRef<{ id: number; x: number; y: number; wait: number; done: number; full: boolean } | null>(null);
+  const touched = useRef(false), held = useRef(false);
+  const clear = () => { const s = at.current; if (s) { clearTimeout(s.wait); clearTimeout(s.done); } at.current = null; };
+  const stop = () => { if (!at.current) return; clear(); setPress('idle'); };
+  useEffect(() => clear, []);
+  const handlers: ButtonHTMLAttributes<HTMLButtonElement> = {
+    onPointerDown: e => {
+      if (!e.isPrimary || e.button !== 0) return;
+      clear(); touched.current = true; held.current = false;
+      const s = { id: e.pointerId, x: e.clientX, y: e.clientY, full: false,
+        wait: window.setTimeout(() => { setPress('holding'); hint(); }, PRESS_WAIT),
+        done: window.setTimeout(() => { s.full = true; setPress('full'); try { navigator.vibrate?.(10); } catch { /* 진동이 없는 기기 */ } }, PRESS_MS) };
+      at.current = s;
+    },
+    onPointerMove: e => { const s = at.current; if (s && s.id === e.pointerId && Math.hypot(e.clientX - s.x, e.clientY - s.y) > PRESS_SLOP) stop(); },
+    onPointerUp: e => {
+      const s = at.current; if (!s || s.id !== e.pointerId) return;
+      const full = s.full; stop();
+      if (full) { held.current = true; run(); }
+    },
+    onPointerLeave: stop, onPointerCancel: stop, onLostPointerCapture: stop,
+    onContextMenu: e => e.preventDefault(), // 길게 누를 때 뜨는 메뉴
+    onClick: e => {
+      const byPointer = touched.current && e.detail !== 0; touched.current = false;
+      if (held.current) { held.current = false; return; } // 방금 꾹 눌러서 실행했어요
+      if (byPointer) hint(); else twice();
+    },
+  };
+  return { press, handlers };
+}
+
+function OptionRow({ o, i, rec, confirm, onPick, fill }: { o: Option; i: number; rec: boolean; confirm: boolean; onPick: (i: number, how?: PickHow) => void; fill?: boolean }) {
   const { t } = useTranslation();
   const risky = Boolean(o.risk && o.risk !== 'low');
+  const [tapped, setTapped] = useState(false); // 손가락이나 마우스로 눌러 본 줄 — 안내가 '꾹 누르기'로 바뀌어요
+  const { press, handlers } = usePress({
+    run: () => onPick(i, 'held'),
+    hint: () => { setTapped(true); onPick(i, 'hint'); },
+    twice: () => { setTapped(false); onPick(i); },
+  });
   // 위험한 답에는 빨강(추천)을 칠하지 않아요 — 디자인 시스템 규칙 3
   const cls = ['cu-opt', rec && !risky ? 'rec' : '', confirm ? 'confirm' : ''].filter(Boolean).join(' ');
+  const hint = press === 'full' ? t('card.holdFull') : press === 'holding' ? t('card.holding') : t(tapped ? 'card.holdHint' : 'card.confirmHint');
   const button = (
-    <button type="button" className={cls} onClick={e => { onPick(i, risky); if (!risky) e.currentTarget.blur(); }} aria-keyshortcuts={String(i + 1)} data-opt={i}>
+    <button type="button" className={cls} aria-keyshortcuts={String(i + 1)} data-opt={i}
+      {...(risky ? handlers : { onClick: e => { onPick(i); e.currentTarget.blur(); } })}>
       <span className="key">{i + 1}</span>
       <span className="l">{o.label}</span>
-      <span className="d">{confirm ? <><I.warning aria-hidden />{t('card.confirmHint')}</> : o.detail}</span>
+      <span className="d">{confirm || press !== 'idle' ? <><I.warning aria-hidden />{hint}</> : o.detail}</span>
       <span className="r">
         {rec && !risky && <><span className="cu-rec">{t('card.suggested')}</span><span className="cu-kbd">↵</span></>}
         {risky && <span className="risk"><I.warning aria-hidden />{t('card.riskWord')}</span>}
       </span>
     </button>
   );
-  if (!fill || !rec || risky) return button;
+  // 꾹 누르는 동안 잉크색이 왼쪽에서 차올라요. 빨강은 추천에만 써요
+  if (risky) return (
+    <div className="cu-fill hold" data-press={press === 'idle' ? undefined : press} style={{ '--press-ms': `${PRESS_MS - PRESS_WAIT}ms` } as CSSProperties}>
+      {button}
+      <div className="cu-opt held" aria-hidden>
+        <span className="key"><span className="num" data-t={i + 1} /><I.check className="ck" /></span>
+        <span className="l" data-t={o.label} /><span className="d" data-t={hint} />
+        <span className="r" />
+      </div>
+    </div>
+  );
+  if (!fill || !rec) return button;
   // 고른 뒤의 모양을 겹쳐 두고, 민 만큼(--f)만 보여 줘요. 글자색도 그 경계에서 바뀌어요
   return (
     <div className="cu-fill">
