@@ -1,0 +1,23 @@
+[
+  {
+    "name": "login-wide",
+    "errors": [],
+    "unmocked": [],
+    "missingPins": [],
+    "blockedHosts": []
+  },
+  {
+    "name": "login-phone",
+    "errors": [],
+    "unmocked": [],
+    "missingPins": [],
+    "blockedHosts": []
+  },
+  {
+    "name": "ko-login-phone",
+    "errors": [],
+    "unmocked": [],
+    "missingPins": [],
+    "blockedHosts": []
+  }
+]

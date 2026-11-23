@@ -1,0 +1,157 @@
+<table class="bd-table sk-copy">
+  <tr><th>가름</th><th>문구 열쇠, 보이는 곳</th><th>지금 글(영어)</th><th>제안(영어)</th><th>이유</th></tr>
+
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>assistant.promise</code><span class="src">토마토 입력창 아래, 늘 보임</span></td>
+    <td>It takes what you say as remember, ask, hand off or find a card. Work starts only when you press, and anything that goes out is decided on a card.</td><td class="p">(없음)</td>
+    <td>규칙은 화면이 이미 지켜요. 일은 단추를 눌러야 시작하고, 카드에 전하는 말도 단추를 눌러야 가요. 글이 없어도 일어나는 일이 같아요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>assistant.empty</code><span class="src">토마토 빈 화면</span></td>
+    <td>Tell the assistant anything. It understands things like these.</td><td class="p">(없음)</td>
+    <td>바로 아래 예시 칩 넷과 입력창의 흐린 글이 같은 말을 해요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>assistant.deckEmpty</code><span class="src">덱 위 시트, 빈 화면</span></td>
+    <td>Say it while you look at a card. “This person” or “this card” means the one on screen. You still answer the card on the card.</td><td class="p">(없음)</td>
+    <td>보고 있는 카드 한 줄과 예시 칩이 같은 것을 보여 줘요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>card.risky</code>, <code>card.riskyNoSwipe</code><span class="src">위험한 카드 맨 아래, 늘 보임</span></td>
+    <td>Cards like this can’t be swiped away and never decide themselves.</td><td class="p">(없음)</td>
+    <td>밀면 그 순간 토스트가 말해요(<code>swipe.blocked</code>). 뒷부분은 제품의 원리라 설계 문서에 둬요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>codex.note</code> 뒷문장<span class="src">연결, 초록 방패 상자</span></td>
+    <td>It’s temporary until CatchUp opens to other people.</td><td class="p">(없음)</td>
+    <td>운영 사정이라 화면에 둘 말이 아니에요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>passkey.note</code> 앞문장<span class="src">연결, 초록 방패 상자</span></td>
+    <td>The passkey stays on your device or keychain; the server keeps only its public key.</td><td class="p">(없음)</td>
+    <td>패스키의 일반 원리예요. 줄의 설명 한 마디로 충분해요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>done.sub2</code><span class="src">다 봤어요</span></td>
+    <td>New cards will come as notifications.</td><td class="p">(없음)</td>
+    <td>알림을 켠 사람에게는 당연하고, 켜지 않은 사람에게는 틀린 말이에요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>sessions.needLoginSub</code><span class="src">코딩 세션, 연결 전</span></td>
+    <td>One ChatGPT sign-in is all it takes</td><td class="p">(없음)</td>
+    <td>옆의 Connect 단추가 다음 할 일을 말해요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>live.loginSub</code><span class="src">로그인</span></td>
+    <td>Enter your eight-digit code. It works once, for 10 minutes.</td><td class="p">입력칸의 흐린 글을 “8-digit code”로</td>
+    <td>시간 제한은 틀렸을 때 <code>live.badCode</code>가 말해요.</td></tr>
+  <tr><td><span class="tg del">지움</span></td><td class="k"><code>fyi.sub</code> 뒷부분, 소식 카드의 꼬리표<span class="src">FYI</span></td>
+    <td>5 things worth knowing, nothing to decide</td><td class="p">5 left</td>
+    <td>화면 제목이 이미 FYI예요. 카드 오른쪽 위의 FYI 꼬리표도 같이 빼요.</td></tr>
+
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>top.of</code><span class="src">덱 위 막대</span></td>
+    <td>1 of 7</td><td class="p">7 left</td>
+    <td>끝까지 얼마 남았는지가 넘기는 힘이 돼요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>card.ifPick</code>, <code>ifPickTell</code>, <code>ifPickCopy</code>, <code>codeIf</code><span class="src">카드, 나갈 글의 머리</span></td>
+    <td>If you pick 1, Seoyeon gets this<br>If you pick 1, Claude Code is told this<br>Pick 1 and the reply is copied for you<br>If you pick 1</td><td class="p">Reply to Seoyeon<br>Message to Claude Code<br>Reply to copy<br>Code change</td>
+    <td>문장을 이름표로 바꿔요. 몇 번의 글인지는 옆의 번호 탭이 말해요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>card.composer</code><span class="src">카드 안 입력창</span></td>
+    <td>Answer differently — tell the assistant in your own words</td><td class="p">Answer differently</td>
+    <td>아이폰은 이미 이 글이에요(<code>card.composerShort</code>).</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>card.myself</code>, <code>card.myselfShort</code><span class="src">덱 아래 단추</span></td>
+    <td>I’ll do it myself<br>Myself</td><td class="p">I’ll do it</td>
+    <td>두 크기가 같은 글을 써요. Myself만으로는 무슨 단추인지 알기 어려워요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>card.command</code><span class="src">카드, 명령 칸의 머리</span></td>
+    <td>Command it wants to run</td><td class="p">Command</td>
+    <td>질문이 이미 “Run this command…?”예요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>card.confirmHint</code>, <code>card.confirm</code><span class="src">위험한 답을 한 번 누른 뒤</span></td>
+    <td>This one is risky. Press it again to go ahead.</td><td class="p">Hold to run<br>(누르는 동안) Keep holding</td>
+    <td>확인 방식이 ‘꾹 누르기’로 바뀌어요(7장). Risky는 같은 줄 오른쪽에 있어서 다시 쓰지 않아요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>first.promise</code><span class="src">처음 화면, 초록 방패 상자</span></td>
+    <td>At first it does nothing on its own. It asks about everything, and offers to take over only after the same answer keeps coming up.</td><td class="p">It asks about everything at first.</td>
+    <td>상자를 없애고 시작 단추 위에 한 줄로 둬요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>first.rows.agents</code><span class="src">처음 화면, 코딩 에이전트 줄</span></td>
+    <td>Cards when an agent has a question or needs approval</td><td class="p">Cards when an agent asks</td>
+    <td>승인도 묻는 것의 하나예요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>memory.tellPh</code><span class="src">기억, 입력창의 흐린 글</span></td>
+    <td>Something to remember — e.g. Always write formally to Seoyeon</td><td class="p">Something to remember</td>
+    <td>아이폰에서는 뒤가 잘려 보이지 않아요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>snoozed.empty</code><span class="src">Snoozed, 빈 화면</span></td>
+    <td>Nothing snoozed. Cards you put off land here.</td><td class="p">Nothing snoozed.</td>
+    <td>화면 이름이 이미 무엇이 오는 곳인지 말해요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>sessions.box</code><span class="src">코딩 세션, Start 단추 옆</span></td>
+    <td>Runs in a sandbox with no internet or secrets. Decisions come to you as cards.</td><td class="p">Runs without internet.</td>
+    <td>맡길 일을 쓸 때 알아야 하는 제약만 남겨요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>assistant.cardSaid</code><span class="src">토마토, 카드에 말을 전한 뒤</span></td>
+    <td>Passed to the card. Pick an answer there</td><td class="p">Passed to the card</td>
+    <td>옆에 See card가 있어요.</td></tr>
+  <tr><td><span class="tg cut">줄임</span></td><td class="k"><code>toast.snoozedUndo</code><span class="src">미룬 직후 토스트의 둘째 줄</span></td>
+    <td>Undo within 5 seconds</td><td class="p">(미룬 카드의 질문)</td>
+    <td>남은 시간은 고리가, 할 수 있는 일은 Undo 단추가 보여 줘요.</td></tr>
+
+  <tr><td><span class="tg when">필요할 때만</span></td><td class="k">키 표시 <code>↵</code> <code>←</code> <code>→</code> <code>D</code> <code>S</code><span class="src">추천 답 줄, 덱 아래 단추, 늘 보임</span></td>
+    <td>(글자 키 다섯 개)</td><td class="p"><code>?</code>의 Keys 목록, 마우스를 올렸을 때</td>
+    <td>답의 번호 1~5는 답의 이름이라 그대로 둬요.</td></tr>
+  <tr><td><span class="tg when">필요할 때만</span></td><td class="k"><code>memory.promise</code><span class="src">기억, 목록 아래, 늘 보임</span></td>
+    <td>Memory comes only from your answers, your edited drafts, your own words, promises in what you sent and finished coding sessions. Text from other people is never stored as an instruction. Forgotten items are not used from the next card on.</td>
+    <td class="p">Only your answers, your edits, your own words and finished coding sessions. Forgotten items stop being used from the next card.</td>
+    <td>제목 옆 ⓘ를 눌렀을 때만 보여요.</td></tr>
+  <tr><td><span class="tg when">필요할 때만</span></td><td class="k"><code>codex.note</code> 앞문장<span class="src">연결, 늘 보임</span></td>
+    <td>The sign-in is stored encrypted on this server and never goes where commands run.</td><td class="p">Your sign-in is stored encrypted on this server.</td>
+    <td>연결하는 동안에만, 코드 카드 안에 보여요. 로그인을 맡기려는 그 순간에 필요한 말이에요.</td></tr>
+  <tr><td><span class="tg when">필요할 때만</span></td><td class="k"><code>codex.setting</code><span class="src">연결, 코드 카드, 늘 보임</span></td>
+    <td>If it fails, turn on device code sign-in under ChatGPT Settings › Security.</td><td class="p">(글은 그대로)</td>
+    <td>연결이 실패했을 때만, 실패 이유 옆에 보여요.</td></tr>
+  <tr><td><span class="tg when">필요할 때만</span></td><td class="k"><code>passkey.note</code> 뒷문장<span class="src">연결, 늘 보임</span></td>
+    <td>Removing a passkey doesn’t sign out devices that are already signed in.</td><td class="p">Passkey removed. Devices already signed in stay signed in.</td>
+    <td>지운 직후 토스트로 보여요. 기기를 잃어버려서 지우는 사람이 꼭 알아야 하는 때가 그때예요.</td></tr>
+  <tr><td><span class="tg when">필요할 때만</span></td><td class="k"><code>proto.label</code>, <code>proto.note</code><span class="src">사이드바 아래 상자(예시 모드)</span></td>
+    <td>Prototype. Sample data. Nothing is sent.</td><td class="p">(글은 그대로)</td>
+    <td>자리를 메뉴의 Settings 안으로 옮겨요. 덱을 보는 동안에는 보이지 않아요.</td></tr>
+
+  <tr><td><span class="tg cut">이름</span></td><td class="k"><code>nav.assistant</code><span class="src">메뉴, 화면 제목, 시트 제목</span></td>
+    <td>Talk to the assistant</td><td class="p">Talk to Tomato</td>
+    <td>‘비서’ 대신 ‘토마토’예요(소유자 결정). 한국어는 “토마토에게 말하기”.</td></tr>
+  <tr><td><span class="tg cut">이름</span></td><td class="k"><code>nav.memory</code>, <code>assistant.seeMemory</code><span class="src">메뉴, 화면 제목, 대화 속 링크</span></td>
+    <td>What it knows<br>See what it knows</td><td class="p">What Tomato knows<br>See what Tomato knows</td>
+    <td>it이 누구인지 이름으로 말해요. 한국어는 “토마토가 아는 것”.</td></tr>
+  <tr><td><span class="tg cut">이름</span></td><td class="k"><code>memory.tell</code><span class="src">기억, 입력창의 이름표</span></td>
+    <td>Tell the assistant</td><td class="p">Tell Tomato</td>
+    <td>화면 읽기 프로그램이 읽는 이름표예요.</td></tr>
+  <tr><td><span class="tg cut">이름</span></td><td class="k"><code>done.auto</code>, <code>log.auto</code><span class="src">다 봤어요, 처리 기록의 탭</span></td>
+    <td>What the assistant handled meanwhile<br>By assistant</td><td class="p">What Tomato handled meanwhile<br>By Tomato</td>
+    <td>같은 이름으로 맞춰요.</td></tr>
+  <tr><td><span class="tg cut">이름</span></td><td class="k"><code>first.sub</code><span class="src">처음 화면</span></td>
+    <td>The assistant reads what comes into the places you connect and turns only the decisions into cards.</td><td class="p">Tomato reads what comes in and turns only the decisions into cards.</td>
+    <td>처음 한 번 보는 제품 소개라 남기되, 이름을 넣고 짧게 해요.</td></tr>
+  <tr><td><span class="tg cut">이름</span></td><td class="k"><code>codex.section</code>, <code>codex.none</code><span class="src">연결</span></td>
+    <td>Coding agent · the assistant’s model<br>Runs the assistant and coding agent on your ChatGPT plan</td><td class="p">Codex<br>Runs Tomato and the coding agent on your ChatGPT plan</td>
+    <td>묶음 제목은 한 낱말로, 설명 줄에는 이름을 넣어요.</td></tr>
+
+  <tr><td><span class="tg cut">가운뎃점</span></td><td class="k"><code>top.doneSplit</code>, <code>log.routinesSub</code>, <code>done.fyiSub</code><span class="src">다 봤어요, 처리 기록</span></td>
+    <td>6 decided · 1 snoozed<br>3 learned from you · 1 set by you<br>Release date · nightly deploy · AWS estimate …</td><td class="p">6 decided, 1 snoozed<br>3 learned from you, 1 set by you<br>Release date, nightly deploy, AWS estimate</td>
+    <td>나열은 쉼표로 써요.</td></tr>
+  <tr><td><span class="tg cut">가운뎃점</span></td><td class="k"><code>swipe.send</code>, <code>swipe.sendArmed</code>, <code>card.recall</code><span class="src">미는 동안의 토스트, 카드의 지난번 줄</span></td>
+    <td>Sends the reply · Seoyeon<br>Release to send · Seoyeon<br>Last time · …</td><td class="p">Sends the reply to Seoyeon<br>Release to send to Seoyeon<br>Last time: …</td>
+    <td>관계는 말(to)이나 쌍점으로 써요.</td></tr>
+  <tr><td><span class="tg cut">가운뎃점</span></td><td class="k"><code>assistant.seen</code><span class="src">덱 위 시트</span></td>
+    <td>On screen · Seoyeon Park · Rebrand quote…</td><td class="p">Seoyeon Park, Rebrand quote…</td>
+    <td>앞의 On screen도 빼요. 시트가 카드 위에 떠 있어서 무엇을 보고 있는지 알아요.</td></tr>
+  <tr><td><span class="tg cut">가운뎃점</span></td><td class="k"><code>first.rows.agents</code> 제목, <code>side.incoming</code><span class="src">처음 화면, 사이드바</span></td>
+    <td>Claude Code · Codex<br>Incoming · overnight</td><td class="p">Claude Code and Codex<br>(목록째 빠져요)</td>
+    <td>둘을 이을 때는 and를 써요.</td></tr>
+  <tr><td><span class="tg cut">가운뎃점</span></td><td class="k">화면 코드가 이어 붙이는 곳 14곳<span class="src"><code>Sessions.tsx:99</code>, <code>Connections.tsx:58</code> · <code>96</code>, <code>talk.tsx:77</code> · <code>92</code>, <code>Catchup.tsx:114</code> · <code>140</code> · <code>148</code> 등</span></td>
+    <td>Working · hanbit/shop<br>Passkey · MacBook Pro<br>Added Nov 21 · last used Nov 23</td><td class="p">Working, hanbit/shop<br>Passkey on MacBook Pro<br>Added Nov 21, last used Nov 23</td>
+    <td>문구 파일이 아니라 코드가 <code>' · '</code>로 잇는 곳이에요. 쉼표로 잇거나 문장 틀로 바꿔요.</td></tr>
+  <tr><td><span class="tg cut">가운뎃점</span></td><td class="k">카드 내용<span class="src">예시 카드 <code>cards.en.ts</code> 56곳, 모델이 쓰는 카드</span></td>
+    <td>Hanbit Design · Gmail · 8:12 AM<br>A: $11,200 · 6 weeks<br>Covers subscriptions too · 4 files · about 10 min</td><td class="p">Hanbit Design, 8:12 AM<br>A: $11,200, 6 weeks<br>Covers subscriptions too, 4 files, about 10 min</td>
+    <td>출처(Gmail)는 아이콘이 이미 말해요. 모델이 쓰는 카드는 프롬프트에 ‘가운뎃점을 쓰지 않는다’를 넣어요(<code>codex/sort.rs</code>).</td></tr>
+
+  <tr><td><span class="tg keep">그대로</span></td><td class="k"><code>card.riskWord</code>, 카드의 위험 기한 글<span class="src">위험한 답 줄, 카드 오른쪽 위</span></td>
+    <td>Risky<br>Changes production data</td><td class="p">(그대로)</td>
+    <td>누르기 전에 무엇이 위험한지 보여야 해요. 경고 아이콘과 낱말을 함께 써요.</td></tr>
+  <tr><td><span class="tg keep">그대로</span></td><td class="k"><code>toast.runsSend</code>, <code>runsTell</code>, <code>runsDo</code>, <code>top.undo</code><span class="src">답을 고른 뒤 10초</span></td>
+    <td>Sends in 9s, Undo</td><td class="p">(그대로)</td>
+    <td>밖으로 나가기 전 마지막 기회예요. 확인 창 대신 되돌리기를 주는 방식이에요.</td></tr>
+  <tr><td><span class="tg keep">그대로</span></td><td class="k"><code>toast.undone</code>, <code>live.tooLate</code>, <code>live.conflict</code>, <code>live.changed</code><span class="src">되돌린 뒤, 늦었을 때, 그사이 바뀌었을 때</span></td>
+    <td>Undone. Nothing was sent.<br>It already ran, so it can’t be undone.<br>The card changed. Take another look.</td><td class="p">(그대로)</td>
+    <td>나갔는지 안 나갔는지는 사람이 꼭 알아야 해요. 그 순간에만 떠요.</td></tr>
+  <tr><td><span class="tg keep">그대로</span></td><td class="k"><code>swipe.*</code><span class="src">미는 동안의 토스트</span></td>
+    <td>Release to send<br>Can’t be decided by swiping</td><td class="p">(가운뎃점만 빼요)</td>
+    <td>놓으면 일어날 일을 놓기 전에 말해요. 미는 동안에만 보여요.</td></tr>
+  <tr><td><span class="tg keep">그대로</span></td><td class="k"><code>codex.only</code> 앞문장<span class="src">연결, 코드 카드</span></td>
+    <td>Only enter a code you got on this screen just now. It expires in about 15 minutes.</td><td class="p">Only enter a code you got on this screen.<br>14 min left</td>
+    <td>앞 문장은 남이 보낸 코드를 넣게 하는 속임수를 막아요. 뒷문장은 줄어드는 숫자로 바꿔요.</td></tr>
+  <tr><td><span class="tg keep">그대로</span></td><td class="k"><code>first.rows.slack</code>, <code>first.rows.kakao</code><span class="src">처음 화면</span></td>
+    <td>Only mentions and DMs<br>Chats can’t be read. Add the channel to get cards in KakaoTalk</td><td class="p">(그대로)</td>
+    <td>무엇을 읽는지는 연결을 허락하는 근거예요.</td></tr>
+  <tr><td><span class="tg keep">그대로</span></td><td class="k"><code>memory.empty</code>, <code>sessions.empty</code>, <code>log.empty</code>, <code>top.none</code><span class="src">빈 화면의 한 줄</span></td>
+    <td>Nothing yet. It builds up as you answer cards.<br>Nothing handed off yet.</td><td class="p">(그대로)</td>
+    <td>빈 화면은 다음에 할 일을 말해 주는 자리예요. 한 줄을 넘지 않아요.</td></tr>
+  <tr><td><span class="tg keep">그대로</span></td><td class="k"><code>passkey.noneHere</code>, <code>live.badCode</code>, <code>sessions.why.*</code>, <code>assistant.why.*</code><span class="src">오류가 났을 때</span></td>
+    <td>No passkey for this site was found on this device. Sign in with a code, then add one under Connections.</td><td class="p">(그대로)</td>
+    <td>무엇이 안 됐고 다음에 무엇을 하면 되는지 말해요.</td></tr>
+</table>

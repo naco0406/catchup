@@ -1,0 +1,242 @@
+{
+  "first-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": [
+      {
+        "n": 6,
+        "x": 400,
+        "y": 714,
+        "ty": 714
+      }
+    ]
+  },
+  "first-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "deck-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": [
+      {
+        "n": 1,
+        "x": 304,
+        "y": 450,
+        "ty": 450
+      },
+      {
+        "n": 2,
+        "x": 1034,
+        "y": 32,
+        "ty": 28
+      },
+      {
+        "n": 3,
+        "x": 1386,
+        "y": 78,
+        "ty": 28
+      },
+      {
+        "n": 4,
+        "x": 1200,
+        "y": 594,
+        "ty": 594
+      },
+      {
+        "n": 5,
+        "x": 1232,
+        "y": 786,
+        "ty": 786
+      }
+    ]
+  },
+  "deck-pad": {
+    "width": 1194,
+    "height": 834,
+    "pins": [
+      {
+        "n": 8,
+        "x": 292,
+        "y": 801,
+        "ty": 801
+      }
+    ]
+  },
+  "deck-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "deck-toast-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": []
+  },
+  "deck-toast-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "deck-risky-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": [
+      {
+        "n": 7,
+        "x": 995,
+        "y": 626,
+        "ty": 626
+      }
+    ]
+  },
+  "deck-risky-pad": {
+    "width": 1194,
+    "height": 834,
+    "pins": []
+  },
+  "deck-risky-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "list-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": []
+  },
+  "fyi-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": []
+  },
+  "fyi-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "snoozed-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": []
+  },
+  "activity-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": []
+  },
+  "memory-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": [
+      {
+        "n": 6,
+        "x": 432,
+        "y": 481,
+        "ty": 481
+      }
+    ]
+  },
+  "memory-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "done-pad": {
+    "width": 1194,
+    "height": 834,
+    "pins": []
+  },
+  "done-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": []
+  },
+  "done-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "drawer-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "drawer-pad-portrait": {
+    "width": 834,
+    "height": 1194,
+    "pins": []
+  },
+  "ko-deck-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": []
+  },
+  "ko-deck-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "ko-first-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "ko-memory-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "ko-done-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "ko-fyi-phone": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  },
+  "talk-sheet-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": [
+      {
+        "n": 6,
+        "x": 556,
+        "y": 634,
+        "ty": 634
+      }
+    ]
+  },
+  "assistant-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": [
+      {
+        "n": 6,
+        "x": 432,
+        "y": 860,
+        "ty": 860
+      }
+    ]
+  },
+  "connections-wide": {
+    "width": 1440,
+    "height": 900,
+    "pins": [
+      {
+        "n": 6,
+        "x": 432,
+        "y": 227,
+        "ty": 227
+      }
+    ]
+  },
+  "deck-phone-c02": {
+    "width": 390,
+    "height": 844,
+    "pins": []
+  }
+}

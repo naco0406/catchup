@@ -1,0 +1,182 @@
+/* '쉽고 빠른 화면' 시안에서 새로 필요한 것 — 값은 모두 tokens.css 변수예요(새 색 · 크기 없음).
+   구현할 때 apps/web/src/app.css(배치)와 packages/design-system/components.css(<MenuButton> · <EvidenceLine> · <Popover>)로 옮겨요.
+   화면의 나머지는 디자인 시스템(.cu-*)과 밀기 시안의 키트(swipe-kit.css)를 그대로 써요. */
+
+/* ── 넓은 화면: 사이드바 없이 덱이 화면 전부 ── */
+.sk-wide { position: relative; display: flex; height: 100%; }
+.sk-wide .cu-main { overflow: hidden; }
+/* 위 막대: 왼쪽(메뉴 · 제목 · 남은 수) | 가운데(토스트의 자리) | 오른쪽(도구) */
+.sk-top { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); padding: 0 16px 0 12px; }
+.sk-top .l { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sk-top .l h1 { margin-left: 4px; white-space: nowrap; }
+.sk-top .l .left { white-space: nowrap; margin-left: 4px; }
+.sk-top .r { display: flex; align-items: center; gap: 4px; justify-self: end; }
+.sk-top.page { display: flex; }
+.sk-slot { display: flex; justify-content: center; min-width: 0; }
+.sk-slot .cu-toast { position: static; transform: none; height: 36px; min-height: 36px; padding: 0 4px 0 4px; gap: 8px; box-shadow: var(--cu-shadow-lift); }
+.sk-slot .cu-toast .u { height: 28px; }
+.sk-slot .cu-ring { width: 28px; height: 28px; }
+/* <MenuButton> — 덱 밖에 새로 온 것이 있으면 잉크 점 하나. 빨강 배지는 쓰지 않아요(빨강은 고를 곳에만) */
+.sk-menu { position: relative; }
+.sk-menu .dot { position: absolute; right: 6px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--cu-fg); box-shadow: 0 0 0 2px var(--cu-bg-canvas); }
+/* <CardProgress> — 넓은 화면도 가는 막대 하나(아이폰과 같은 것). 카드와 같은 폭이에요 */
+.sk-wide .cu-pbar { width: 680px; margin: 0 auto; padding: 0 0 12px; flex: none; }
+.sk-wide .cu-stage { padding-top: 0; }
+.sk-wide .cu-deck > .sw-next { position: absolute; left: 0; top: 0; z-index: 1; }
+.sk-wide .cu-acts .cu-btn svg { color: inherit; }
+.sk-wide .cu-acts .rec { color: var(--cu-accent-text); }
+
+/* ── <DecisionCard> 안에서 줄인 것 ── */
+/* <EvidenceLine> — 근거 알약 셋을 글 한 줄로 */
+.cu-root .cu-ask { text-wrap: balance; }
+.sk-ev { margin-top: 14px; display: flex; align-items: center; gap: 6px; font: var(--cu-t-caption); color: var(--cu-fg-3); min-width: 0; }
+.cu-root .sk-ev svg { width: 15px; height: 15px; }
+.sk-ev span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cu-card.p .sk-ev { margin-top: 12px; }
+/* <EffectPreview> 머리 — 번호 탭은 머리 줄 오른쪽에 */
+.sk-tabs { height: 28px; padding: 2px; border-radius: var(--cu-r-full); background: var(--cu-bg-surface); display: inline-flex; font: var(--cu-t-caption); color: var(--cu-fg-2); font-variant-numeric: tabular-nums; }
+.sk-tabs i { font-style: normal; width: 32px; display: inline-grid; place-items: center; border-radius: var(--cu-r-full); }
+.sk-tabs i.on { background: var(--cu-bg-soft); color: var(--cu-fg); font-weight: 600; }
+.cu-prev .h .sk-tabs { margin-right: 4px; }
+.cu-card.p .cu-prev { padding: 12px 16px 14px; }
+
+/* ── 메뉴(서랍) ── 넓은 화면에서도 같은 서랍. 고정하면 본문을 밀어요 */
+.sk-scrim { position: absolute; inset: 0; z-index: 5; background: rgb(28 26 24 / .32); }
+.sk-side { height: 100%; }
+.sk-side.drawer { position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; box-shadow: var(--cu-shadow-pop); }
+.sk-side .cu-side-label { margin-top: 12px; }
+.sk-side .foot { margin-top: auto; display: grid; gap: 2px; }
+.sk-side .cu-nav .n.wait { color: var(--cu-wait); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.sk-side .cu-nav .n.wait::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--cu-wait-dot); }
+.sk-phone .sk-side.drawer { width: 300px; padding-top: 8px; }
+/* 설정 줄을 누르면 그 자리에 펼쳐져요 — 언어 · 알림 · 로그아웃 */
+.sk-set { margin: 4px 0 8px; padding: 6px; border-radius: var(--cu-r-panel); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift); display: grid; gap: 2px; }
+.sk-set .row { height: var(--cu-h-md); display: flex; align-items: center; gap: 10px; padding: 0 10px; font: var(--cu-t-caption); }
+.sk-set .row svg { color: var(--cu-fg-2); }
+.sk-set .row .v { margin-left: auto; color: var(--cu-fg-3); }
+.sk-set .cu-seg { height: 32px; padding: 3px; margin-left: auto; }
+.sk-set .cu-seg > span { padding: 0 12px; }
+
+/* ── 떠 있는 것: 팝오버 · 키 도움말 ── */
+.sk-pop { position: absolute; z-index: 7; padding: 16px 20px; border-radius: var(--cu-r-panel); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-pop); font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.sk-pop b { display: block; margin-bottom: 4px; font: 600 14px/20px var(--cu-font); color: var(--cu-fg); }
+.sk-keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: center; margin-top: 8px; color: var(--cu-fg); }
+.sk-keys .k { display: inline-flex; gap: 4px; }
+
+/* ── 목록 화면(사이드바 없는 넓은 화면) ── */
+.sk-wide .cu-page { padding-top: 0; }
+.sk-wide .sk-top.page .in { width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 12px; position: relative; }
+.sk-wide .sk-top.page .sk-menu { position: absolute; left: 12px; }
+.sk-wide .sk-top.page { position: relative; padding: 0; }
+.sk-row-wrap .s { white-space: normal; }
+/* 비서에게 말하기 — 주고받은 것은 위에 쌓이고 입력창은 아래에 붙어요 */
+.sk-talk { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.sk-talk .cu-page-in { padding-bottom: 8px; }
+.sk-turn { padding: 4px 0 14px; }
+.sk-turn .cu-said { margin-top: 12px; }
+.sk-turn .cu-reply { margin: 8px 0 0; }
+.sk-turn .cu-reply.task { padding: 12px 18px; border-radius: var(--cu-r-inset); background: var(--cu-bg-soft); }
+.sk-acts { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.sk-dock { flex: none; padding: 0 40px 24px; }
+.sk-dock .cu-composer { margin-top: 8px; }
+.sk-dock .cu-composer.focus { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+.sk-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+/* 연결 — 기기 코드 카드 */
+.sk-device-card { margin-top: 12px; }
+.sk-device-card .cu-ask { margin: 0; font: var(--cu-t-body-strong); }
+.sk-code { margin: 12px 0 0; font: 700 32px/40px var(--cu-mono); letter-spacing: .08em; }
+.sk-device-card .sk-acts { margin-top: 16px; }
+.sk-device-card .cu-foot { margin-top: 16px; }
+/* 다 봤어요 */
+.sk-done { width: 600px; margin: 0 auto; }
+.sk-done .cu-done-head { padding-top: 28px; }
+
+/* ── 아이폰 ── */
+.sk-phone { position: relative; height: 100%; }
+.sk-phone .cu-ptop .sk-menu { margin-right: 0; }
+.sk-phone .cu-pdock { background: var(--cu-bg-canvas); position: relative; z-index: 4; padding-top: 8px; }
+.sk-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; padding: 16px 16px 28px; border-radius: 28px 28px 0 0; background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-pop); }
+.sk-sheet .hd { display: flex; align-items: center; gap: 10px; }
+.sk-sheet .hd h2 { flex: 1; margin: 0; font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); }
+.cu-root .sk-sheet .hd > svg { width: 20px; height: 20px; color: var(--cu-fg-2); }
+.sk-sheet .cu-work { margin-top: 4px; min-width: 0; }
+.sk-sheet .cu-work span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-sheet .sk-chips { margin-top: 16px; }
+.sk-sheet .cu-composer { margin-top: 12px; box-shadow: inset 0 0 0 2px var(--cu-fg); }
+.sk-sheet .cu-link { display: inline-block; margin-top: 12px; }
+.sk-phone .cu-page { padding: 0 16px; }
+.sk-phone .cu-page-in { width: auto; }
+.sk-phone .cu-row .t { white-space: normal; }
+.sk-phone .cu-row { align-items: start; }
+.sk-phone .cu-row .cu-tile { margin-top: 2px; }
+.sk-phone .cu-row .acts { grid-column: 2; display: flex; gap: 16px; margin-top: 4px; }
+.sk-phone .cu-row.wrap { grid-template-columns: 32px 1fr; }
+.sk-info { color: var(--cu-fg-3); }
+.sk-info.on { background: var(--cu-bg-soft); color: var(--cu-fg); }
+
+/* ── 위험한 답: 꾹 누르면 차올라요 ── 밀기의 차오르는 추천 답(.cu-fill)과 같은 방법이에요. 색만 잉크예요(빨강은 추천 답에만).
+   --h(0~1)는 누르고 있는 만큼. 다 차면 실행되고, 그 전에 떼면 0으로 돌아가요. */
+.sk-hold { position: relative; }
+.sk-hold > .cu-opt.held { position: absolute; inset: 0; clip-path: inset(0 calc((1 - var(--h, 0)) * 100%) 0 0 round var(--cu-r-card)); }
+.cu-opt.held { background: var(--cu-bg-inverse); color: var(--cu-fg-on-inverse); box-shadow: none; }
+.cu-opt.held .key { background: var(--cu-fg-on-inverse); color: var(--cu-fg); }
+.cu-root .cu-opt.held .key svg { width: 16px; height: 16px; }
+.cu-opt.held .d { color: rgb(255 255 255 / .82); }
+.cu-opt.held .r .risk, .cu-root .cu-opt.held .r .risk svg { color: var(--cu-fg-on-inverse); }
+.cu-card.p .cu-opt.held { background: var(--cu-bg-inverse); }
+.cu-card.p .cu-opt.held::after { box-shadow: none; }
+.cu-card.p .cu-opt.confirm::after { box-shadow: inset 0 0 0 2px var(--cu-fg); }
+
+/* ── <OptionRow> 여러 줄이 될 때(v2) ── 번호는 가운데가 아니라 첫 두 줄(이름 + 이유 첫 줄) 옆에 서요.
+   두 줄짜리 답은 지금과 같은 높이(64 · 아이폰 60)이고, 줄이 늘어도 번호와 이름의 자리는 그대로예요.
+   이유는 꼬리표 아래까지 온 폭을 써요. 모서리는 지금 그대로예요(--cu-r-card 32, 아이폰은 앱과 같은 30) —
+   두 줄일 때는 반원이고, 줄이 늘면 번호를 왼쪽 위에 둔 채 아래로만 길어져요(소유자 결정 2026-11-23). */
+.cu-opt.v2 { grid-template-columns: 36px 1fr auto; align-items: start; padding: 10px 20px 10px 14px; }
+.cu-opt.v2 .key { grid-row: 1 / span 2; margin-top: 4px; }
+.cu-opt.v2 .l { grid-column: 2; grid-row: 1; width: auto; }
+.cu-opt.v2 .r { grid-column: 3; grid-row: 1; min-height: 24px; }
+.cu-opt.v2 .d { grid-column: 2 / -1; grid-row: 2; display: block; overflow: visible; width: auto; text-wrap: pretty; }
+.cu-card.p .cu-opt.v2 { grid-template-columns: 32px 1fr auto; padding: 8px 14px 8px 10px; border-radius: 30px; }   /* 30: 앱(app.css)의 아이폰 값 — 높이 60의 반 */
+.cu-card.p .cu-opt.v2 .key { margin-top: 6px; }
+.cu-card.p .sk-hold > .cu-opt.v2.held { clip-path: inset(0 calc((1 - var(--h, 0)) * 100%) 0 0 round 30px); }
+/* 견줘 본 모양: 모서리를 24로 낮추기 */
+.cu-opt.v2.r24, .cu-card.p .cu-opt.v2.r24 { border-radius: var(--cu-r-panel); }
+/* 견줘 본 모양 A: 한 줄로 자르기 — 알약은 그대로, 넘치는 글은 말줄임 */
+.sk-clamp > div { min-width: 0; }
+.cu-opt.sk-clamp .l, .cu-opt.sk-clamp .d { display: block; width: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 견줘 본 모양 C: 이름만 — 이유는 추천 답 아래 한 줄 */
+.cu-card.p .cu-opt.sk-label { min-height: 52px; }
+.sk-why { margin: -2px 0 4px; padding: 0 14px 0 54px; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+/* 아이폰의 코드 칸 머리: 한 줄로, 파일 이름은 넘치면 말줄임 */
+.cu-card.p .cu-code .fh span { white-space: nowrap; }
+.cu-card.p .cu-code .fh .file { min-width: 0; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+
+/* ── 답 줄, 레퍼런스를 보고 다시 그린 세 모양 ── */
+/* (1) 알약에는 한 줄만: 번호와 이름. 한 줄이면 높이 48 에 반지름 24 로 반원이고, 이름이 두 줄이 되면 같은 반지름으로 아래로 길어져요.
+       이유는 알약 밖 아래에 작은 글로. ChatGPT · Gemini 의 입력창과 같은 규칙(반지름 = 한 줄 높이의 반) */
+.cu-opts.sk-gap { gap: 10px; }
+.cu-card.p .cu-opt.sk-pill, .cu-opt.sk-pill { min-height: 48px; grid-template-columns: 32px 1fr auto; align-items: start; column-gap: 10px; padding: 8px 16px 8px 8px; border-radius: var(--cu-r-panel); }
+.cu-opt.sk-pill .key { width: 32px; height: 32px; }
+.cu-opt.sk-pill .l { padding: 4px 0; width: auto; }
+.cu-opt.sk-pill .r { min-height: 32px; }
+.sk-cap { padding: 4px 16px 0 50px; font: var(--cu-t-caption); color: var(--cu-fg-2); text-wrap: pretty; }
+/* (2) 번호를 글 흐름 안으로: 번호는 24 로 줄여 이름 줄 맨 앞에. 글은 왼쪽 여백 20 에서 한 덩어리로 내려가요(Gemini 입력창의 여러 줄 모양) */
+.cu-card.p .cu-opt.sk-inset, .cu-opt.sk-inset { grid-template-columns: 24px 1fr auto; align-items: start; column-gap: 8px; padding: 8px 20px 8px 18px; border-radius: 30px; }
+.cu-card.p .cu-opt.sk-inset .key, .cu-opt.sk-inset .key { width: 24px; height: 24px; font: var(--cu-t-micro); }
+.cu-opt.sk-inset .l { width: auto; }
+.cu-opt.sk-inset .d { grid-column: 1 / -1; display: block; overflow: visible; width: auto; text-wrap: pretty; }
+/* (3) 한 묶음: 답 셋이 큰 둥근 칸 하나 안의 줄이에요. 줄마다 높이가 달라도 바깥 모양은 하나 */
+.cu-opts.sk-group { gap: 0; border-radius: 30px; box-shadow: inset 0 0 0 1px var(--cu-line-strong); overflow: hidden; background: var(--cu-bg-surface); }
+.sk-grow { display: grid; grid-template-columns: 32px 1fr auto; column-gap: 12px; align-items: start; padding: 12px 16px 12px 12px; }
+.sk-grow + .sk-grow { box-shadow: inset 0 1px 0 var(--cu-line); }
+.sk-grow.rec { background: var(--cu-accent-soft); box-shadow: inset 0 0 0 2px var(--cu-accent); border-radius: 30px 30px 0 0; }
+.sk-grow .key { grid-row: 1 / span 2; width: 32px; height: 32px; border-radius: 50%; background: var(--cu-bg-soft); display: grid; place-items: center; font: 600 14px/20px var(--cu-font); color: var(--cu-fg-2); margin-top: 4px; }
+.sk-grow.rec .key { background: var(--cu-accent); color: var(--cu-on-accent); }
+.sk-grow .l { font: var(--cu-t-body-strong); }
+.sk-grow .r { font: var(--cu-t-micro); color: var(--cu-danger); display: inline-flex; align-items: center; gap: 4px; min-height: 24px; white-space: nowrap; }
+.sk-grow .r .risk { display: inline-flex; align-items: center; gap: 4px; }
+.cu-root .sk-grow .r svg { width: 14px; height: 14px; }
+.sk-grow .d { grid-column: 2 / -1; font: var(--cu-t-caption); color: var(--cu-fg-2); text-wrap: pretty; }
+.sk-cap.warn { color: var(--cu-danger); font-weight: 600; }
+.cu-root .sk-cap.warn svg { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; margin-right: 4px; }
+.sk-hold > .cu-opt.sk-pill.held, .cu-card.p .sk-hold > .cu-opt.sk-pill.held { clip-path: inset(0 calc((1 - var(--h, 0)) * 100%) 0 0 round var(--cu-r-panel)); }
