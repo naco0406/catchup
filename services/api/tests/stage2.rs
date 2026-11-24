@@ -72,7 +72,8 @@ impl World {
     async fn cell(&mut self) -> Uuid {
         let cell = Uuid::new_v4();
         let wrapped = Key::from_hex(&env("CATCHUP_MASTER_KEY")).unwrap().new_cell_key(cell).unwrap();
-        sqlx::query("INSERT INTO catchup.cells (cell, wrapped_key) VALUES ($1, $2)")
+        // 시험의 글이 한국어라서 칸의 언어를 적어 둬요(새 계정의 기본값은 영어예요)
+        sqlx::query("INSERT INTO catchup.cells (cell, lang, wrapped_key) VALUES ($1, 'ko', $2)")
             .bind(cell)
             .bind(wrapped)
             .execute(&mut self.owner)

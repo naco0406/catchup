@@ -50,6 +50,14 @@ ok(/HttpOnly/.test(me.cookie) && /SameSite=Strict/.test(me.cookie), '세션 쿠�
 ok((await fetch(`${API}/v1/me/cards`)).status === 401, '로그인 없이는 못 봐요');
 ok((await me.call('POST', `/v1/me/cards/${randomUUID()}/undo`, {}, 'https://evil.example')).status === 403, '다른 사이트에서는 못 써요');
 
+// 언어 잇기: 화면의 언어가 계정의 언어가 돼요. 내 칸만 바뀌고, 모르는 언어는 받지 않아요
+ok((await me.call('GET', '/v1/me')).json.lang === 'ko', '만든 언어 그대로');
+ok((await me.call('PUT', '/v1/me', { lang: 'en' })).status === 204 && (await me.call('GET', '/v1/me')).json.lang === 'en', '언어를 바꿔요');
+ok((await other.call('GET', '/v1/me')).json.lang === 'ko', '남의 언어는 그대로');
+ok((await me.call('PUT', '/v1/me', { lang: 'fr' })).status === 422 && (await me.call('GET', '/v1/me')).json.lang === 'en', '모르는 언어는 안 받아요');
+ok((await fetch(`${API}/v1/me`, { method: 'PUT', headers: { 'content-type': 'application/json', origin: ORIGIN }, body: '{"lang":"en"}' })).status === 401, '로그인 없이는 못 바꿔요');
+ok((await me.call('PUT', '/v1/me', { lang: 'ko' })).status === 204, '되돌려요');
+
 // 답 요청의 지연
 const N = 100;
 me.seed(Array.from({ length: N }, (_, i) => card(`latency-${run}-${i}`)));

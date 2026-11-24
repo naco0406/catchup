@@ -50,6 +50,10 @@ SELECT catchup.emit('card', NULL);
 
 SET catchup.cell = '00000000-0000-0000-0000-00000000000a';
 SELECT t.ok((SELECT count(*) = 1 FROM catchup.cells), '내 칸만 보임');
+WITH u AS (UPDATE catchup.cells SET lang = 'en' RETURNING cell)
+SELECT t.ok((SELECT array_agg(cell) = ARRAY['00000000-0000-0000-0000-00000000000a'::uuid] FROM u), '언어는 내 칸 것만 바뀜');
+SELECT t.refuses($q$UPDATE catchup.cells SET state = 'paused'$q$, '칸의 다른 열은 못 고침');
+SELECT t.refuses($q$UPDATE catchup.cells SET lang = 'fr'$q$, '모르는 언어는 못 넣음');
 SELECT t.ok((SELECT count(*) = 0 FROM catchup.decision_cards), '남의 카드가 안 보임');
 SELECT t.ok((SELECT count(*) = 0 FROM catchup.cell_events), '남의 사건이 안 보임');
 WITH u AS (UPDATE catchup.decision_cards SET question = 'x' WHERE id = '00000000-0000-0000-0000-0000000000b1' RETURNING 1)
