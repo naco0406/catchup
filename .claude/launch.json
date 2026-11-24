@@ -2,6 +2,8 @@
   "version": "0.0.1",
   "configurations": [
     { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "@catchup/web", "dev"], "port": 5180 },
-    { "name": "web-live", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "@catchup/web", "dev:live"], "port": 5181, "url": "http://127.0.0.1:5181" }
+    { "name": "web-live", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "@catchup/web", "dev:live"], "port": 5181, "url": "http://127.0.0.1:5181" },
+    { "name": "landing", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "@catchup/landing", "dev"], "port": 5183 },
+    { "name": "landing-dist", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "@catchup/landing", "preview"], "port": 5184 }
   ]
 }

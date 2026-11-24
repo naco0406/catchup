@@ -4,10 +4,11 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "pnpm --filter @catchup/web dev",
+    "dev:landing": "pnpm --filter @catchup/landing dev",
     "build": "pnpm --filter @catchup/web build",
     "test": "pnpm --filter @catchup/web test",
     "e2e": "pnpm --filter @catchup/web e2e",
-    "typecheck": "pnpm --filter @catchup/web typecheck",
+    "typecheck": "pnpm -r --if-present typecheck",
     "dev:live": "pnpm --filter @catchup/web dev:live",
     "backend:up": "zsh infra/local/local.sh up",
     "backend:stop": "zsh infra/local/local.sh stop",
@@ -15,6 +16,9 @@
     "test:live": "node services/api/tests/live.mjs && pnpm --filter @catchup/web e2e:live",
     "contracts": "pnpm --filter @catchup/web contracts",
     "backend:demo": "node infra/local/demo-cards.mjs | zsh infra/local/local.sh ops seed demo@example.test",
-    "test:codex": "node services/api/tests/codex-login.mjs && node services/api/tests/codex-gateway.mjs && node services/api/tests/codex-sessions.mjs"
+    "test:codex": "node services/api/tests/codex-login.mjs && node services/api/tests/codex-gateway.mjs && node services/api/tests/codex-sessions.mjs",
+    "build:landing": "pnpm --filter @catchup/landing build",
+    "e2e:landing": "pnpm --filter @catchup/landing e2e",
+    "shots:landing": "pnpm --filter @catchup/landing shots"
   }
 }

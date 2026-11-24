@@ -3,7 +3,6 @@ dist/
 .vite/
 test-results/
 playwright-report/
-landing/dist/
 .DS_Store
 # 계정 캐시 · 비밀값 · 로컬 실행 상태
 .wrangler/

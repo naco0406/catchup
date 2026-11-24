@@ -16,7 +16,7 @@
 | `services/api` · `infra/` | **2단계 서버**(Rust · Postgres · 전용 Colima). `pnpm backend:up` · `pnpm dev:live` · `pnpm test:api` |
 | `docs/performance/` | 잰 것 |
 | `packages/design-system` | 디자인 시스템 정본 파일(`@catchup/design-system`). 웹 앱 · 보드 · 소개 페이지가 함께 읽어요 |
-| `landing/` | 소개 페이지(한 파일 HTML). https://catchup.naco.im 에 올려 두었어요(Cloudflare Workers `catchup-landing`) |
+| `apps/landing` | 소개 페이지(`@catchup/landing`). React로 짜서 빌드할 때 정적 HTML로 구워요(영어 `/`, 한국어 `/ko/`). 그림은 실제 앱 캡처, `/app/`에 프로토타입을 함께 올려요. https://catchup.naco.im (Cloudflare Workers `catchup-landing`). 자세한 건 `apps/landing/README.md` |
 
 핵심 결과 두 가지:
 - **'각자 자기 AI 구독으로 로그인'은 지금 막혀 있어요.** Anthropic은 사전 승인 필요, OpenAI는 선정 파트너만, Google은 금지예요(원문 확인). 소유자 답(Q10): 임시로 AI1처럼 Codex(ChatGPT) 로그인 + Codex CLI로 LLM을 불러요. 다른 사람에게 열기 전에 바꿔요.

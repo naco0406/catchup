@@ -16,6 +16,9 @@ jobs:
       - run: pnpm test
       - run: pnpm --filter @catchup/web exec playwright install --with-deps chromium
       - run: pnpm e2e
+      # 소개 페이지: 두 언어를 굽고(앱은 /app/ 으로 함께), 바깥 페이지를 시험해요
+      - run: pnpm build:landing
+      - run: pnpm e2e:landing
 
   # 한 칸이 다른 칸의 줄을 읽지 못하는 경계 시험(plan.md 2단계)
   api:

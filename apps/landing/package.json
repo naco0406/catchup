@@ -1,0 +1,30 @@
+{
+  "name": "@catchup/landing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5183 --strictPort",
+    "build": "tsc --noEmit && vite build && pnpm run build:app",
+    "build:app": "cd ../web && CATCHUP_BASE=/app/ vite build --outDir ../landing/dist/app --emptyOutDir --logLevel warn",
+    "preview": "vite preview --host 127.0.0.1 --port 5184 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "shots": "node scripts/shots.mjs",
+    "e2e": "playwright test",
+    "ship": "pnpm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "@catchup/design-system": "workspace:*",
+    "@phosphor-icons/react": "2.1.10",
+    "pretendard": "1.3.9",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "typescript": "5.9.3",
+    "vite": "8.3.5"
+  }
+}

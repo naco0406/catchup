@@ -1,0 +1,10 @@
+{
+  // CatchUp 소개 페이지. dist/ 를 catchup.naco.im 에 올려요(정적 파일만, Worker 코드 없음).
+  // dist/index.html(영어), dist/ko/index.html(한국어), dist/app/(프로토타입, apps/web 을 /app/ 으로 구운 것)
+  // 배포: pnpm --filter @catchup/landing ship
+  "name": "catchup-landing",
+  "routes": [{ "pattern": "catchup.naco.im", "custom_domain": true }],
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist", "not_found_handling": "404-page" },
+  "observability": { "enabled": true }
+}
