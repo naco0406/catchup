@@ -26,6 +26,24 @@ describe.each([['en', en], ['ko', ko]] as const)('%s 예시 카드', (_, ds) => 
     const max = ds === en ? 32 : 21;
     for (const c of ds.cards) for (const o of [...c.options, ...(c.followUp?.options ?? [])]) expect([...o.label].length, `${c.id} ${o.label}`).toBeLessThanOrEqual(max);
   });
+  it('일정이 바뀌는 답은 그 카드에 있는 일정을 가리켜요(달력 조각)', () => {
+    for (const c of ds.cards) for (const o of c.options) {
+      if (!o.day) continue;
+      const slots = c.context?.kind === 'slots' ? c.context.slots : [];
+      expect(slots.map(x => x.name), `${c.id} ${o.label}`).toContain(o.day.name);
+      expect(slots.every(x => x.from !== undefined && x.to !== undefined), c.id).toBe(true);
+      if (o.day.from !== undefined) expect(o.day.to! > o.day.from, c.id).toBe(true);
+    }
+  });
+  it('여러 파일의 코드 변경은 파일마다의 합이 전체와 같아요', () => {
+    for (const c of ds.cards) for (const o of c.options) {
+      const code = o.effect.kind === 'tell' ? o.effect.code : undefined;
+      if (!code?.parts?.length) continue;
+      expect(code.parts.reduce((n, p) => n + p.add, 0), c.id).toBe(code.add);
+      expect(code.parts.reduce((n, p) => n + p.del, 0), c.id).toBe(code.del);
+      expect(code.parts.length, c.id).toBeLessThanOrEqual(code.files);
+    }
+  });
   it('추천은 위험한 답이 아니에요', () => {
     for (const c of ds.cards) expect(c.options[c.recommended]?.risk ?? 'low', c.id).toBe('low');
   });

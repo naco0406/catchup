@@ -7,7 +7,7 @@
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::model::{CardOption, CodeChange, CodeLine, Effect, NewCard, Risk};
+use crate::model::{CardOption, CodeChange, CodeFile, CodeLine, Effect, NewCard, Risk};
 
 pub const PREFIX: &str = "codex-request:";
 /// 이보다 긴 명령은 다 보여 줄 수 없으니 허용할 수 없어요
@@ -222,6 +222,7 @@ impl Asking<'_> {
     fn files(&self) -> (String, Value, Vec<CardOption>, Risk, &'static str) {
         let changes = self.changes.as_array().cloned().unwrap_or_default();
         let mut lines = vec![];
+        let mut parts: Vec<CodeFile> = vec![];
         let (mut add, mut del, mut total, mut concealed) = (0u32, 0u32, 0usize, false);
         let mut removes = false;
         for change in &changes {
@@ -232,6 +233,7 @@ impl Asking<'_> {
             if changes.len() > 1 {
                 lines.push(CodeLine { t: "ctx".into(), s: clip(path, 300) });
             }
+            let mut part = CodeFile { file: clip(path, 300), add: 0, del: 0, lines: vec![] };
             for raw in change["diff"].as_str().unwrap_or_default().lines() {
                 concealed |= raw.chars().any(hidden);
                 let (tag, text) = match kind {
@@ -244,12 +246,23 @@ impl Asking<'_> {
                 };
                 add += u32::from(tag == "add");
                 del += u32::from(tag == "del");
+                part.add += u32::from(tag == "add");
+                part.del += u32::from(tag == "del");
+                // 파일마다 나눈 줄도 전체 한도(MAX_LINES) 안에서만 담아요
+                if total < MAX_LINES {
+                    part.lines.push(CodeLine { t: tag.into(), s: clip(&text, 500) });
+                }
                 total += 1;
                 lines.push(CodeLine { t: tag.into(), s: clip(&text, 500) });
             }
+            parts.push(part);
         }
         let clipped = total > MAX_LINES;
         lines.truncate(MAX_LINES);
+        // 파일이 하나면 나눌 것이 없어요
+        if parts.len() < 2 {
+            parts.clear();
+        }
         let known = !changes.is_empty();
         // 내용을 못 봤거나 · 지우거나 · 숨은 글자가 있거나 · 다 못 보여 주면 한 번 더 확인
         let risk = if !known || removes || concealed || clipped { Risk::Irreversible } else { Risk::Low };
@@ -259,6 +272,7 @@ impl Asking<'_> {
             del,
             files: changes.len() as u32,
             lines,
+            parts,
         });
         let allow = self.option(
             self.say("바꿔요", "Apply"),
@@ -450,6 +464,27 @@ mod tests {
         let card = card(Kind::FileChange, json!({}), Value::Null, changes);
         let Effect::Tell { code: Some(code), .. } = &card.options[0].effect else { panic!("no code") };
         assert_eq!((code.add, code.del, code.files, code.file.as_str()), (1, 1, 1, "src/retry.ts"));
+    }
+
+    #[test]
+    fn a_change_across_files_is_split_per_file() {
+        let changes = json!([
+            { "path": "src/retry.ts", "kind": { "type": "update" }, "diff": "@@\n-old\n+new\n+more\n" },
+            { "path": "src/temporary.ts", "kind": { "type": "add" }, "diff": "export const x = 1\n" },
+        ]);
+        let card = card(Kind::FileChange, json!({}), Value::Null, changes);
+        let Effect::Tell { code: Some(code), .. } = &card.options[0].effect else { panic!("no code") };
+        let per: Vec<_> = code.parts.iter().map(|p| (p.file.as_str(), p.add, p.del, p.lines.len())).collect();
+        assert_eq!(per, vec![("src/retry.ts", 2, 1, 4), ("src/temporary.ts", 1, 0, 1)]);
+        assert_eq!((code.add, code.del, code.files), (3, 1, 2), "합은 파일마다의 합과 같아요");
+    }
+
+    #[test]
+    fn one_file_needs_no_parts() {
+        let changes = json!([{ "path": "src/retry.ts", "kind": { "type": "update" }, "diff": "-a\n+b\n" }]);
+        let card = card(Kind::FileChange, json!({}), Value::Null, changes);
+        let Effect::Tell { code: Some(code), .. } = &card.options[0].effect else { panic!("no code") };
+        assert!(code.parts.is_empty());
     }
 
     #[test]

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Card, Option } from '../data/types';
-import { altOptions, previewable, turnsOf } from '../data';
+import type { Card, Option, Slot } from '../data/types';
+import { altOptions, reviewable, turnsOf } from '../data';
 import { draftKey, type Progress } from '../state/store';
 import { I, SourceIcon } from './icons';
+import { CodeReview, DayStrip } from './Review';
 
 /** 답을 어떻게 눌렀는지 — held: 위험한 답을 꾹 눌러 다 채우고 놓았어요. hint: 짧게 눌러서 안내만 띄워요. 없으면 키보드나 화면 읽기 프로그램이에요 */
 export type PickHow = 'held' | 'hint';
@@ -58,7 +59,8 @@ export function DecisionCard({ card, prog, onPick, onSay, onDraft, composerRef, 
             {card.summary.length > 0 && (
               <ul className="cu-sum">{card.summary.map((s, i) => <li key={i} className={s.dim ? 'dim' : undefined}>{s.strong && <b>{s.strong}</b>}{s.text}</li>)}</ul>
             )}
-            {card.context?.kind === 'slots' && (
+            {card.context?.kind === 'slots' && timed(card.context.slots) && <DayStrip slots={card.context.slots} />}
+            {card.context?.kind === 'slots' && !timed(card.context.slots) && (
               <div className="cu-slots">{card.context.slots.map(s => <div key={s.name} className={`cu-slot${s.isNew ? ' new' : ''}`}><span className="tm">{s.time}</span><span className="nm">{s.name}</span><span className="wh">{s.who}</span></div>)}</div>
             )}
             {card.remembered?.map(text => <div className="cu-work recall" key={text}><I.history aria-hidden /><span>{t('card.recall', { text })}</span></div>)}
@@ -70,7 +72,7 @@ export function DecisionCard({ card, prog, onPick, onSay, onDraft, composerRef, 
           {options.map((o, i) => <OptionRow key={`${alt ? `a${turns.length}` : 'o'}${i}`} o={o} i={i} rec={i === rec} confirm={prog?.confirm === i} onPick={onPick} fill={fill} />)}
         </div>
 
-        <Previews key={turns.length} options={options} rec={rec} prog={prog} onDraft={onDraft} force={pulling ? rec : undefined} />
+        <Previews key={turns.length} options={options} rec={rec} prog={prog} onDraft={onDraft} force={pulling ? rec : undefined} slots={card.context?.kind === 'slots' && timed(card.context.slots) ? card.context.slots : undefined} />
         <Composer onSay={onSay} placeholder={alt ? t('card.more') : t('card.composer')} inputRef={composerRef} />
       </div>
   );
@@ -166,11 +168,14 @@ function OptionRow({ o, i, rec, confirm, onPick, fill }: { o: Option; i: number;
 }
 
 /** 고르면 일어나는 일 — 추천 것을 먼저 보여 주고, 다른 번호의 글도 고르기 전에 볼 수 있어요. 확인을 기다리는 답이 있으면 그 글이 보여요 */
-function Previews({ options, rec, prog, onDraft, force }: { options: Option[]; rec: number; /** 오른쪽으로 미는 동안에는 나갈 글을 보여요 */ force?: number; prog?: Progress; onDraft: (key: string, text: string) => void }) {
+/** 일정에 시각(분)이 다 있으면 달력 조각으로 그려요 */
+const timed = (slots: Slot[]) => slots.length > 0 && slots.every(s => s.from !== undefined && s.to !== undefined);
+
+function Previews({ options, rec, prog, onDraft, force, slots }: { options: Option[]; rec: number; /** 오른쪽으로 미는 동안에는 나갈 글을 보여요 */ force?: number; prog?: Progress; onDraft: (key: string, text: string) => void; slots?: Slot[] }) {
   const { t } = useTranslation();
   const [chosen, setChosen] = useState<number>();
   useEffect(() => { if (prog?.confirm !== undefined) setChosen(prog.confirm); }, [prog?.confirm]);
-  const shows = options.flatMap((o, i) => (previewable(o.effect) ? [i] : []));
+  const shows = options.flatMap((o, i) => (reviewable(o) && (o.effect.kind !== 'change' && o.effect.kind !== 'none' || slots) ? [i] : []));
   if (!shows.length) return null;
   const at = (force !== undefined && shows.includes(force) ? force : chosen) ?? (shows.includes(rec) ? rec : shows[0]!);
   const key = draftKey(prog, at);
@@ -179,22 +184,21 @@ function Previews({ options, rec, prog, onDraft, force }: { options: Option[]; r
       {shows.map(i => <button key={i} type="button" className={i === at ? 'on' : ''} aria-pressed={i === at} aria-label={t('card.previewOf', { n: i + 1 })} onClick={() => setChosen(i)}>{i + 1}</button>)}
     </span>
   );
-  return <Preview key={key} o={options[at]!} draft={prog?.drafts?.[key]} onDraft={text => onDraft(key, text)} tabs={tabs} />;
+  return <Preview key={key} o={options[at]!} draft={prog?.drafts?.[key]} onDraft={text => onDraft(key, text)} tabs={tabs} slots={slots} />;
 }
 
-function Preview({ o, draft, onDraft, tabs }: { o: Option; draft?: string; onDraft: (text: string) => void; tabs: React.ReactNode }) {
+function Preview({ o, draft, onDraft, tabs, slots }: { o: Option; draft?: string; onDraft: (text: string) => void; tabs: React.ReactNode; slots?: Slot[] }) {
   const { t } = useTranslation();
   const e = o.effect;
   const [editing, setEditing] = useState(false);
   const area = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (editing) { const a = area.current; a?.focus(); a?.setSelectionRange(a.value.length, a.value.length); } }, [editing]);
-  if (e.kind === 'tell' && e.code) {
-    const c = e.code;
-    return (
-      <div className="cu-code"><div className="fh"><I.branch aria-hidden /><span className="lb">{t('card.codeIf')}</span><span className="file">{c.file}</span><span className="sp" />
-        <span className="st"><span className="a">+{c.add}</span><span className="m">−{c.del}</span><span>{t('card.files', { count: c.files })}</span></span></div>
-        {c.lines.map((l, i) => <div key={i} className={`ln ${l.t === 'ctx' ? '' : l.t}`}>{l.s}</div>)}</div>
-    );
+  // 코드 변경은 파일마다 접고 펼치는 diff, 번호 탭은 그 아래에 둬요(다른 답의 글로 돌아갈 수 있게)
+  if (e.kind === 'tell' && e.code) return <><CodeReview c={e.code} />{tabs && <div className="pv-under">{tabs}</div>}</>;
+  // 일정이 바뀌는 답은 고른 뒤의 달력 조각을 보여 줘요. 보낼 글이 있으면 그 아래에 이어요
+  const day = o.day && slots ? <DayStrip slots={slots} change={o.day} /> : null;
+  if (day && !('text' in e && e.text)) {
+    return <div className="cu-prev day"><div className="h"><I.calendar aria-hidden /><span>{t('card.ifPickDay')}</span><span className="sp" /></div>{day}{tabs}</div>;
   }
   // 글이 없는 답(바꾸기 · 기록만)을 확인하는 중이면 다른 답의 글을 보여 주지 않아요
   if (!('text' in e) || !e.text) return null;
@@ -208,6 +212,7 @@ function Preview({ o, draft, onDraft, tabs }: { o: Option; draft?: string; onDra
             onBlur={ev => { if (ev.target.value.trim() && ev.target.value !== text) onDraft(ev.target.value); }}
             onKeyDown={ev => { ev.stopPropagation(); if (ev.key === 'Escape' || (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey))) { (ev.target as HTMLTextAreaElement).blur(); setEditing(false); } }} />
         : <p>{text}</p>}
+      {day}
       {tabs}
     </div>
   );

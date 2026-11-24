@@ -430,3 +430,43 @@ button.cu-btn:disabled { opacity: .4; cursor: default; }
 /* 추천 답이 없는 덱(알려만 드려요)의 오른쪽 단추는 잉크색이에요 — 빨강은 추천 답에만 */
 [data-pull="right"] .act-r.ink, [data-nudge] .act-r.ink { color: var(--cu-fg); }
 [data-armed] .act-m, [data-armed][data-pull="right"] .act-l, [data-armed][data-pull="left"] .act-r { color: var(--cu-warm-300); }
+
+/* ── 카드 안의 검토 화면(design.md 17장 제안 1) — 고르면 일어나는 일을 그 일의 모양으로 ── */
+/* <DayStrip> 그날의 달력 조각: 이름 칸 | 시간 축. 겹친 구간은 강조색 옅은 칠, 새 초대는 점선, 옮긴 일정의 원래 자리는 점선 그림자 */
+.cu-day { margin-top: 16px; }
+.cu-prev .cu-day { margin-top: 10px; }
+.cu-day-grid { position: relative; display: grid; grid-template-columns: minmax(96px, 38%) minmax(0, 1fr); row-gap: 8px; column-gap: 12px; }
+.cu-day-band { position: absolute; top: 0; bottom: 24px; left: calc(38% + 12px); right: 0; pointer-events: none; }
+.cu-day-band .tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--cu-line); }
+.cu-day-band .clash { position: absolute; top: 0; bottom: 0; background: var(--cu-accent-soft); border-radius: 6px; }
+.cu-day-row { display: contents; }
+.cu-day-row .nm { min-width: 0; display: grid; font: var(--cu-t-label); color: var(--cu-fg); }
+.cu-day-row .tm { font: var(--cu-t-caption); color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
+.cu-day-row .track { position: relative; min-height: 40px; }
+.cu-day-row .bar { position: absolute; top: calc(50% - 14px); height: 28px; min-width: 6px; border-radius: 8px; background: var(--cu-bg-inverse); }
+.cu-day-row.new .bar { background: var(--cu-bg-surface); box-shadow: inset 0 0 0 2px var(--cu-fg); }
+.cu-day-row .bar.ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--cu-line-strong); border: 1px dashed var(--cu-fg-3); }
+.cu-day-row.moved .bar:not(.ghost) { background: var(--cu-ok); }
+.cu-day-row.moved .tm { color: var(--cu-ok); font-weight: 600; }
+.cu-day-row.away .bar { opacity: .25; }
+.cu-day-row.away .nm .n { color: var(--cu-fg-3); text-decoration: line-through; text-decoration-thickness: 1px; }
+.cu-day-row.away .tm { color: var(--cu-fg-2); }
+.cu-day-axis { grid-column: 2; position: relative; height: 16px; font: var(--cu-t-micro); font-weight: 400; color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
+.cu-day-axis span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.cu-day-axis span:first-child { transform: none; }
+.cu-day-axis span:last-child { transform: translateX(-100%); }
+.cu-day-note { margin: 8px 0 0; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+/* 코드 변경 — 파일마다 접고 펼쳐요 */
+.cu-code.files .cu-file + .cu-file { border-top: 1px solid var(--cu-line); }
+.cu-file summary { list-style: none; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 14px; cursor: pointer; font-family: var(--cu-mono); font-size: 12px; color: var(--cu-fg); }
+.cu-file summary::-webkit-details-marker { display: none; }
+.cu-root .cu-file summary svg { width: 14px; height: 14px; color: var(--cu-fg-3); transition: transform var(--cu-dur) var(--cu-ease); }
+.cu-file[open] summary svg { transform: rotate(90deg); }
+.cu-file summary .file { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cu-file summary .st { display: inline-flex; gap: 8px; white-space: nowrap; font-weight: 600; }
+.cu-file summary .a { color: var(--cu-ok); } .cu-file summary .m { color: var(--cu-danger); }
+.cu-file summary:focus-visible { outline: none; box-shadow: inset var(--cu-focus); }
+.cu-file > .ln:last-child { padding-bottom: 8px; }
+.cu-file-more { padding: 10px 14px; border-top: 1px solid var(--cu-line); font: var(--cu-t-caption); color: var(--cu-fg-3); }
+.pv-under { margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { .cu-root .cu-file summary svg { transition: none; } }

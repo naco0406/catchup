@@ -33,7 +33,12 @@ export const ko: Dataset = {
       summary: [{ text: '결제가 실패하면 3번까지 다시 시도하게 만드는 중이에요.' }, { text: '지금은 주문 화면에만 있어서, 정기 결제는 실패하면 그대로 끝나요.' }],
       evidence: ['지금까지 한 일 6단계', '읽은 파일 12개', '테스트 38개 통과'],
       options: [
-        { label: '결제 서버에서 다시 시도해요', detail: '정기 결제까지 한 번에 해결돼요, 파일 4개, 10분쯤', done: 'Claude Code에게 결제 서버에서 다시 시도하라고 했어요', effect: { kind: 'tell', to: 'Claude Code', code: { file: 'services/payments/retry.ts', add: 18, del: 2, files: 4, lines: [{ t: 'del', s: '- return charge(order)' }, { t: 'add', s: '+ return withRetry(() => charge(order), { times: 3, onlyWhen: isTemporaryFailure })' }] } } },
+        { label: '결제 서버에서 다시 시도해요', detail: '정기 결제까지 한 번에 해결돼요, 파일 4개, 10분쯤', done: 'Claude Code에게 결제 서버에서 다시 시도하라고 했어요', effect: { kind: 'tell', to: 'Claude Code', code: { file: 'services/payments/retry.ts', add: 18, del: 2, files: 4, lines: [{ t: 'del', s: '- return charge(order)' }, { t: 'add', s: '+ return withRetry(() => charge(order), { times: 3, onlyWhen: isTemporaryFailure })' }], parts: [
+          { file: 'services/payments/retry.ts', add: 9, del: 1, lines: [{ t: 'ctx', s: '  export async function pay(order: Order) {' }, { t: 'del', s: '-   return charge(order)' }, { t: 'add', s: '+   return withRetry(() => charge(order), { times: 3, onlyWhen: isTemporaryFailure })' }, { t: 'ctx', s: '  }' }] },
+          { file: 'services/payments/temporary.ts', add: 5, del: 0, lines: [{ t: 'add', s: '+ export const isTemporaryFailure = (e: PaymentError) =>' }, { t: 'add', s: "+   e.code === 'timeout' || e.code === 'rate_limited'" }] },
+          { file: 'services/subscriptions/renew.ts', add: 2, del: 1, lines: [{ t: 'del', s: '-   await charge(sub.order)' }, { t: 'add', s: '+   await pay(sub.order)' }] },
+          { file: 'services/payments/retry.test.ts', add: 2, del: 0, lines: [{ t: 'add', s: "+ it('retries a timeout up to 3 times', async () => { /* … */ })" }, { t: 'add', s: "+ it('never retries a declined card', async () => { /* … */ })" }] },
+        ] } } },
         { label: '주문 화면에서만 다시 시도해요', detail: '가장 작게 바꿔요, 파일 1개, 정기 결제는 그대로예요', done: 'Claude Code에게 주문 화면에서만 다시 시도하라고 했어요', effect: { kind: 'tell', to: 'Claude Code' } },
         { label: '여기서 멈추고 두 방법을 정리해 둬요', detail: '코드는 바꾸지 않고, 내가 나중에 직접 봐요', done: 'Claude Code에게 멈추고 두 방법을 정리하라고 했어요', effect: { kind: 'tell', to: 'Claude Code' } },
       ],
@@ -44,12 +49,12 @@ export const ko: Dataset = {
       question: '목요일 3시에 일정\u00a0둘이 겹쳐요. 어느 쪽을 옮길까요?',
       summary: [],
       options: [
-        { label: '주간 회의를 4시 30분으로 옮겨요', detail: '6명 모두 그 시간에 비어 있어요', done: '제품 주간 회의를 목요일 4시 30분으로 옮기고 6명에게 바뀐 초대를 보냈어요', effect: { kind: 'change', undo: true } },
-        { label: '투자 미팅을 금요일 10시로 되물어요', detail: '김태호 님 답이 오면 다시 알려 드려요', done: '김태호 님께 투자 미팅을 금요일 10시로 옮길 수 있는지 여쭤봤어요', effect: { kind: 'send', to: '김태호', text: '태호 님, 목요일 3시에 정기 회의가 있어서요. 투자 미팅을 금요일 오전 10시로 옮길 수 있을까요?' } },
-        { label: '주간 회의는 이번 주만 빠져요', detail: '이도현 님께 진행을 부탁해요', done: '이도현 님께 이번 주 주간 회의 진행을 부탁했어요', effect: { kind: 'send', to: '이도현', text: '도현 님, 이번 주 제품 주간 회의는 제가 빠져야 해서요. 진행을 부탁드려도 될까요?' } },
+        { label: '주간 회의를 4시 30분으로 옮겨요', detail: '6명 모두 그 시간에 비어 있어요', done: '제품 주간 회의를 목요일 4시 30분으로 옮기고 6명에게 바뀐 초대를 보냈어요', day: { name: '제품 주간 회의', from: 990, to: 1020 }, effect: { kind: 'change', undo: true } },
+        { label: '투자 미팅을 금요일 10시로 되물어요', detail: '김태호 님 답이 오면 다시 알려 드려요', done: '김태호 님께 투자 미팅을 금요일 10시로 옮길 수 있는지 여쭤봤어요', day: { name: '블루포인트 투자 미팅', away: '금요일 10시로 되물어요', pending: true }, effect: { kind: 'send', to: '김태호', text: '태호 님, 목요일 3시에 정기 회의가 있어서요. 투자 미팅을 금요일 오전 10시로 옮길 수 있을까요?' } },
+        { label: '주간 회의는 이번 주만 빠져요', detail: '이도현 님께 진행을 부탁해요', done: '이도현 님께 이번 주 주간 회의 진행을 부탁했어요', day: { name: '제품 주간 회의', away: '이번 주는 이도현 님이 진행' }, effect: { kind: 'send', to: '이도현', text: '도현 님, 이번 주 제품 주간 회의는 제가 빠져야 해서요. 진행을 부탁드려도 될까요?' } },
       ],
       recommended: 0,
-      context: { kind: 'slots', slots: [{ time: '15:00 – 16:00', name: '블루포인트 투자 미팅', who: '새 초대, 김태호 외 2명', isNew: true }, { time: '15:00 – 15:30', name: '제품 주간 회의', who: '매주, 6명' }] },
+      context: { kind: 'slots', slots: [{ time: '15:00 – 16:00', name: '블루포인트 투자 미팅', from: 900, to: 960, who: '새 초대, 김태호 외 2명', isNew: true }, { time: '15:00 – 15:30', name: '제품 주간 회의', from: 900, to: 930, who: '매주, 6명' }] },
     },
     {
       id: 'c04', source: 'kakao', who: '엄마', meta: '카카오톡 채널로 보내 주신 대화, 어제 오후 9:40', due: { text: '급하지 않아요', tone: 'calm' },

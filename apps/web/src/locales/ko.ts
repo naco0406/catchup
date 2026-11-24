@@ -34,7 +34,7 @@ export const ko: Messages = {
   card: {
     recall: '지난번: {{text}}', previews: '번호마다 나갈 글', previewOf: '{{n}}번의 글 보기', ifPickTell: '{{to}}에게 전하는 말', edit: '고치기', editDone: '완료', edited: '고쳤어요', mic: '음성', micStop: '받아쓰기 멈추기', listening: '듣고 있어요…',
     suggested: '추천', ifPick: '{{to}}에게 보내는 답장', ifPickCopy: '복사할 답장',
-    codeIf: '바뀌는 코드', files_one: '파일 {{count}}개', files_other: '파일 {{count}}개', riskWord: '위험', command: '명령', confirmHint: '한 번 더 누르면 실행해요', holdHint: '꾹 누르면 실행해요', holding: '계속 눌러 주세요', holdFull: '손을 떼면 실행해요',
+    ifPickDay: '고르면 그날은 이렇게 돼요', filesMore_one: '보이지 않는 파일 {{count}}개', filesMore_other: '보이지 않는 파일 {{count}}개', codeIf: '바뀌는 코드', files_one: '파일 {{count}}개', files_other: '파일 {{count}}개', riskWord: '위험', command: '명령', confirmHint: '한 번 더 누르면 실행해요', holdHint: '꾹 누르면 실행해요', holding: '계속 눌러 주세요', holdFull: '손을 떼면 실행해요',
     composer: '다르게 답하기', more: '더 말하기', send: '보내기',
     firstOptions: '처음 선택지 {{n}}개: {{list}}', snooze: '미루기', myself: '내가 할게요',
     asSuggested: '추천대로', asSuggestedShort: '추천대로', asSuggestedNamed: '추천: {{label}}', options: '답',
@@ -59,4 +59,5 @@ export const ko: Messages = {
   log: { read: '읽었어요: {{q}}', subRead: '내가 읽음으로 표시했어요', pending: '아직 되돌릴 수 있어요', edited: '초안을 고쳤어요', title: '처리 기록', today: '오늘', count: '오늘 {{n}}개', all: '모두', mine: '내가 정한 것', auto: '토마토가 한 것', byMe: '내가 정했어요', subSnoozed: '내가 미뤘어요', subHanded: '내가 맡았어요', suggested: '추천대로', inWords: '말로 다르게 답했어요', snoozed: '미뤘어요: {{q}}', handed: '직접 하기로 했어요: {{q}}', undo: '되돌리기', undone: '되돌렸어요', routines: '알아서 해도 되는 범위', routinesSub: '내 답에서 배운 것 3개, 내가 정한 것 1개', empty: '오늘은 아직 없어요.' },
   keys: { title: '키', pick: '답 고르기', suggested: '추천대로', snooze: '미루기', myself: '내가 할게요', undo: '되돌리기', say: '다르게 답하기', talk: '토마토에게 말하기', menu: '메뉴' },
   src: { gmail: 'Gmail', calendar: '캘린더', slack: 'Slack', kakao: '카카오톡', github: 'GitHub', claude: 'Claude Code', codex: 'Codex', local: '로컬' },
+  day: { clash: '겹쳐요', clear: '겹치지 않아요', stillClash: '아직 겹쳐요', cleared: '겹치는 일정이 없어져요', ifAgreed: '상대가 받아 주면 겹치지 않아요' },
 };

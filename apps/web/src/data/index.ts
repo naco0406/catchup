@@ -51,6 +51,8 @@ export const undoableAfterRun = (e: Effect) => e.kind === 'copy' || e.kind === '
 
 /** 미리 보여 줄 것이 있나 */
 export const previewable = (e: Effect) => e.kind === 'send' || e.kind === 'copy' || (e.kind === 'tell' && Boolean(e.text || e.code));
+/** 고르면 일어나는 일을 미리 보여 줄 수 있는 답 — 글, 코드, 또는 그날 일정의 바뀜 */
+export const reviewable = (o: Option) => previewable(o.effect) || Boolean(o.day);
 
 /** 고친 초안을 넣은, 실제로 실행할 내용 */
 export const withDraft = (e: Effect, draft?: string): Effect =>

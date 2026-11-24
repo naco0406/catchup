@@ -659,6 +659,18 @@ export interface components {
             file: string;
             /** Format: int32 */
             files: number;
+            /** @description 모든 파일을 이어 붙인 줄(파일이 여럿이면 경로가 구분 줄로 들어가요). 예전 화면을 위해 남겨요 */
+            lines: components["schemas"]["CodeLine"][];
+            /** @description 파일마다 나눈 것(파일이 둘 이상일 때만). 줄 수 한도는 `lines` 와 같아요 */
+            parts?: components["schemas"]["CodeFile"][];
+        };
+        /** @description 파일 하나의 바뀜 — 카드는 파일마다 접고 펼쳐요(design.md 17장 제안 1) */
+        CodeFile: {
+            /** Format: int32 */
+            add: number;
+            /** Format: int32 */
+            del: number;
+            file: string;
             lines: components["schemas"]["CodeLine"][];
         };
         CodeLine: {

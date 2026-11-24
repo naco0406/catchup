@@ -33,7 +33,12 @@ export const en: Dataset = {
       summary: [{ text: 'Making failed payments retry up to 3 times.' }, { text: 'Right now retries only exist on the checkout page, so failed subscriptions just stop.' }],
       evidence: ['6 steps so far', '12 files read', '38 tests passing'],
       options: [
-        { label: 'Retry in the payment service', detail: 'Covers subscriptions too, 4 files, about 10 min', done: 'Told Claude Code to retry in the payment service', effect: { kind: 'tell', to: 'Claude Code', code: { file: 'services/payments/retry.ts', add: 18, del: 2, files: 4, lines: [{ t: 'del', s: '- return charge(order)' }, { t: 'add', s: '+ return withRetry(() => charge(order), { times: 3, onlyWhen: isTemporaryFailure })' }] } } },
+        { label: 'Retry in the payment service', detail: 'Covers subscriptions too, 4 files, about 10 min', done: 'Told Claude Code to retry in the payment service', effect: { kind: 'tell', to: 'Claude Code', code: { file: 'services/payments/retry.ts', add: 18, del: 2, files: 4, lines: [{ t: 'del', s: '- return charge(order)' }, { t: 'add', s: '+ return withRetry(() => charge(order), { times: 3, onlyWhen: isTemporaryFailure })' }], parts: [
+          { file: 'services/payments/retry.ts', add: 9, del: 1, lines: [{ t: 'ctx', s: '  export async function pay(order: Order) {' }, { t: 'del', s: '-   return charge(order)' }, { t: 'add', s: '+   return withRetry(() => charge(order), { times: 3, onlyWhen: isTemporaryFailure })' }, { t: 'ctx', s: '  }' }] },
+          { file: 'services/payments/temporary.ts', add: 5, del: 0, lines: [{ t: 'add', s: '+ export const isTemporaryFailure = (e: PaymentError) =>' }, { t: 'add', s: "+   e.code === 'timeout' || e.code === 'rate_limited'" }] },
+          { file: 'services/subscriptions/renew.ts', add: 2, del: 1, lines: [{ t: 'del', s: '-   await charge(sub.order)' }, { t: 'add', s: '+   await pay(sub.order)' }] },
+          { file: 'services/payments/retry.test.ts', add: 2, del: 0, lines: [{ t: 'add', s: "+ it('retries a timeout up to 3 times', async () => { /* … */ })" }, { t: 'add', s: "+ it('never retries a declined card', async () => { /* … */ })" }] },
+        ] } } },
         { label: 'Retry on the checkout page only', detail: 'Smallest change, 1 file, subscriptions stay as they are', done: 'Told Claude Code to retry on the checkout page only', effect: { kind: 'tell', to: 'Claude Code' } },
         { label: 'Stop and write up both options', detail: 'No code changes. I’ll look later.', done: 'Told Claude Code to stop and write up both options', effect: { kind: 'tell', to: 'Claude Code' } },
       ],
@@ -44,12 +49,12 @@ export const en: Dataset = {
       question: 'Two meetings overlap Thursday at 3. Which one moves?',
       summary: [],
       options: [
-        { label: 'Move the sync to 4:30', detail: 'All six are free then', done: 'Moved the weekly product sync to Thu 4:30 and sent updated invites to 6 people', effect: { kind: 'change', undo: true } },
-        { label: 'Ask to move it to Fri 10 AM', detail: 'You’ll hear back when Taeho replies', done: 'Asked Taeho if the investor meeting can move to Fri 10 AM', effect: { kind: 'send', to: 'Taeho', text: 'Hi Taeho, I have a team sync Thursday at 3. Could we move the investor meeting to Friday at 10 AM?' } },
-        { label: 'Skip the sync this week', detail: 'Ask Dohyun to run it', done: 'Asked Dohyun to run this week’s sync', effect: { kind: 'send', to: 'Dohyun', text: 'Dohyun, I have to miss this week’s product sync. Could you run it?' } },
+        { label: 'Move the sync to 4:30', detail: 'All six are free then', done: 'Moved the weekly product sync to Thu 4:30 and sent updated invites to 6 people', day: { name: 'Weekly product sync', from: 990, to: 1020 }, effect: { kind: 'change', undo: true } },
+        { label: 'Ask to move it to Fri 10 AM', detail: 'You’ll hear back when Taeho replies', done: 'Asked Taeho if the investor meeting can move to Fri 10 AM', day: { name: 'Bluepoint investor meeting', away: 'Asked to move to Fri 10 AM', pending: true }, effect: { kind: 'send', to: 'Taeho', text: 'Hi Taeho, I have a team sync Thursday at 3. Could we move the investor meeting to Friday at 10 AM?' } },
+        { label: 'Skip the sync this week', detail: 'Ask Dohyun to run it', done: 'Asked Dohyun to run this week’s sync', day: { name: 'Weekly product sync', away: 'Dohyun runs it this week' }, effect: { kind: 'send', to: 'Dohyun', text: 'Dohyun, I have to miss this week’s product sync. Could you run it?' } },
       ],
       recommended: 0,
-      context: { kind: 'slots', slots: [{ time: '3:00 – 4:00 PM', name: 'Bluepoint investor meeting', who: 'New invite, Taeho and 2 others', isNew: true }, { time: '3:00 – 3:30 PM', name: 'Weekly product sync', who: 'Weekly, 6 people' }] },
+      context: { kind: 'slots', slots: [{ time: '3:00 – 4:00 PM', name: 'Bluepoint investor meeting', from: 900, to: 960, who: 'New invite, Taeho and 2 others', isNew: true }, { time: '3:00 – 3:30 PM', name: 'Weekly product sync', from: 900, to: 930, who: 'Weekly, 6 people' }] },
     },
     {
       id: 'c04', source: 'kakao', who: 'Mom', meta: 'Sent via KakaoTalk channel, yesterday 9:40 PM', due: { text: 'Not urgent', tone: 'calm' },

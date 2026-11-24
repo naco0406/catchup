@@ -23,13 +23,26 @@ pub struct CodeLine {
     pub s: String,
 }
 
+/// 파일 하나의 바뀜 — 카드는 파일마다 접고 펼쳐요(design.md 17장 제안 1)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct CodeFile {
+    pub file: String,
+    pub add: u32,
+    pub del: u32,
+    pub lines: Vec<CodeLine>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct CodeChange {
     pub file: String,
     pub add: u32,
     pub del: u32,
     pub files: u32,
+    /// 모든 파일을 이어 붙인 줄(파일이 여럿이면 경로가 구분 줄로 들어가요). 예전 화면을 위해 남겨요
     pub lines: Vec<CodeLine>,
+    /// 파일마다 나눈 것(파일이 둘 이상일 때만). 줄 수 한도는 `lines` 와 같아요
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<CodeFile>,
 }
 
 /// 고르면 일어나는 일 — 선택지마다 하나. 보여 준 글이 곧 실행하는 글이에요

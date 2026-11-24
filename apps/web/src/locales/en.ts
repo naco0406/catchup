@@ -32,7 +32,7 @@ export const en = {
   card: {
     recall: 'Last time: {{text}}', previews: 'Text for each answer', previewOf: 'Show the text for {{n}}', ifPickTell: 'Message to {{to}}', edit: 'Edit', editDone: 'Done', edited: 'edited', mic: 'Voice', micStop: 'Stop listening', listening: 'Listening…',
     suggested: 'Suggested', ifPick: 'Reply to {{to}}', ifPickCopy: 'Reply to copy',
-    codeIf: 'Code change', files_one: '{{count}} file', files_other: '{{count}} files', riskWord: 'Risky', command: 'Command', confirmHint: 'Press again to run', holdHint: 'Hold to run', holding: 'Keep holding', holdFull: 'Release to run',
+    codeIf: 'Code change', files_one: '{{count}} file', files_other: '{{count}} files', filesMore_one: '{{count}} more file not shown', filesMore_other: '{{count}} more files not shown', ifPickDay: 'Your day after this', riskWord: 'Risky', command: 'Command', confirmHint: 'Press again to run', holdHint: 'Hold to run', holding: 'Keep holding', holdFull: 'Release to run',
     composer: 'Answer differently', more: 'Say more', send: 'Send',
     firstOptions: 'First {{n}} options: {{list}}', snooze: 'Snooze', myself: 'I’ll do it',
     asSuggested: 'Go with suggestion', asSuggestedShort: 'Suggested', asSuggestedNamed: 'Suggested: {{label}}', options: 'Answers',
@@ -57,5 +57,6 @@ export const en = {
   log: { read: 'Read: {{q}}', subRead: 'Marked as read by you', pending: 'You can still undo', edited: 'edited the draft', title: 'Activity', today: 'Today', count: '{{n}} today', all: 'All', mine: 'By me', auto: 'By Tomato', byMe: 'By me', subSnoozed: 'By me', subHanded: 'By me', suggested: 'took the suggestion', inWords: 'answered in words', snoozed: 'Snoozed: {{q}}', handed: 'You’ll handle it: {{q}}', undo: 'Undo', undone: 'Undone', routines: 'What it can handle on its own', routinesSub: '3 learned from you, 1 set by you', empty: 'Nothing yet today.' },
   keys: { title: 'Keys', pick: 'Pick an answer', suggested: 'Go with suggestion', snooze: 'Snooze', myself: 'I’ll do it', undo: 'Undo', say: 'Answer differently', talk: 'Talk to Tomato', menu: 'Menu' },
   src: { gmail: 'Gmail', calendar: 'Calendar', slack: 'Slack', kakao: 'KakaoTalk', github: 'GitHub', claude: 'Claude Code', codex: 'Codex', local: 'Local' },
+  day: { clash: 'Overlaps', clear: 'No overlap', stillClash: 'Still overlaps', cleared: 'No overlap left', ifAgreed: 'No overlap if they agree' },
 };
 export type Messages = typeof en;

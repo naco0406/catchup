@@ -10,9 +10,15 @@ export interface Option {
   /** 실행하면 처리 기록에 남는 한 줄 */
   done: string;
   effect: Effect;
+  /** 일정 카드: 이 답을 고르면 그날 일정이 이렇게 돼요(달력 조각으로 미리 보여요, design.md 17장 제안 1).
+   *  from · to 가 있으면 그 시각으로 옮겨요. away 가 있으면 그날에서 빠지고 그 말이 붙어요. pending 은 상대가 받아 줘야 그렇게 돼요(되묻기) */
+  day?: { name: string; from?: number; to?: number; away?: string; pending?: boolean };
 }
 
-export interface CodeChange { file: string; add: number; del: number; files: number; lines: { t: 'add' | 'del' | 'ctx'; s: string }[] }
+export interface CodeLine { t: 'add' | 'del' | 'ctx'; s: string }
+/** 파일 하나의 바뀜 — 여러 파일이면 파일마다 접고 펼쳐요 */
+export interface CodeFile { file: string; add: number; del: number; lines: CodeLine[] }
+export interface CodeChange { file: string; add: number; del: number; files: number; lines: CodeLine[]; parts?: CodeFile[] }
 
 /** 고르면 일어나는 일 — 선택지마다 하나. 보여 준 글(text)이 곧 실행하는 글이에요
  *  send 밖으로 보내요 · copy 누르는 순간 복사만 해요 · tell 에이전트에게 답을 전해요 · change 밖의 것을 바꿔요 · none 기록만 남겨요 */
@@ -26,7 +32,10 @@ export type Effect =
 /** 정하기 전에 보여 주는 자료 — 실행되지 않아요 */
 export type Context =
   | { kind: 'command'; cmd: string }
-  | { kind: 'slots'; slots: { time: string; name: string; who: string; isNew?: boolean }[] };
+  | { kind: 'slots'; slots: Slot[] };
+
+/** 겹친 일정 한 칸. from · to 는 그날 0시부터의 분(예: 15:00 = 900). 있으면 달력 조각으로 그려요 */
+export interface Slot { time: string; name: string; who: string; isNew?: boolean; from?: number; to?: number }
 
 export interface Card {
   id: string;

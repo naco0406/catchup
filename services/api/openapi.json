@@ -1514,6 +1514,45 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CodeLine"
+            },
+            "description": "모든 파일을 이어 붙인 줄(파일이 여럿이면 경로가 구분 줄로 들어가요). 예전 화면을 위해 남겨요"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeFile"
+            },
+            "description": "파일마다 나눈 것(파일이 둘 이상일 때만). 줄 수 한도는 `lines` 와 같아요"
+          }
+        }
+      },
+      "CodeFile": {
+        "type": "object",
+        "description": "파일 하나의 바뀜 — 카드는 파일마다 접고 펼쳐요(design.md 17장 제안 1)",
+        "required": [
+          "file",
+          "add",
+          "del",
+          "lines"
+        ],
+        "properties": {
+          "add": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "del": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "file": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeLine"
             }
           }
         }
