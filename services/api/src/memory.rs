@@ -115,9 +115,11 @@ async fn korean(conn: &mut PgConnection) -> Result<bool> {
 pub async fn list(db: &Db, cell: Uuid) -> Result<Vec<Memory>> {
     let mut tx = db.cell_tx(cell).await?;
     let ko = korean(&mut tx).await?;
-    let rows: Vec<Row> = sqlx::query_as(&format!("SELECT {COLUMNS}, needs_check, merged FROM catchup.memories ORDER BY at DESC NULLS LAST, key LIMIT 300"))
-        .fetch_all(&mut *tx)
-        .await?;
+    let rows: Vec<Row> = sqlx::query_as(&format!(
+        "SELECT {COLUMNS}, needs_check, merged FROM catchup.memories ORDER BY at DESC NULLS LAST, key LIMIT 300"
+    ))
+    .fetch_all(&mut *tx)
+    .await?;
     tx.commit().await?;
     Ok(rows.into_iter().map(|r| r.into_memory(ko)).collect())
 }
@@ -393,7 +395,8 @@ pub fn plan(facts: &[Fact], now: DateTime<Utc>, done: &std::collections::HashSet
         }
     }
     // 확인 필요: 내 선호 중 오래된 것. 합쳐서 빠질 것은 빼요
-    let merged: std::collections::HashSet<String> = out.iter().filter_map(|t| if let Tidy::Merge { key, .. } = t { Some(key.clone()) } else { None }).collect();
+    let merged: std::collections::HashSet<String> =
+        out.iter().filter_map(|t| if let Tidy::Merge { key, .. } = t { Some(key.clone()) } else { None }).collect();
     for f in facts {
         let old = f.at.is_some_and(|at| at <= now - chrono::Duration::days(STALE_DAYS));
         if f.kind == "preference" && old && !merged.contains(&f.key) && !done.contains(&(f.key.clone(), "check")) {
@@ -417,9 +420,10 @@ pub async fn tidy(db: &Db, cell: Uuid) -> Result<usize> {
         return Ok(0);
     }
     let ko = korean(&mut tx).await?;
-    let rows: Vec<Row> = sqlx::query_as(&format!("SELECT {COLUMNS} FROM catchup.memories ORDER BY at DESC NULLS LAST, key LIMIT 2000"))
-        .fetch_all(&mut *tx)
-        .await?;
+    let rows: Vec<Row> =
+        sqlx::query_as(&format!("SELECT {COLUMNS} FROM catchup.memories ORDER BY at DESC NULLS LAST, key LIMIT 2000"))
+            .fetch_all(&mut *tx)
+            .await?;
     let facts: Vec<Fact> = rows
         .into_iter()
         .map(|r| {
@@ -468,10 +472,13 @@ pub struct Tidied {
     pub created_at: DateTime<Utc>,
 }
 
+/// memory_tidy 한 줄: id, action, into_key, created_at, key
+type TidyRow = (Uuid, String, Option<String>, DateTime<Utc>, String);
+
 pub async fn tidied(db: &Db, cell: Uuid) -> Result<Vec<Tidied>> {
     let mut tx = db.cell_tx(cell).await?;
     let ko = korean(&mut tx).await?;
-    let found: Vec<(Uuid, String, Option<String>, DateTime<Utc>, String)> = sqlx::query_as(
+    let found: Vec<TidyRow> = sqlx::query_as(
         "SELECT t.id, t.action, t.into_key, t.created_at, t.key FROM catchup.memory_tidy t
          WHERE t.undone_at IS NULL ORDER BY t.created_at DESC, t.key LIMIT 50",
     )
@@ -499,12 +506,11 @@ pub async fn tidied(db: &Db, cell: Uuid) -> Result<Vec<Tidied>> {
 /// 정리를 되돌려요(합친 기억이 다시 보이고, '확인 필요'는 '맞아요'가 돼요). 되돌린 정리는 다시 하지 않아요
 pub async fn untidy(db: &Db, cell: Uuid, id: Uuid) -> Result<()> {
     let mut tx = db.cell_tx(cell).await?;
-    let found: Option<i32> = sqlx::query_scalar(
-        "UPDATE catchup.memory_tidy SET undone_at = COALESCE(undone_at, now()) WHERE id = $1 RETURNING 1",
-    )
-    .bind(id)
-    .fetch_optional(&mut *tx)
-    .await?;
+    let found: Option<i32> =
+        sqlx::query_scalar("UPDATE catchup.memory_tidy SET undone_at = COALESCE(undone_at, now()) WHERE id = $1 RETURNING 1")
+            .bind(id)
+            .fetch_optional(&mut *tx)
+            .await?;
     found.ok_or(Error::NotFound)?;
     emit(&mut tx, "memory", None).await?;
     tx.commit().await?;
@@ -516,7 +522,14 @@ mod tests {
     use super::*;
 
     fn fact(key: &str, kind: &str, subject: &str, text: &str, days_ago: i64, edited: bool) -> Fact {
-        Fact { key: key.into(), kind: kind.into(), subject: subject.into(), text: text.into(), at: Some(Utc::now() - chrono::Duration::days(days_ago)), edited }
+        Fact {
+            key: key.into(),
+            kind: kind.into(),
+            subject: subject.into(),
+            text: text.into(),
+            at: Some(Utc::now() - chrono::Duration::days(days_ago)),
+            edited,
+        }
     }
 
     #[test]
@@ -528,10 +541,14 @@ mod tests {
             fact("said:x", "preference", "", "메일은 짧게!", 30, true),
         ];
         let plan = plan(&facts, Utc::now(), &Default::default());
-        assert_eq!(plan, vec![
-            Tidy::Merge { key: "note:b".into(), into: "said:x".into() },
-            Tidy::Merge { key: "note:a".into(), into: "said:x".into() },
-        ], "같은 대상끼리만, 내가 고친 것을 남겨요");
+        assert_eq!(
+            plan,
+            vec![
+                Tidy::Merge { key: "note:b".into(), into: "said:x".into() },
+                Tidy::Merge { key: "note:a".into(), into: "said:x".into() },
+            ],
+            "같은 대상끼리만, 내가 고친 것을 남겨요"
+        );
     }
 
     #[test]
@@ -549,7 +566,11 @@ mod tests {
 
     #[test]
     fn what_was_undone_is_not_done_again() {
-        let facts = vec![fact("note:a", "preference", "", "짧게", 3, false), fact("note:b", "preference", "", "짧게", 1, false), fact("note:old", "preference", "", "x", 200, false)];
+        let facts = vec![
+            fact("note:a", "preference", "", "짧게", 3, false),
+            fact("note:b", "preference", "", "짧게", 1, false),
+            fact("note:old", "preference", "", "x", 200, false),
+        ];
         let done = [("note:a".to_owned(), "merge"), ("note:old".to_owned(), "check")].into_iter().collect();
         assert!(plan(&facts, Utc::now(), &done).is_empty());
     }

@@ -467,7 +467,8 @@ pub async fn settle(db: &Db, cell: Uuid, item: Uuid, sorted: &Sorted, by: &str) 
         _ => "ask",
     };
     // 내가 켠 감시 규칙(design.md 17장 제안 2)은 갈래를 올리기만 해요. 넘겨요 → 알려만 드려요 → 물어봐요
-    let watched = watch::raise_for(&mut tx, lane, &held.sender, &held.org, &held.subject, held.text.as_deref().unwrap_or_default()).await?;
+    let watched =
+        watch::raise_for(&mut tx, lane, &held.sender, &held.org, &held.subject, held.text.as_deref().unwrap_or_default()).await?;
     let lane = match &watched {
         Some((_, rule_lane)) if rule_lane == "ask" => "ask",
         Some(_) => "fyi",

@@ -267,10 +267,12 @@ mod tests {
             &[],
         )
         .unwrap();
-        assert_eq!((routed.intent.as_str(), routed.watch.kind.as_str(), routed.watch.value.as_str(), routed.watch.days), ("watch", "from", "acmecorp.com", 7));
+        assert_eq!(
+            (routed.intent.as_str(), routed.watch.kind.as_str(), routed.watch.value.as_str(), routed.watch.days),
+            ("watch", "from", "acmecorp.com", 7)
+        );
         // watch 가 빠진 옛 모양도 읽어요(빈 규칙 — 서버가 만들지 않아요)
         let old = routed_from(r#"{"intent":"ask","reply":"네","task":"","repo":"","card":0}"#, &[]).unwrap();
         assert!(crate::watch::clean(&old.watch).is_none());
     }
-
 }

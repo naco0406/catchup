@@ -20,12 +20,12 @@ use catchup_api::{
     error::Error,
     executor::{Action, Executor, Found, Outcome, Revision, Source, Task},
     inbox::{self, Choice, Incoming, Sorted},
-    watch,
     memory,
     model::{AnswerInput, Card, CardOption, Effect, NewCard, Receipt, Risk, Surface},
     passkeys,
     promises::{self, Promise},
     push::{self, Delivery, Notifier, Subscription},
+    watch,
     worker::{Timing, Worker},
 };
 use serde_json::json;
@@ -2044,7 +2044,13 @@ fn skipped() -> Sorted {
 }
 
 fn automatic(id: &str, org: &str, subject: &str) -> Incoming {
-    Incoming { org: org.into(), subject: subject.into(), direct: false, auto: true, ..mail(id, "noreply@hanbit.example", "자동 알림이에요") }
+    Incoming {
+        org: org.into(),
+        subject: subject.into(),
+        direct: false,
+        auto: true,
+        ..mail(id, "noreply@hanbit.example", "자동 알림이에요")
+    }
 }
 
 async fn lane_of(w: &World, cell: Uuid, id: &str) -> (String, bool) {
@@ -2066,7 +2072,11 @@ async fn a_watch_rule_only_raises_and_only_after_i_turn_it_on() {
     assistant::settle(&w.db, cell, said.id, &model).await.unwrap();
     let proposed = assistant::list(&w.db, cell).await.unwrap().remove(0);
     let rule = proposed.watch.clone().expect("제안된 규칙");
-    assert_eq!((proposed.intent.as_deref(), rule.state.as_str(), rule.lane.as_str()), (Some("watch"), "proposed", "ask"), "넘겨 달라고 해도 올리는 쪽으로만");
+    assert_eq!(
+        (proposed.intent.as_deref(), rule.state.as_str(), rule.lane.as_str()),
+        (Some("watch"), "proposed", "ask"),
+        "넘겨 달라고 해도 올리는 쪽으로만"
+    );
     assert!(rule.until <= chrono::Utc::now() + chrono::Duration::days(31), "끝나는 날은 30일 안");
     assert!(proposed.reply.unwrap().contains("한빛 디자인"));
     assert!(watch::list(&w.db, cell).await.unwrap().is_empty(), "켜기 전에는 적용되지 않아요");
@@ -2097,7 +2107,9 @@ async fn a_watch_rule_only_raises_and_only_after_i_turn_it_on() {
     assistant::accept(&w.db, cell, fyi.id).await.unwrap();
     inbox::receive(&w.db, cell, "local", &[mail("w5", "김하나", "이번 달 청구서예요. 금요일까지 확인해 주세요")]).await.unwrap();
     let item = inbox::next(&w.db, cell).await.unwrap().unwrap();
-    inbox::settle(&w.db, cell, item.id, &ask("확인할까요?", vec![choice("확인했어요", "확인했어요", "low")], 0), "model").await.unwrap();
+    inbox::settle(&w.db, cell, item.id, &ask("확인할까요?", vec![choice("확인했어요", "확인했어요", "low")], 0), "model")
+        .await
+        .unwrap();
     assert_eq!(inbox::list(&w.db, cell).await.unwrap().into_iter().find(|e| e.id == item.id).unwrap().lane, "ask", "내리지 않아요");
 
     watch::stop(&w.db, cell, rule.id).await.unwrap();

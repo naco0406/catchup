@@ -117,7 +117,10 @@ pub async fn propose(conn: &mut PgConnection, cell: Uuid, message: Uuid, rule: &
 
 /// 그 말이 제안한 규칙
 pub async fn of_message(conn: &mut PgConnection, message: Uuid) -> Result<Option<Rule>> {
-    Ok(sqlx::query_as(&format!("SELECT {VIEW} FROM catchup.watch_rules WHERE message = $1")).bind(message).fetch_optional(conn).await?)
+    Ok(sqlx::query_as(&format!("SELECT {VIEW} FROM catchup.watch_rules WHERE message = $1"))
+        .bind(message)
+        .fetch_optional(conn)
+        .await?)
 }
 
 /// 내가 눌러서 켜요. 이미 켜졌으면 그대로, 멈췄거나 끝났으면 다시 켜지 않아요
@@ -133,12 +136,11 @@ pub async fn start(conn: &mut PgConnection, id: Uuid) -> Result<Rule> {
         _ if rule.until <= Utc::now() => return Err(Error::Conflict("expired")),
         _ => {}
     }
-    let rule = sqlx::query_as(&format!(
-        "UPDATE catchup.watch_rules SET state = 'active', started_at = now() WHERE id = $1 RETURNING {VIEW}"
-    ))
-    .bind(id)
-    .fetch_one(&mut *conn)
-    .await?;
+    let rule =
+        sqlx::query_as(&format!("UPDATE catchup.watch_rules SET state = 'active', started_at = now() WHERE id = $1 RETURNING {VIEW}"))
+            .bind(id)
+            .fetch_one(&mut *conn)
+            .await?;
     emit(conn, "watch", None).await?;
     Ok(rule)
 }
@@ -198,10 +200,18 @@ pub fn proposal(ko: bool, rule: &Rule, time_zone_day: &str) -> String {
         (true, "from", _) => format!("{time_zone_day}까지 '{}' 쪽에서 온 것은 넘기지 않고 알려 드릴게요. 켤까요?", rule.value),
         (true, _, "ask") => format!("{time_zone_day}까지 '{}' 낱말이 들어간 글은 바로 물어볼게요. 켤까요?", rule.value),
         (true, _, _) => format!("{time_zone_day}까지 '{}' 낱말이 들어간 글은 넘기지 않고 알려 드릴게요. 켤까요?", rule.value),
-        (false, "from", "ask") => format!("Until {time_zone_day}, I'll ask you about anything from “{}” right away. Turn this on?", rule.value),
-        (false, "from", _) => format!("Until {time_zone_day}, I'll show you anything from “{}” instead of skipping it. Turn this on?", rule.value),
-        (false, _, "ask") => format!("Until {time_zone_day}, I'll ask you about anything mentioning “{}” right away. Turn this on?", rule.value),
-        (false, _, _) => format!("Until {time_zone_day}, I'll show you anything mentioning “{}” instead of skipping it. Turn this on?", rule.value),
+        (false, "from", "ask") => {
+            format!("Until {time_zone_day}, I'll ask you about anything from “{}” right away. Turn this on?", rule.value)
+        }
+        (false, "from", _) => {
+            format!("Until {time_zone_day}, I'll show you anything from “{}” instead of skipping it. Turn this on?", rule.value)
+        }
+        (false, _, "ask") => {
+            format!("Until {time_zone_day}, I'll ask you about anything mentioning “{}” right away. Turn this on?", rule.value)
+        }
+        (false, _, _) => {
+            format!("Until {time_zone_day}, I'll show you anything mentioning “{}” instead of skipping it. Turn this on?", rule.value)
+        }
     }
 }
 

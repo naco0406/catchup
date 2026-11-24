@@ -27,7 +27,6 @@ use crate::{
         sessions::{self, AgentSession, StartInput},
     },
     connections::{self, Connection},
-    watch::{self, Rule},
     crypto::Key,
     db::Db,
     error::{Error, Result},
@@ -35,6 +34,7 @@ use crate::{
     model::{AnswerInput, Card, CardOption, Effect, Receipt, Surface, Turn},
     passkeys,
     push::{self, Subscription},
+    watch::{self, Rule},
 };
 
 #[derive(Clone)]
