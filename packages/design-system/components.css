@@ -470,3 +470,13 @@ button.cu-btn:disabled { opacity: .4; cursor: default; }
 .cu-file-more { padding: 10px 14px; border-top: 1px solid var(--cu-line); font: var(--cu-t-caption); color: var(--cu-fg-3); }
 .pv-under { margin-top: 8px; }
 @media (prefers-reduced-motion: reduce) { .cu-root .cu-file summary svg { transition: none; } }
+
+/* ── 기억 정리(design.md 17장 제안 3) — '확인 필요' 표시와 정리한 것 목록 ── */
+.cu-check { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--cu-wait); font-weight: 600; }
+.cu-root .cu-check svg { width: 14px; height: 14px; }
+details.cu-tidied { margin-top: 24px; }
+details.cu-tidied > summary { list-style: none; cursor: pointer; }
+details.cu-tidied > summary::-webkit-details-marker { display: none; }
+details.cu-tidied > summary::after { content: '+'; margin-left: 8px; color: var(--cu-fg-3); }
+details.cu-tidied[open] > summary::after { content: '−'; }
+details.cu-tidied > summary:focus-visible { outline: none; box-shadow: var(--cu-focus); border-radius: var(--cu-r-inset); }

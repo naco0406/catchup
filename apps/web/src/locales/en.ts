@@ -59,5 +59,6 @@ export const en = {
   src: { gmail: 'Gmail', calendar: 'Calendar', slack: 'Slack', kakao: 'KakaoTalk', github: 'GitHub', claude: 'Claude Code', codex: 'Codex', local: 'Local' },
   day: { clash: 'Overlaps', clear: 'No overlap', stillClash: 'Still overlaps', cleared: 'No overlap left', ifAgreed: 'No overlap if they agree' },
   watch: { title: 'Watching', from: 'From “{{v}}”', words: 'Mentioning “{{v}}”', ask: 'Asks you', fyi: 'Shows you', until: 'until {{when}}', turnOn: 'Turn on', on: 'On', stop: 'Stop', stopped: 'Stopped', proposal: 'A watch rule', about: 'Rules only bring things up to you, and every rule ends.' },
+  tidy: { title: 'Tidied by Tomato', merged: 'Merged into the same memory', mergedIn_one: '{{count}} merged in', mergedIn_other: '{{count}} merged in', check: 'Still right?', stillRight: 'Still right', undo: 'Undo' },
 };
 export type Messages = typeof en;

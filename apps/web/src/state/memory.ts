@@ -6,7 +6,9 @@ import type { Card } from '../data/types';
 import { draftKey, stateOf, type State } from './store';
 
 export type MemoryKind = 'preference' | 'person' | 'project' | 'promise';
-export interface Memory { key: string; kind: MemoryKind; subject: string; text: string; at?: string | null; edited: boolean; card?: string | null }
+export interface Memory { key: string; kind: MemoryKind; subject: string; text: string; at?: string | null; edited: boolean; card?: string | null;
+  /** 실제 모드: 정리 일꾼이 '확인 필요'로 표시했어요 · 이 기억으로 합친 수(design.md 17장 제안 3) */
+  check?: boolean; merged?: number }
 
 /** 카드 한 장에 붙이는 기억의 수(서버의 ON_CARD) */
 const ON_CARD = 3;

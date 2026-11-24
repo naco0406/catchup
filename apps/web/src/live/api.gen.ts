@@ -532,6 +532,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/tidy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 정리 일꾼이 한 일(합침 · 확인 필요) — design.md 17장 제안 3 */
+        get: operations["list_tidied"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/tidy/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 정리를 되돌려요. '확인 필요'를 되돌리면 '맞아요'예요 */
+        post: operations["undo_tidy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/watch": {
         parameters: {
             query?: never;
@@ -812,11 +846,18 @@ export interface components {
             at?: string | null;
             /** Format: uuid */
             card?: string | null;
+            /** @description 정리 일꾼이 '확인 필요'로 표시했어요(오래 다시 확인되지 않은 내 선호). 쓰기는 계속 써요 */
+            check: boolean;
             /** @description 내가 고친 기억 */
             edited: boolean;
             key: string;
             /** @description person · project · preference · promise */
             kind: string;
+            /**
+             * Format: int32
+             * @description 이 기억으로 합친 같은 기억의 수
+             */
+            merged: number;
             /** Format: uuid */
             session?: string | null;
             /** @description 누구 · 어느 일에 대한 것인지. 내가 알려 준 것은 비어 있어요 */
@@ -954,6 +995,18 @@ export interface components {
         TellInput: {
             /** Format: uuid */
             request_key: string;
+            text: string;
+        };
+        /** @description 정리 일꾼이 한 일(되돌리지 않은 것, 최근 것부터). `text` 는 정리한 그 기억의 글이에요 */
+        Tidied: {
+            /** @description merge · check */
+            action: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            into_key?: string | null;
+            key: string;
             text: string;
         };
         Turn: {
@@ -2025,6 +2078,50 @@ export interface operations {
         };
     };
     push_off: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_tidied: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tidied"][];
+                };
+            };
+        };
+    };
+    undo_tidy: {
         parameters: {
             query?: never;
             header?: never;

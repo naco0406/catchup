@@ -2119,3 +2119,45 @@ async fn a_watch_without_a_target_is_not_made() {
     let m = assistant::list(&w.db, cell).await.unwrap().remove(0);
     assert_eq!((m.intent.as_deref(), m.watch.is_none()), (Some("unclear"), true));
 }
+
+/// 기억 정리 일꾼(design.md 17장 제안 3): 같은 기억은 하나로 합치고, 오래된 내 선호는 '확인 필요'로 표시해요.
+/// 하루에 한 번만 하고, 되돌릴 수 있고, 되돌린 정리는 다시 하지 않아요. 다른 칸에는 닿지 않아요
+#[tokio::test]
+async fn tidying_merges_repeats_flags_old_preferences_and_can_be_undone() {
+    let mut w = World::new().await;
+    let (cell, other) = (w.cell().await, w.cell().await);
+    for text in ["메일은 짧게", "메일은  짧게.", "존댓말로 써 줘"] {
+        memory::tell(&w.db, cell, Uuid::new_v4(), text).await.unwrap();
+    }
+    for _ in 0..2 {
+        memory::tell(&w.db, other, Uuid::new_v4(), "메일은 짧게").await.unwrap();
+    }
+    sqlx::query("UPDATE catchup.memory_notes SET created_at = now() - interval '120 days' WHERE text = '존댓말로 써 줘'")
+        .execute(&mut w.owner)
+        .await
+        .unwrap();
+    let picked: Vec<Uuid> = sqlx::query_scalar("SELECT cell FROM front.cells_to_tidy(100)").fetch_all(w.db.pool()).await.unwrap();
+    assert!(picked.contains(&cell), "일꾼이 정리할 칸으로 골라요");
+
+    assert_eq!(memory::tidy(&w.db, cell).await.unwrap(), 2, "합침 하나, 확인 필요 하나");
+    assert_eq!(memory::tidy(&w.db, cell).await.unwrap(), 0, "하루에 한 번");
+    let picked: Vec<Uuid> = sqlx::query_scalar("SELECT cell FROM front.cells_to_tidy(100)").fetch_all(w.db.pool()).await.unwrap();
+    assert!(!picked.contains(&cell), "정리한 칸은 하루 동안 다시 고르지 않아요");
+    let known = memory::list(&w.db, cell).await.unwrap();
+    let short: Vec<_> = known.iter().filter(|m| m.text.contains("짧게")).collect();
+    assert_eq!((short.len(), short[0].merged), (1, 1), "하나만 남고, 합친 수가 붙어요");
+    assert!(known.iter().find(|m| m.text.contains("존댓말")).unwrap().check);
+    assert_eq!(memory::list(&w.db, other).await.unwrap().len(), 2, "다른 칸은 그대로");
+
+    let done = memory::tidied(&w.db, cell).await.unwrap();
+    assert_eq!(done.len(), 2);
+    let merge = done.iter().find(|t| t.action == "merge").unwrap();
+    assert!(merge.text.contains("짧게") && merge.into_key.is_some(), "합친 기억의 글과 남긴 곳이 보여요");
+    assert!(matches!(memory::untidy(&w.db, other, merge.id).await, Err(Error::NotFound)), "다른 칸의 정리는 되돌릴 수 없어요");
+    memory::untidy(&w.db, cell, merge.id).await.unwrap();
+    memory::untidy(&w.db, cell, merge.id).await.unwrap();
+    assert_eq!(memory::list(&w.db, cell).await.unwrap().iter().filter(|m| m.text.contains("짧게")).count(), 2, "되돌리면 다시 보여요");
+
+    sqlx::query("UPDATE catchup.memory_tidy_runs SET ran_at = now() - interval '2 days'").execute(&mut w.owner).await.unwrap();
+    assert_eq!(memory::tidy(&w.db, cell).await.unwrap(), 0, "되돌린 정리는 다시 하지 않아요");
+}

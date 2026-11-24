@@ -61,4 +61,5 @@ export const ko: Messages = {
   src: { gmail: 'Gmail', calendar: '캘린더', slack: 'Slack', kakao: '카카오톡', github: 'GitHub', claude: 'Claude Code', codex: 'Codex', local: '로컬' },
   day: { clash: '겹쳐요', clear: '겹치지 않아요', stillClash: '아직 겹쳐요', cleared: '겹치는 일정이 없어져요', ifAgreed: '상대가 받아 주면 겹치지 않아요' },
   watch: { title: '지켜보는 것', from: '“{{v}}” 쪽에서 온 것', words: '“{{v}}” 낱말이 들어간 글', ask: '바로 물어봐요', fyi: '알려만 드려요', until: '{{when}}까지', turnOn: '켜기', on: '켜져 있어요', stop: '멈추기', stopped: '멈췄어요', proposal: '지켜보기 규칙', about: '규칙은 나에게 올리기만 하고, 늘 끝나는 날이 있어요.' },
+  tidy: { title: '토마토가 정리한 것', merged: '같은 기억으로 합쳤어요', mergedIn_one: '{{count}}개 합침', mergedIn_other: '{{count}}개 합침', check: '아직 맞나요?', stillRight: '맞아요', undo: '되돌리기' },
 };

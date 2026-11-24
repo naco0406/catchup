@@ -27,7 +27,7 @@ async function open(page: Page, hash: string, proposed: Rule, rules: Rule[]) {
     if (path.endsWith('/stream')) return route.fulfill({ status: 200, contentType: 'text/event-stream', body: ': ok\n\n' });
     const body = path.endsWith('/me/assistant') ? [message]
       : path.endsWith('/me/watch') ? rules
-      : path.endsWith('/me/memories') ? []
+      : path.endsWith('/me/memories') || path.endsWith('/me/tidy') ? []
       : path.endsWith('/me/codex') ? { state: 'in', busy: false }
       : path.endsWith('/agent-sessions') || path.endsWith('/activity') ? []
       : path.endsWith('/v1/me') ? { cell: '00000000-0000-0000-0000-00000000000a', lang: 'ko', time_zone: 'Asia/Seoul' }

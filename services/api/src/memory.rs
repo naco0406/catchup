@@ -11,7 +11,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
-    db::Db,
+    db::{Db, emit},
     error::{Error, Result},
 };
 
@@ -39,6 +39,10 @@ pub struct Memory {
     pub edited: bool,
     pub card: Option<Uuid>,
     pub session: Option<Uuid>,
+    /// 정리 일꾼이 '확인 필요'로 표시했어요(오래 다시 확인되지 않은 내 선호). 쓰기는 계속 써요
+    pub check: bool,
+    /// 이 기억으로 합친 같은 기억의 수
+    pub merged: i32,
 }
 
 #[derive(sqlx::FromRow)]
@@ -53,6 +57,10 @@ struct Row {
     session: Option<Uuid>,
     at: Option<DateTime<Utc>>,
     fixed: Option<String>,
+    #[sqlx(default)]
+    needs_check: bool,
+    #[sqlx(default)]
+    merged: i32,
 }
 
 const COLUMNS: &str = "key, kind, subject, what, a, b, card, session, at, fixed";
@@ -92,6 +100,8 @@ impl Row {
             edited: self.fixed.is_some(),
             card: self.card,
             session: self.session,
+            check: self.needs_check,
+            merged: self.merged,
         }
     }
 }
@@ -105,7 +115,7 @@ async fn korean(conn: &mut PgConnection) -> Result<bool> {
 pub async fn list(db: &Db, cell: Uuid) -> Result<Vec<Memory>> {
     let mut tx = db.cell_tx(cell).await?;
     let ko = korean(&mut tx).await?;
-    let rows: Vec<Row> = sqlx::query_as(&format!("SELECT {COLUMNS} FROM catchup.memories ORDER BY at DESC NULLS LAST, key LIMIT 300"))
+    let rows: Vec<Row> = sqlx::query_as(&format!("SELECT {COLUMNS}, needs_check, merged FROM catchup.memories ORDER BY at DESC NULLS LAST, key LIMIT 300"))
         .fetch_all(&mut *tx)
         .await?;
     tx.commit().await?;
@@ -330,9 +340,219 @@ pub fn for_model(lines: &[String]) -> String {
     )
 }
 
+// ── 기억 정리 일꾼(design.md 17장 제안 3, 'dreaming') ──────────────────────────────────────────
+// 새 기억을 짓지 않아요. 있는 기억에 '합침' · '확인 필요' 표시만 붙이고, 정리마다 줄이 남아 내가 되돌릴 수 있어요.
+// 모델을 쓰지 않아서 밖에서 온 글이 정리를 거쳐 선호나 지시로 바뀌는 길이 없어요.
+
+/// 이만큼 다시 확인되지 않은 내 선호는 '확인 필요'로 표시해요
+pub const STALE_DAYS: i64 = 90;
+
+/// 정리할 기억 하나(이미 뷰를 지난 것: 지운 것 · 합친 것은 없어요)
+#[derive(Clone, Debug)]
+pub struct Fact {
+    pub key: String,
+    pub kind: String,
+    pub subject: String,
+    pub text: String,
+    pub at: Option<DateTime<Utc>>,
+    pub edited: bool,
+}
+
+/// 정리 하나
+#[derive(Clone, Debug, PartialEq)]
+pub enum Tidy {
+    /// key 를 into 로 합쳐요(key 는 뷰에서 빠져요)
+    Merge { key: String, into: String },
+    /// key 를 '확인 필요'로 표시해요
+    Check { key: String },
+}
+
+/// 같은 글인지 볼 때 — 대소문자 · 띄어쓰기 · 끝 문장부호는 가리지 않아요
+fn same_text(text: &str) -> String {
+    text.to_lowercase().split_whitespace().collect::<Vec<_>>().join(" ").trim_end_matches(['.', '!', '?', '。', '~']).to_owned()
+}
+
+/// 무엇을 정리할지. `done` 은 이미 한(되돌린 것까지) 정리 — 같은 정리를 다시 하지 않아요
+pub fn plan(facts: &[Fact], now: DateTime<Utc>, done: &std::collections::HashSet<(String, &'static str)>) -> Vec<Tidy> {
+    use std::collections::HashMap;
+    let mut out = vec![];
+    // 합침: 약속은 날짜마다 따로라 합치지 않아요. 남기는 것은 내가 고친 것, 그다음 가장 최근 것
+    let mut groups: HashMap<(String, String, String), Vec<&Fact>> = HashMap::new();
+    for f in facts.iter().filter(|f| f.kind != "promise") {
+        groups.entry((f.kind.clone(), f.subject.to_lowercase(), same_text(&f.text))).or_default().push(f);
+    }
+    let mut keys: Vec<_> = groups.into_iter().filter(|(_, g)| g.len() > 1).collect();
+    keys.sort_by(|a, b| a.0.cmp(&b.0));
+    for (_, mut group) in keys {
+        group.sort_by(|a, b| (b.edited, b.at, &b.key).cmp(&(a.edited, a.at, &a.key)));
+        let keep = group[0].key.clone();
+        for f in &group[1..] {
+            if !done.contains(&(f.key.clone(), "merge")) {
+                out.push(Tidy::Merge { key: f.key.clone(), into: keep.clone() });
+            }
+        }
+    }
+    // 확인 필요: 내 선호 중 오래된 것. 합쳐서 빠질 것은 빼요
+    let merged: std::collections::HashSet<String> = out.iter().filter_map(|t| if let Tidy::Merge { key, .. } = t { Some(key.clone()) } else { None }).collect();
+    for f in facts {
+        let old = f.at.is_some_and(|at| at <= now - chrono::Duration::days(STALE_DAYS));
+        if f.kind == "preference" && old && !merged.contains(&f.key) && !done.contains(&(f.key.clone(), "check")) {
+            out.push(Tidy::Check { key: f.key.clone() });
+        }
+    }
+    out
+}
+
+/// 하루에 한 번 정리해요. 오늘 이미 했으면 아무것도 하지 않아요. 정리한 수를 돌려줘요
+pub async fn tidy(db: &Db, cell: Uuid) -> Result<usize> {
+    let mut tx = db.cell_tx(cell).await?;
+    let due: Option<i32> = sqlx::query_scalar(
+        "INSERT INTO catchup.memory_tidy_runs (cell, ran_at) VALUES ($1, now())
+         ON CONFLICT (cell) DO UPDATE SET ran_at = now() WHERE catchup.memory_tidy_runs.ran_at <= now() - interval '1 day' RETURNING 1",
+    )
+    .bind(cell)
+    .fetch_optional(&mut *tx)
+    .await?;
+    if due.is_none() {
+        return Ok(0);
+    }
+    let ko = korean(&mut tx).await?;
+    let rows: Vec<Row> = sqlx::query_as(&format!("SELECT {COLUMNS} FROM catchup.memories ORDER BY at DESC NULLS LAST, key LIMIT 2000"))
+        .fetch_all(&mut *tx)
+        .await?;
+    let facts: Vec<Fact> = rows
+        .into_iter()
+        .map(|r| {
+            let edited = r.fixed.is_some();
+            let m = r.into_memory(ko);
+            Fact { key: m.key, kind: m.kind, subject: m.subject, text: m.text, at: m.at, edited }
+        })
+        .collect();
+    let done: std::collections::HashSet<(String, &'static str)> =
+        sqlx::query_as::<_, (String, String)>("SELECT key, action FROM catchup.memory_tidy")
+            .fetch_all(&mut *tx)
+            .await?
+            .into_iter()
+            .map(|(key, action)| (key, if action == "merge" { "merge" } else { "check" }))
+            .collect();
+    let plan = plan(&facts, Utc::now(), &done);
+    for t in &plan {
+        let (action, key, into) = match t {
+            Tidy::Merge { key, into } => ("merge", key, Some(into)),
+            Tidy::Check { key } => ("check", key, None),
+        };
+        sqlx::query("INSERT INTO catchup.memory_tidy (cell, action, key, into_key) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING")
+            .bind(cell)
+            .bind(action)
+            .bind(key)
+            .bind(into)
+            .execute(&mut *tx)
+            .await?;
+    }
+    if !plan.is_empty() {
+        emit(&mut tx, "memory", None).await?;
+    }
+    tx.commit().await?;
+    Ok(plan.len())
+}
+
+/// 정리 일꾼이 한 일(되돌리지 않은 것, 최근 것부터). `text` 는 정리한 그 기억의 글이에요
+#[derive(Clone, Debug, Serialize, ToSchema)]
+pub struct Tidied {
+    pub id: Uuid,
+    /// merge · check
+    pub action: String,
+    pub key: String,
+    pub into_key: Option<String>,
+    pub text: String,
+    pub created_at: DateTime<Utc>,
+}
+
+pub async fn tidied(db: &Db, cell: Uuid) -> Result<Vec<Tidied>> {
+    let mut tx = db.cell_tx(cell).await?;
+    let ko = korean(&mut tx).await?;
+    let found: Vec<(Uuid, String, Option<String>, DateTime<Utc>, String)> = sqlx::query_as(
+        "SELECT t.id, t.action, t.into_key, t.created_at, t.key FROM catchup.memory_tidy t
+         WHERE t.undone_at IS NULL ORDER BY t.created_at DESC, t.key LIMIT 50",
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+    let mut out = vec![];
+    for (id, action, into_key, created_at, key) in found {
+        // 합친 기억은 memories 뷰에서 빠져서, 재료(memory_facts)와 내가 고친 글에서 읽어요
+        let row: Option<Row> = sqlx::query_as(
+            "SELECT f.key, f.kind, f.subject, f.what, f.a, f.b, f.card, f.session, f.at, e.text AS fixed
+             FROM catchup.memory_facts f LEFT JOIN catchup.memory_edits e ON e.cell = f.cell AND e.key = f.key
+             WHERE f.key = $1 AND e.state IS DISTINCT FROM 'forgotten'",
+        )
+        .bind(&key)
+        .fetch_optional(&mut *tx)
+        .await?;
+        if let Some(row) = row {
+            out.push(Tidied { id, action, key, into_key, text: row.into_memory(ko).text, created_at });
+        }
+    }
+    tx.commit().await?;
+    Ok(out)
+}
+
+/// 정리를 되돌려요(합친 기억이 다시 보이고, '확인 필요'는 '맞아요'가 돼요). 되돌린 정리는 다시 하지 않아요
+pub async fn untidy(db: &Db, cell: Uuid, id: Uuid) -> Result<()> {
+    let mut tx = db.cell_tx(cell).await?;
+    let found: Option<i32> = sqlx::query_scalar(
+        "UPDATE catchup.memory_tidy SET undone_at = COALESCE(undone_at, now()) WHERE id = $1 RETURNING 1",
+    )
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    found.ok_or(Error::NotFound)?;
+    emit(&mut tx, "memory", None).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn fact(key: &str, kind: &str, subject: &str, text: &str, days_ago: i64, edited: bool) -> Fact {
+        Fact { key: key.into(), kind: kind.into(), subject: subject.into(), text: text.into(), at: Some(Utc::now() - chrono::Duration::days(days_ago)), edited }
+    }
+
+    #[test]
+    fn the_same_memory_twice_keeps_the_newest_or_the_one_i_edited() {
+        let facts = vec![
+            fact("note:a", "preference", "", "메일은 짧게", 10, false),
+            fact("note:b", "preference", "", "메일은  짧게.", 2, false),
+            fact("note:c", "preference", "박서연", "메일은 짧게", 1, false),
+            fact("said:x", "preference", "", "메일은 짧게!", 30, true),
+        ];
+        let plan = plan(&facts, Utc::now(), &Default::default());
+        assert_eq!(plan, vec![
+            Tidy::Merge { key: "note:b".into(), into: "said:x".into() },
+            Tidy::Merge { key: "note:a".into(), into: "said:x".into() },
+        ], "같은 대상끼리만, 내가 고친 것을 남겨요");
+    }
+
+    #[test]
+    fn promises_are_never_merged_and_only_my_old_preferences_need_a_check() {
+        let facts = vec![
+            fact("promise:1", "promise", "", "견적서 보내기", 200, false),
+            fact("promise:2", "promise", "", "견적서 보내기", 100, false),
+            fact("answer:1", "person", "박서연", "B안", 200, false),
+            fact("note:old", "preference", "", "존댓말로", 120, false),
+            fact("note:new", "preference", "", "반말로", 5, false),
+        ];
+        let plan = plan(&facts, Utc::now(), &Default::default());
+        assert_eq!(plan, vec![Tidy::Check { key: "note:old".into() }]);
+    }
+
+    #[test]
+    fn what_was_undone_is_not_done_again() {
+        let facts = vec![fact("note:a", "preference", "", "짧게", 3, false), fact("note:b", "preference", "", "짧게", 1, false), fact("note:old", "preference", "", "x", 200, false)];
+        let done = [("note:a".to_owned(), "merge"), ("note:old".to_owned(), "check")].into_iter().collect();
+        assert!(plan(&facts, Utc::now(), &done).is_empty());
+    }
 
     #[test]
     fn memory_goes_to_the_model_as_data() {

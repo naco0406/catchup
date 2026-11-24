@@ -80,6 +80,8 @@ pub fn router(app: App) -> Router {
         .route("/v1/me/assistant", get(assistant_thread).post(tell_assistant))
         .route("/v1/me/assistant/{id}/accept", post(accept_proposal))
         .route("/v1/me/assistant/{id}/keep", post(keep_words))
+        .route("/v1/me/tidy", get(list_tidied))
+        .route("/v1/me/tidy/{id}/undo", post(undo_tidy))
         .route("/v1/me/watch", get(list_watch))
         .route("/v1/me/watch/{id}/stop", post(stop_watch))
         .route("/v1/me/connections", get(list_connections))
@@ -431,6 +433,19 @@ async fn keep_words(State(app): State<App>, session: Session, Path(id): Path<Uui
     Ok(Json(assistant::keep(&app.db, session.cell, id).await?))
 }
 
+/// 정리 일꾼이 한 일(합침 · 확인 필요) — design.md 17장 제안 3
+#[utoipa::path(get, path = "/v1/me/tidy", responses((status = 200, body = Vec<crate::memory::Tidied>)))]
+async fn list_tidied(State(app): State<App>, session: Session) -> Result<Json<Vec<crate::memory::Tidied>>> {
+    Ok(Json(crate::memory::tidied(&app.db, session.cell).await?))
+}
+
+/// 정리를 되돌려요. '확인 필요'를 되돌리면 '맞아요'예요
+#[utoipa::path(post, path = "/v1/me/tidy/{id}/undo", params(("id" = Uuid, Path)), responses((status = 204), (status = 404)))]
+async fn undo_tidy(State(app): State<App>, session: Session, Path(id): Path<Uuid>) -> Result<StatusCode> {
+    crate::memory::untidy(&app.db, session.cell, id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /// 켜져 있는 감시 규칙(design.md 17장 제안 2). 켜기는 토마토의 제안을 받아들이는 것(`/v1/me/assistant/{id}/accept`)이에요
 #[utoipa::path(get, path = "/v1/me/watch", responses((status = 200, body = Vec<Rule>)))]
 async fn list_watch(State(app): State<App>, session: Session) -> Result<Json<Vec<Rule>>> {
@@ -570,6 +585,8 @@ async fn session_patch(State(app): State<App>, session: Session, Path(id): Path<
         keep_words,
         list_watch,
         stop_watch,
+        list_tidied,
+        undo_tidy,
         list_connections,
         disconnect,
         push_key,
@@ -586,6 +603,7 @@ async fn session_patch(State(app): State<App>, session: Session, Path(id): Path<
     ),
     components(schemas(
         Rule,
+        crate::memory::Tidied,
         CodexStatus,
         Message,
         AgentSession,

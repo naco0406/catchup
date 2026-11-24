@@ -88,6 +88,20 @@ impl Worker {
                 this.busy.lock().await.remove(&cell);
             });
         }
+        // 기억 정리(하루에 한 번, design.md 17장 제안 3) — 답의 일과 따로 골라요. 실패해도 다른 일은 막지 않아요
+        let tidy: Vec<Uuid> = sqlx::query_scalar("SELECT cell FROM front.cells_to_tidy(20)").fetch_all(self.db.pool()).await?;
+        for cell in tidy {
+            if !self.busy.lock().await.insert(cell) {
+                continue;
+            }
+            let this = self.clone();
+            running.spawn(async move {
+                if let Err(error) = crate::memory::tidy(&this.db, cell).await {
+                    tracing::warn!(%cell, %error, "memory tidy failed");
+                }
+                this.busy.lock().await.remove(&cell);
+            });
+        }
         Ok(())
     }
 
