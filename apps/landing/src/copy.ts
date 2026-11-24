@@ -3,7 +3,7 @@
 // 'Try it' 안의 화면은 실제 앱이라, 그 글은 apps/web/src/locales 와 apps/web/src/data 에서 고쳐요.
 
 export type Lang = 'en' | 'ko';
-export type Shot = 'cal' | 'code' | 'risk' | 'words' | 'fyi' | 'fail' | 'log' | 'phone';
+export type Shot = 'cal' | 'code' | 'risk' | 'words' | 'fyi' | 'fail' | 'log' | 'phone' | 'done';
 type Moment = { id: string; tab: string; shot: Shot; alt: string; title: string; body: string; facts: [string, string] };
 type Row = { name: string; does: string };
 
@@ -146,7 +146,7 @@ const en: Copy = {
     lede: 'Only the decisions, as cards. Coming soon.',
     action: 'Try the prototype',
     open: 'Open in a new tab',
-    shotAlt: 'The deck on a phone, the first card of the morning',
+    shotAlt: 'The deck after the last card: all caught up, with what it handled meanwhile',
   },
   foot: { note: 'Screens are from the prototype running on sample cards. Names and numbers are examples.', rights: '© 2026 CatchUp' },
 };
@@ -261,7 +261,7 @@ const ko: Copy = {
     lede: '정할 것만, 카드로. 곧 만나요.',
     action: '프로토타입 써 보기',
     open: '새 탭에서 열기',
-    shotAlt: '휴대폰의 덱. 아침의 첫 카드',
+    shotAlt: '마지막 카드 뒤의 덱. 다 봤어요, 그리고 그동안 알아서 한 일',
   },
   foot: { note: '화면은 예시 카드로 돌아가는 프로토타입이에요. 이름과 숫자는 예시예요.', rights: '© 2026 CatchUp' },
 };

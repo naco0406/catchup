@@ -113,6 +113,23 @@ for (const lang of ['en', 'ko']) {
     await page.close();
   }
 
+  // 다 봤어요: 일곱 장에 답한 뒤의 화면(끝 장). 추천대로(↵), 위험한 카드는 내가 할게요(D)
+  {
+    const page = await open(lang, '#/catchup', { width: 390, height: 844 });
+    for (let i = 0; i < 14; i++) {
+      const card = page.locator('.cu-card[data-card]').first();
+      if (!(await card.count())) break;
+      const id = await card.getAttribute('data-card');
+      await page.waitForTimeout(8_000);   // 화면에 걸리는 'N장을 M초에'가 지어낸 숫자처럼 보이지 않게, 한 장에 8초쯤 읽고 답해요
+      await page.keyboard.press('Enter'); await page.waitForTimeout(700);
+      if (await page.locator(`.cu-card[data-card="${id}"]`).count()) { await page.keyboard.press('d'); await page.waitForTimeout(700); }
+    }
+    await page.waitForTimeout(11_000);   // 10초 되돌리기가 끝나 답이 나간 뒤
+    await page.reload({ waitUntil: 'load' }); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(500);
+    await phoneShot(page, 'done');
+    await page.close();
+  }
+
   fs.writeFileSync(path.join(out, 'sizes.json'), JSON.stringify(sizes, null, 2) + '\n');
   console.log(`✓ ${lang}: ${Object.keys(sizes).length}장`);
 }

@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowUUpLeft, CheckCircle, EnvelopeSimple, LockSimple, ShieldCheck } from '@phosphor-icons/react/dist/ssr';
+import { ArrowUUpLeft, CheckCircle, EnvelopeSimple, LockSimple, ShieldCheck } from '@phosphor-icons/react/dist/ssr';
 import type { Copy, Lang, Shot } from './copy';
 
 // 소개 페이지 한 장. 빌드할 때 정적 HTML로 구워요(render.tsx). 여기에 상태나 이벤트는 없어요. 움직이는 건 main.ts 가 맡아요.
@@ -48,12 +48,9 @@ export function Page({ t, lang, app, sizes }: Props) {
           </div>
         </section>
 
-        <section id="try" className="try" aria-labelledby="try-title">
+        {/* 써 보기: 제목 없이 첫 화면 바로 아래에 붙어요. 실제 앱(/app/)의 덱을 바로 넘겨 봐요 */}
+        <section id="try" className="try" aria-label={t.try.title}>
           <div className="wrap">
-            <div className="sec-head">
-              <h2 id="try-title">{t.try.title}</h2>
-              <p>{t.try.lede}</p>
-            </div>
             <div className="try-stage">
               <div className="device" id="device">
                 <div className="device-in" id="deviceIn">
@@ -61,6 +58,7 @@ export function Page({ t, lang, app, sizes }: Props) {
                 </div>
               </div>
               <div className="try-bar" id="tryBar">
+                <p className="try-cap">{t.try.lede}</p>
                 <dl className="keys">
                   <div><dt><kbd className="cu-kbd">1</kbd><kbd className="cu-kbd">2</kbd><kbd className="cu-kbd">3</kbd></dt><dd>{t.try.keys.pick}</dd></div>
                   <div><dt><kbd className="cu-kbd">↵</kbd></dt><dd>{t.try.keys.take}</dd></div>
@@ -93,7 +91,6 @@ export function Page({ t, lang, app, sizes }: Props) {
             </div>
             <div className="tally">
               <p className="fig in"><b>{t.how.figures.in}</b><span>{t.how.figures.inLabel}</span><small>{t.how.figures.inSub}</small></p>
-              <ArrowRight className="to" aria-hidden="true" />
               <p className="fig out"><b>{t.how.figures.out}</b><span>{t.how.figures.outLabel}</span><small>{t.how.figures.outSub}</small></p>
               <p className="fig each"><b>{t.how.figures.each}</b><span>{t.how.figures.eachLabel}</span><small>{t.how.figures.eachSub}</small></p>
             </div>
@@ -206,7 +203,7 @@ export function Page({ t, lang, app, sizes }: Props) {
                 <a className="cu-btn lg" id="endOpen" href={appUrl} target="_blank" rel="noopener">{t.end.open}</a>
               </div>
             </div>
-            <Img className="end-shot" lang={lang} shot="phone" alt={t.end.shotAlt} sizes={sizes} />
+            <Img className="end-shot" lang={lang} shot="done" alt={t.end.shotAlt} sizes={sizes} />
           </div>
         </section>
       </main>
