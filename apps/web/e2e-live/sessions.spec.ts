@@ -22,6 +22,7 @@ async function open(page: Page, sessions: Fake[], login = 'in', lang = 'ko') {
     if (path.endsWith('/patch')) return route.fulfill({ status: 200, contentType: 'text/plain', body: '--- a/retry.ts\n+++ b/retry.ts\n-return charge(order)\n+return withRetry(order) // \u202ehidden\n' });
     const body = path.endsWith('/agent-sessions') ? sessions
       : path.endsWith('/me/codex') ? { state: login, busy: false }
+      : path.endsWith('/v1/me') ? { cell: '00000000-0000-0000-0000-00000000000a', lang, time_zone: 'Asia/Seoul' }
       : path.endsWith('/activity') ? []
       : { cards: [], cursor: 0 };
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
@@ -45,16 +46,12 @@ test('로그인 전에는 연결로 보내요', async ({ page }) => {
   await expect(page).toHaveURL(/#\/connections/);
 });
 
-test('기다리는 세션은 사이드바에 보이고 카드로 보내요', async ({ page }) => {
+test('기다리는 세션은 메뉴에 수로 보이고 카드로 보내요', async ({ page }) => {
   await open(page, [session({ state: 'waiting' })]);
-  const menu = page.locator('.cu-top .menu');
-  if (await menu.isVisible()) {
-    await menu.click();
-    await expect(page.locator('.drawer .cu-run .s.wait')).toContainText('답을 기다려요');
-    await page.keyboard.press('Escape');
-  } else {
-    await expect(page.locator('.cu-side .cu-run .s.wait')).toContainText('답을 기다려요');
-  }
+  await page.getByRole('button', { name: '메뉴' }).first().click();
+  await expect(page.locator('.cu-side.drawer').getByRole('button', { name: '코딩 세션' })).toContainText('1');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.cu-side.drawer')).toHaveCount(0);
   await page.locator('[data-session="waiting"]').getByRole('button', { name: '답하기' }).click();
   await expect(page).toHaveURL(/#\/catchup/);
 });

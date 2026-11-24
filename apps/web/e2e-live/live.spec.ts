@@ -134,9 +134,11 @@ test('미룬 카드를 다시 꺼내고, 알려만을 카드로 올려요', asyn
 test('로그아웃하면 카드가 남지 않아요', async ({ page }) => {
   await signIn(page, [card('내 카드', [option('알겠어요', { kind: 'none' })])]);
   await expect(question(page)).toHaveText('내 카드');
-  const menu = page.locator('.cu-top .menu');
-  if (await menu.isVisible()) await menu.click();
-  await page.getByRole('button', { name: '로그아웃' }).filter({ visible: true }).click();
+  // 로그아웃은 메뉴의 설정 안에 있어요
+  await page.getByRole('button', { name: '메뉴' }).first().click();
+  const side = page.locator('.cu-side.drawer');
+  await side.getByRole('button', { name: '설정' }).click();
+  await side.getByRole('button', { name: '로그아웃' }).click();
   await expect(page.getByRole('heading', { name: 'CatchUp에 로그인' })).toBeVisible();
   await expect(question(page)).toHaveCount(0);
 });
@@ -229,8 +231,8 @@ test('같은 사람의 다음 카드에 지난 결정이 붙어 오고, 지우�
   const known = page.locator('[data-memory]').filter({ hasText: 'B안으로 진행해요' });
   await expect(known).toBeVisible();
   // 직접 알려 주고, 고치고
-  await page.getByRole('textbox', { name: '직접 알려 주기' }).fill('서연 님께는 늘 존댓말로 써 주세요');
-  await page.getByRole('button', { name: '직접 알려 주기' }).click();
+  await page.getByRole('textbox', { name: '토마토에게 알려 주기' }).fill('서연 님께는 늘 존댓말로 써 주세요');
+  await page.getByRole('button', { name: '토마토에게 알려 주기' }).click();
   const told = page.locator('[data-memory]').filter({ hasText: '늘 존댓말로' });
   await expect(told).toBeVisible();
   await told.getByRole('button', { name: '고치기' }).click();
@@ -247,12 +249,12 @@ test('같은 사람의 다음 카드에 지난 결정이 붙어 오고, 지우�
   expect(sql(`SELECT state FROM catchup.memory_edits WHERE cell = '${me.cell}' AND state = 'forgotten'`)).toBe('forgotten');
 });
 
-test('비서에게 한 말은 모델이 없어도 남고, 그대로 기억해 두거나 되돌릴 수 있어요', async ({ page }) => {
+test('토마토에게 한 말은 모델이 없어도 남고, 그대로 기억해 두거나 되돌릴 수 있어요', async ({ page }) => {
   const me = await signIn(page, []);
   await expect(page.getByText('다 봤어요')).toBeVisible();
   await page.evaluate(() => { location.hash = '#/assistant'; });
   await expect(page.locator('.talk-examples button')).toHaveCount(4);
-  await page.getByRole('textbox', { name: '비서에게 말하기' }).fill('서연 님 메일은 세 문장 안으로 써 줘');
+  await page.getByRole('textbox', { name: '토마토에게 말하기' }).fill('서연 님 메일은 세 문장 안으로 써 줘');
   await page.getByRole('button', { name: '보내기' }).click();
   const turn = page.locator('[data-talk]').filter({ hasText: '세 문장 안으로' });
   await expect(turn).toBeVisible();
@@ -289,7 +291,7 @@ test('내가 보낸 글의 약속이 맨 위 칸에 보이고, 같은 사람의 
   await noOverflow(page);
 });
 
-test('비서에게 말한 카드는 눌러야 그 말이 전해지고, 답은 카드에서 골라요', async ({ page }) => {
+test('토마토에게 말한 카드는 눌러야 그 말이 전해지고, 답은 카드에서 골라요', async ({ page }) => {
   const me = await signIn(page, [card('리뷰는 몇 시에 할까요?', [option('11시로 해요', send('11시에 해요'))]), card('견적은 어느 안으로 할까요?', [option('A안으로 진행해요', send('A안으로 갈게요'))])]);
   await expect(question(page)).toHaveText('리뷰는 몇 시에 할까요?');
   // 갈래를 고르는 것은 모델이라(시험 계정은 연결돼 있지 않아요) 고른 결과를 넣어요
@@ -307,11 +309,11 @@ test('비서에게 말한 카드는 눌러야 그 말이 전해지고, 답은 �
   await expect.poll(me.sent, { timeout: 20_000 }).toBe('견적은 B안으로 한다고 해 줘');
 });
 
-test('덱에서 바로 비서에게 말하면 보고 있던 카드가 같이 가고, 카드에는 아무 일도 없어요', async ({ page }) => {
+test('덱에서 바로 토마토에게 말하면 보고 있던 카드가 같이 가고, 카드에는 아무 일도 없어요', async ({ page }) => {
   const me = await signIn(page, [card('계약서는 어느 안 기준인가요?', [option('B안 기준이에요', send('B안 기준이에요'))])]);
   await expect(question(page)).toHaveText('계약서는 어느 안 기준인가요?');
   await page.locator('[data-talk-open]').click();
-  const sheet = page.getByRole('dialog', { name: '비서에게 말하기' });
+  const sheet = page.getByRole('dialog', { name: '토마토에게 말하기' });
   // 지금 보는 카드를 알려 주고, 입력창에 바로 쓸 수 있어요
   await expect(sheet.locator('.talk-seen')).toContainText('서연');
   await expect(sheet.locator('.talk-seen')).toContainText('계약서는 어느 안 기준인가요?');
@@ -387,7 +389,7 @@ test.describe('패스키', () => {
     const me = await signIn(page, [card('패스키로 들어와도 보이나요?', [option('네', send('네'))])]);
     await expect(question(page)).toHaveText('패스키로 들어와도 보이나요?');
     await page.evaluate(() => { location.hash = '#/connections'; });
-    await expect(page.getByText('얼굴 · 지문으로 로그인해요')).toBeVisible();
+    await expect(page.getByText('얼굴이나 지문으로 로그인해요')).toBeVisible();
     await page.getByRole('button', { name: '패스키 추가' }).click();
     const row = page.locator('[data-passkey]');
     await expect(row).toHaveCount(1);
