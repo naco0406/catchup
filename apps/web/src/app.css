@@ -10,16 +10,27 @@ h1, h2, h3, p { text-wrap: pretty; }
 .shell > .cu-side { height: 100%; overflow-y: auto; overscroll-behavior: contain; }
 .shell > .cu-main { height: 100%; overflow: hidden; }
 
-/* 사이드바 아래쪽 — 프로토타입 상자 · 언어 */
-.side-foot { margin-top: auto; padding-top: 16px; display: grid; gap: 8px; }
-.proto { padding: 12px 14px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); font: var(--cu-t-caption); color: var(--cu-fg-2); display: grid; gap: 8px; }
-.proto b { font: var(--cu-t-micro); color: var(--cu-fg-3); letter-spacing: .02em; text-transform: uppercase; }
-.proto .row { display: flex; gap: 6px; flex-wrap: wrap; }
-.proto .cu-btn { height: var(--cu-h-sm); padding: 0 12px; }
-.seg-lang { display: flex; }
-.seg-lang .cu-seg { width: 100%; height: 36px; }
-.seg-lang .cu-seg button { flex: 1; justify-content: center; padding: 0; }
-.cu-side .cu-me { margin-top: 0; }
+/* 메뉴 아래쪽 — Settings 를 누르면 그 자리에서 펼쳐져요: 언어, 알림, 키, 로그아웃, 예시 자료 안내 */
+.side-foot { margin-top: auto; padding-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.side-set { margin: 0 0 4px; padding: 6px; border-radius: var(--cu-r-panel); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-lift); display: grid; gap: 2px; animation: rise var(--cu-dur) var(--cu-ease); }
+.side-set .row { min-height: var(--cu-h-md); width: 100%; display: flex; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: var(--cu-r-full); background: transparent; font: var(--cu-t-caption); color: var(--cu-fg); text-align: left; }
+.side-set button.row { cursor: pointer; }
+.side-set .row svg { color: var(--cu-fg-2); }
+.side-set .row .v { margin-left: auto; display: inline-flex; }
+.side-set .cu-seg { height: 32px; padding: 3px; margin-left: auto; }
+.side-set .cu-seg button { padding: 0 10px; }
+.side-set .proto { padding: 8px 10px 6px; display: grid; gap: 8px; font: var(--cu-t-caption); color: var(--cu-fg-2); }
+.side-set .proto .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.side-set .proto .cu-btn { height: var(--cu-h-sm); padding: 0 12px; }
+@media (hover: hover) { .side-set button.row:hover { background: var(--cu-bg-soft); } }
+@media (hover: none) { .side-set .keys-row { display: none; } }
+
+/* 팝오버의 자리 — ⓘ 는 단추 아래, 키 목록은 오른쪽 아래 */
+.cu-pop-anchor { position: relative; display: inline-flex; }
+.cu-pop-anchor .cu-pop { top: calc(100% + 8px); left: -8px; width: 320px; animation: rise var(--cu-dur) var(--cu-ease); }
+.keys-pop { position: fixed; right: 16px; bottom: 16px; width: 252px; animation: rise var(--cu-dur) var(--cu-ease); }
+@media (max-width: 599px) { .cu-pop-anchor { position: static; } .cu-pop-anchor .cu-pop { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; } }
+.first-promise { margin-top: 20px; }
 
 /* 실제 모드 — 코딩 세션 */
 .new-session { margin-top: 12px; }
@@ -46,12 +57,10 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .talk-dock { flex: none; padding: 0 40px 20px; }
 .talk-dock .cu-composer { margin-top: 8px; }
 .talk-dock .cu-fail { margin: 0 0 4px; }
-.talk-dock .cu-foot { margin-top: 10px; align-items: flex-start; }
-.talk-dock .cu-foot svg { flex: none; margin-top: 2px; }
 
 /* 덱에서 비서에게 말하기 — 덱 위에 뜨는 시트. 넓은 화면은 본문 아래 가운데, 아이폰은 아래에 붙어요 */
 .talk-sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 24px; margin: 0 auto; width: min(560px, calc(100vw - 48px)); max-height: min(640px, calc(100dvh - 96px)); display: flex; flex-direction: column; padding: 20px 24px; border-radius: var(--cu-r-card); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-pop); animation: rise var(--cu-dur) var(--cu-ease); }
-@media (min-width: 1024px) { .talk-sheet { left: 264px; } }
+@media (min-width: 1024px) { .shell.pinned .talk-sheet { left: 264px; } }
 .talk-sheet-head { flex: none; display: flex; align-items: center; gap: 10px; }
 .talk-sheet-head > svg { width: 20px; height: 20px; flex: none; color: var(--cu-fg-2); }
 .talk-sheet-head h2 { flex: 1; min-width: 0; margin: 0; font: var(--cu-t-title); }
@@ -74,7 +83,6 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .memory .cu-composer { margin: 8px 0 4px; }
 .memory .cu-row .t, .memory .cu-row .s { white-space: normal; overflow: visible; }
 .memory .cu-row .acts { display: flex; gap: 16px; }
-.memory .cu-foot { margin: 24px 0 48px; }
 .cu-work.recall { align-items: flex-start; }
 .cu-work.recall svg { margin-top: 3px; }
 .session-sum { margin: 0 0 12px 46px; font: var(--cu-t-caption); color: var(--cu-fg-2); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -88,11 +96,12 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .device-code { margin: 20px 0; padding: 20px 12px; border-radius: var(--cu-r-inset); background: var(--cu-bg-soft); font: var(--cu-t-display); font-family: var(--cu-mono); text-align: center; overflow-wrap: anywhere; user-select: all; }
 .device-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .device-acts a.cu-btn { text-decoration: none; }
-.device .cu-sum { margin-top: 20px; }
-.conn-note { width: 100%; max-width: 100%; margin-top: 20px; text-align: left; }
+.device .cu-foot { margin-top: 20px; align-items: flex-start; }
+.device .cu-foot svg { margin-top: 2px; color: var(--cu-ok); }
+.device-acts .device-left { margin: 0 0 0 auto; align-self: center; }
+.conn-hint { margin: 12px 0 0; text-align: left; }
 
 /* 실제 모드 — 계정 */
-.account { display: flex; flex-wrap: wrap; gap: 6px; }
 .login { gap: 12px; }
 .login .cu-big { margin-top: 8px; }
 .login .cu-composer { width: 420px; max-width: 100%; margin: 0; }
@@ -105,12 +114,20 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .drawer-bg { position: fixed; inset: 0; background: rgb(28 26 24 / .32); z-index: 40; animation: fade var(--cu-dur) var(--cu-ease); }
 .drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 41; box-shadow: var(--cu-shadow-pop); animation: slide var(--cu-dur) var(--cu-ease); }
 .drawer.cu-side { height: 100%; overflow-y: auto; width: min(300px, 86vw); }
+@media (min-width: 1024px) { .drawer.cu-side { width: 264px; } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes slide { from { transform: translateX(-24px); opacity: 0; } }
 
 /* 위 막대 */
-.cu-top { min-width: 0; }
-.cu-top .menu { display: none; margin-left: -12px; }
+/* 메뉴 단추는 모든 화면의 왼쪽 위 같은 자리예요. 메뉴를 고정해 둔 넓은 화면에서만 숨어요 */
+.cu-top { min-width: 0; padding-left: 12px; }
+.cu-top .menu { display: grid; }
+@media (min-width: 1024px) {
+  .shell.pinned .cu-top { padding-left: 28px; }
+  .shell.pinned .cu-top .menu { display: none; }
+  .cu-top.page-top { position: relative; }
+  .page-top .menu { position: absolute; left: 12px; top: 10px; }
+}
 .cu-steps { min-width: 0; overflow: hidden; }
 /* 캐치업 위 막대 — 진행 동그라미(또는 토스트)를 화면 가운데에 둬요 */
 .deck-top-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
@@ -173,7 +190,7 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .toasts { position: fixed; left: 0; right: 0; bottom: calc(20px + env(safe-area-inset-bottom)); display: flex; justify-content: center; pointer-events: none; z-index: 30; }
 .toasts .cu-toast { position: static; transform: none; pointer-events: auto; animation: rise var(--cu-dur) var(--cu-ease); max-width: calc(100vw - 32px); }
 .cu-toast .u { border: 0; color: inherit; font: inherit; font-weight: 600; cursor: pointer; flex: none; }
-@media (min-width: 1024px) { .toasts { left: 264px; } }
+@media (min-width: 1024px) { .shell.pinned .toasts { left: 264px; } }
 /* 캐치업에선 넓은 화면의 토스트가 위 막대 가운데(진행 동그라미 자리)에 서요 */
 /* 덱의 토스트 자리 — 넓은 화면은 위 막대 가운데(한 줄), 아이폰은 입력창 위 한 줄. 카드를 덮지 않아요 */
 .top-toast { display: flex; justify-content: center; min-width: 0; }
@@ -227,8 +244,6 @@ button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); bord
 /* 중간 폭 — 사이드바를 서랍으로 */
 @media (max-width: 1023px) {
   .shell > .cu-side:not(.drawer) { display: none; }
-  .cu-top .menu { display: grid; }
-  .cu-top { padding-left: 20px; }
   .cu-top.page-top { padding: 0 40px; }
 }
 
@@ -236,14 +251,11 @@ button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); bord
 .phone-dock { display: none; }
 @media (max-width: 599px) {
   .cu-top { height: 52px; padding: 0 8px 0 12px; gap: 6px; }
-  .cu-top .menu { margin-left: 0; }
   .cu-top h1 { font: var(--cu-t-title); }
-  .cu-top .cu-steps { display: none; }
   .deck-top-bar { display: flex; }
   .deck-top-bar .ttl { flex: 1; gap: 8px; }
   .deck-top-bar .ttl .left { overflow: hidden; text-overflow: ellipsis; }
   .deck-desktop-only { display: none !important; }
-  .cu-pbar { display: flex; }
   .cu-stage { padding: 0 12px 16px; }
   .cu-peek { display: none; }
   .cu-card { padding: 20px 18px 18px; border-radius: 28px; box-shadow: var(--cu-shadow-lift); }
@@ -318,8 +330,9 @@ button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); bord
   .cu-done-head { flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 16px; }
   .done-wrap { padding: 8px 16px 96px; }
 }
-.cu-pbar { display: none; padding: 0 12px 12px; }
-@media (max-width: 599px) { .cu-pbar { display: flex; } }
+/* 진행 막대 — 카드와 같은 폭이에요(680). 남은 수(“7 left”)와 한 쌍이에요 */
+.cu-pbar { width: 100%; max-width: 728px; margin: 0 auto; padding: 0 24px 12px; flex: none; }
+@media (max-width: 599px) { .cu-pbar { padding: 0 12px 12px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 @media (prefers-reduced-motion: reduce) and (max-width: 599px) {
   .cu-fill.hold[data-press="holding"] > button.cu-opt { background: transparent; }

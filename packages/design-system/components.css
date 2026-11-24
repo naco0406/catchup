@@ -1,5 +1,5 @@
 /*
-  CatchUp 컴포넌트 — v0.8, 2026-11-23 (위험한 답은 꾹 눌러 확인해요. 답 줄은 이름과 이유를 따로 놓는 칸 배치)
+  CatchUp 컴포넌트 — v0.9, 2026-11-23 (쉽고 빠른 화면: 메뉴 단추의 점, 근거 한 줄, 팝오버, 꾹 눌러 확인)
   값은 모두 tokens.css 의 변수예요. 여기서 새 색 · 크기 숫자를 지어내지 않아요(격자 안의 배치 값만 예외).
   클래스 이름 = 만들 컴포넌트 이름이에요. 목록과 쓰임은 README.md 의 '컴포넌트' 표에 있어요.
     .cu-card = <DecisionCard>   .cu-opt = <OptionRow>   .cu-composer = <Composer>   .cu-btn = <Button> …
@@ -170,7 +170,7 @@
 .cu-code .fh .a { color: var(--cu-ok); font-weight: 600; } .cu-code .fh .m { color: var(--cu-danger); font-weight: 600; }
 .cu-code div.ln { padding: 0 14px 0 calc(14px + 2ch); text-indent: -2ch; white-space: pre-wrap; overflow-wrap: anywhere; }
 .cu-code .fh .file { font-family: var(--cu-mono); font-size: 12px; color: var(--cu-fg-2); min-width: 0; overflow-wrap: anywhere; }
-.cu-code .fh .file::before { content: '· '; font-family: var(--cu-font); }
+.cu-code .fh .file { margin-left: 4px; }
 .cu-code .fh .st { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .cu-code .fh + .ln { padding-top: 6px; } .cu-code .ln:last-child { padding-bottom: 6px; }
 .cu-code div.add { background: var(--cu-diff-add); } .cu-code div.del { background: var(--cu-diff-del); }
@@ -267,6 +267,25 @@
 .cu-ptop .sp { flex: 1; }
 /* <CardProgress> 좁은 모양 — 지금 카드만 길어져요 */
 .cu-pbar { display: flex; gap: 4px; padding: 0 16px 12px; }
+
+/* ── 쉽고 빠른 화면(v0.9). 시안: docs/design/simple-ui ── 새 색과 새 크기 없이 있는 토큰으로만 그려요 */
+/* <MenuButton> 점: 덱 밖에 새로 온 것이 있다는 뜻이에요. 잉크색이에요. 빨강 배지는 쓰지 않아요 */
+.cu-ib.menu { position: relative; }
+.cu-ib .dot { position: absolute; right: 6px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--cu-fg); box-shadow: 0 0 0 2px var(--cu-bg-canvas); }
+/* <EvidenceLine> 근거 한 줄: 누를 수 없는 것은 단추처럼 그리지 않아요. 넘치면 말줄임 */
+.cu-evline { margin-top: 14px; display: flex; align-items: center; gap: 6px; font: var(--cu-t-caption); color: var(--cu-fg-3); min-width: 0; }
+.cu-root .cu-evline svg { width: 15px; height: 15px; }
+.cu-evline span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* <Popover> ⓘ의 설명과 ? 의 키 목록 */
+.cu-pop { position: absolute; z-index: 45; padding: 16px 20px; border-radius: var(--cu-r-panel); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-pop); font: var(--cu-t-caption); color: var(--cu-fg-2); text-align: left; }
+.cu-pop b { display: block; margin-bottom: 4px; font: 600 14px/20px var(--cu-font); color: var(--cu-fg); }
+.cu-pop p { margin: 0; }
+.cu-keys { display: grid; gap: 8px; margin: 8px 0 0; color: var(--cu-fg); }
+.cu-keys > div { display: grid; grid-template-columns: 64px 1fr; gap: 16px; align-items: center; }
+.cu-keys dt { display: inline-flex; gap: 4px; }
+.cu-keys dd { margin: 0; }
+.cu-ib.info { color: var(--cu-fg-3); }
+.cu-ib.info.on, .cu-ib.side-pin.on { background: var(--cu-bg-soft-strong); color: var(--cu-fg); }
 .cu-pbar i { flex: 1; height: 6px; border-radius: var(--cu-r-full); background: var(--cu-bg-soft-strong); }
 .cu-pbar i.d { background: var(--cu-warm-300); } .cu-pbar i.on { flex: 3; background: var(--cu-accent); }
 .cu-card.p { width: auto; margin: 0 12px; padding: 20px 18px 18px; border-radius: 28px; }

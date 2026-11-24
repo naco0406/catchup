@@ -43,7 +43,7 @@ test('카드로 올리면 알려만에서 빠지고 캐치업 덱에 들어가�
   await acts(page, info.project.name === 'iphone').getByRole('button', { name: '카드로', exact: true }).click();
   await expect(news(page)).toHaveText(SECOND);
   await go(page, 'catchup');
-  await expect(page.locator('.cu-top .left')).toContainText('8개 중');
+  await expect(page.locator('.cu-top .left')).toContainText('8개 남았어요');
 });
 
 test('다 읽으면 다 봤다고 알려요', async ({ page }, info) => {

@@ -15,6 +15,8 @@ import { turnOnNotifications } from './live/notifications';
 import { copyText } from './clipboard';
 import { Sidebar, type Route } from './components/Sidebar';
 import { Sprite } from './components/icons';
+import { MenuDot } from './components/MenuButton';
+import { KeysPop } from './components/Popover';
 import { Toast, type ToastView } from './components/Toast';
 import { Catchup } from './screens/Catchup';
 import type { PickHow } from './components/DecisionCard';
@@ -26,6 +28,20 @@ const RUNS: Record<Exclude<Effect['kind'], 'copy'>, string> = { send: 'toast.run
 const SNOOZE_UNDO_MS = 5_000;
 const ROUTES: Route[] = ['catchup', 'fyi', 'snoozed', 'activity', 'connections', 'sessions', 'memory', 'assistant'];
 
+/** 메뉴를 고정해 뒀는가(기기마다) · 코딩 세션 화면을 마지막으로 본 때 */
+const PINNED = 'catchup-menu-pinned', SEEN_SESSIONS = 'catchup-sessions-seen';
+const stored = (key: string) => { try { return localStorage.getItem(key); } catch { return null; } };
+const store = (key: string, value: string) => { try { localStorage.setItem(key, value); } catch { /* 저장소가 막혀 있으면 이 화면에서만 */ } };
+function useMedia(query: string) {
+  const [on, setOn] = useState(() => typeof matchMedia === 'function' && matchMedia(query).matches);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const m = matchMedia(query); const f = () => setOn(m.matches);
+    f(); m.addEventListener('change', f); return () => m.removeEventListener('change', f);
+  }, [query]);
+  return on;
+}
+
 const routeOf = (): Route => { const r = location.hash.replace('#/', '') as Route; return ROUTES.includes(r) ? r : 'catchup'; };
 
 export function App() {
@@ -34,6 +50,14 @@ export function App() {
   const { live, s, ds, act, getCard } = backend;
   const [route, setRoute] = useState<Route>(routeOf);
   const [drawer, setDrawer] = useState(false);
+  /** 메뉴는 기본이 숨김이에요. 넓은 화면(1024 이상)에서만 고정할 수 있고, 고정하면 본문을 밀어요 */
+  const [pinned, setPinned] = useState(() => stored(PINNED) === '1');
+  const wide = useMedia('(min-width: 1024px)');
+  const hover = useMedia('(hover: hover)');
+  const docked = pinned && wide;
+  const togglePin = useCallback(() => { setPinned(p => { store(PINNED, p ? '0' : '1'); return !p; }); setDrawer(false); }, []);
+  const [keys, setKeys] = useState(false);
+  const [seenSessions, setSeenSessions] = useState(() => Number(stored(SEEN_SESSIONS)) || 0);
   const [toast, setToast] = useState<{ text: string; n: number } | null>(null);
   const [now, setNow] = useState(Date.now());
   const composerRef = useRef<HTMLInputElement | null>(null);
@@ -65,6 +89,20 @@ export function App() {
     addEventListener('keydown', f); return () => removeEventListener('keydown', f);
   }, [drawer]);
   useEffect(() => { setToast(null); }, [i18n.language]);
+  useEffect(() => { if (route === 'sessions') { const at = Date.now(); store(SEEN_SESSIONS, String(at)); setSeenSessions(at); } }, [route, backend.sessions]);
+  // 어느 화면에서나: [ 메뉴 여닫기 · ? 키 목록
+  useEffect(() => {
+    if (backend.auth !== 'in' || !s.started) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat || talk) return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === '[') { e.preventDefault(); if (docked) togglePin(); else setDrawer(d => !d); }
+      else if (e.key === '?') { e.preventDefault(); setKeys(k => !k); }
+    };
+    addEventListener('keydown', onKey);
+    return () => removeEventListener('keydown', onKey);
+  }, [backend.auth, s.started, talk, docked, togglePin]);
 
   const say = useCallback((text: string) => { const n = Date.now(); setToast({ text, n }); setTimeout(() => setToast(x => (x?.n === n ? null : x)), 2800); }, []);
 
@@ -142,11 +180,14 @@ export function App() {
     return () => removeEventListener('keydown', onKey);
   }, [s.started, route, card, pick, optsOf, snooze, handoff, undo, list, drawer, talk, live]);
 
-  const counts = useMemo(() => ({ open: open.length, fyi: ds.fyi.filter(f => stateOf(s, f.id) === 'open' && !s.deck.includes(`p-${f.id}`)).length, snoozed: snoozedIds(s).length }), [open.length, ds, s]);
+  const counts = useMemo(() => ({ open: open.length, fyi: ds.fyi.filter(f => stateOf(s, f.id) === 'open' && !s.deck.includes(`p-${f.id}`)).length, snoozed: snoozedIds(s).length,
+    sessions: backend.sessions.filter(x => !x.finished_at).length }), [open.length, ds, s, backend.sessions]);
+  // 메뉴 단추의 점 — 덱 밖에 새로 온 것: 안 읽은 소식, 내가 보지 못한 끝난 코딩 세션
+  const dot = counts.fyi > 0 || backend.sessions.some(x => x.finished_at && Date.parse(x.finished_at) > seenSessions);
   const more = () => act({ type: 'more', ids: ds.cards.map(c => c.id).filter(id => !ds.today.includes(id)) });
   const reset = () => { act({ type: 'reset', today: ds.today }); nav('catchup'); };
-  const search = () => { nav('catchup'); setList(true); setTimeout(() => searchRef.current?.focus(), 0); };
-  const sideProps = { ds, route, counts, onNav: (r: Route) => { setList(false); nav(r); }, onMore: () => { more(); nav('catchup'); }, onReset: reset, onSearch: search, moreAdded: s.moreAdded,
+  const sideProps = { route, counts, onNav: (r: Route) => { setList(false); nav(r); }, onMore: () => { more(); nav('catchup'); }, onReset: reset, moreAdded: s.moreAdded,
+    canPin: wide, pinned, onPin: togglePin, onKeys: hover ? () => { setDrawer(false); setKeys(true); } : undefined, onLang: (l: 'en' | 'ko') => void i18n.changeLanguage(l),
     account: live ? { logout: backend.logout, notify: () => void turnOnNotifications().then(ok => say(t(ok ? 'live.notifyOn' : 'live.notifyFailed'))) } : undefined };
   const menu = () => setDrawer(true);
 
@@ -159,7 +200,7 @@ export function App() {
   const waiting = !latestEffect ? '' : latestEffect.kind === 'copy' ? t('toast.copied', { to: t(`src.${latestCard!.source}`) }) : t(RUNS[latestEffect.kind], { s: left });
   const latestOption = latest && latestCard ? optsOf(latestCard).options[latest.pick] : undefined;
   // 토스트 한 장: 방금 미룬 것 → 기다리는 답(남은 초를 고리로) → 알림 → 서버에 다시 잇는 중
-  const view: ToastView | null = snoozedNow ? { text: t('toast.snoozed'), sub: t('toast.snoozedUndo'), icon: 'clock', undo: () => undo() }
+  const view: ToastView | null = snoozedNow ? { text: t('toast.snoozed'), sub: getCard(snoozedNow.id)?.question, icon: 'clock', undo: () => undo() }
     : latest ? { text: waiting, sub: latestOption?.label, undo: () => undo(), ...(latestEffect?.kind === 'copy' ? { icon: 'check' as const } : { count: left, ring: left / (HOLD_MS / 1000) }) }
     : toast ? { text: toast.text }
     : backend.offline ? { text: t('live.reconnecting') } : null;
@@ -178,7 +219,7 @@ export function App() {
   const talkOpen = talk && live && route === 'catchup';
   let main: React.ReactNode;
   if (!s.started) main = <First s={s} onConnect={id => act({ type: 'connect', id })} onStart={() => { act({ type: 'start' }); nav('catchup'); }} />;
-  else if (live && route === 'connections') main = <Connections onMenu={menu} />;
+  else if (live && route === 'connections') main = <Connections onMenu={menu} onSay={say} />;
   else if (live && route === 'assistant') main = <Assistant onMenu={menu} onNav={nav} />;
   else if (live && route === 'memory') main = <Memory onMenu={menu} />;
   else if (route === 'memory') main = <MemoryView items={backend.memories} onMenu={menu} onTell={text => act({ type: 'tell', text, now: Date.now() })} onEdit={(key, text) => act({ type: 'fix', key, text })} onForget={key => act({ type: 'forget', key })} />;
@@ -188,20 +229,23 @@ export function App() {
   else if (route === 'activity') main = <Activity s={s} ds={ds} getCard={getCard} onMenu={menu} onUndo={id => act({ type: 'undoEntry', entryId: id })} onUndoPending={undo} onUndoAuto={id => act({ type: 'undoAuto', id })} onRoutine={id => act({ type: 'routine', id })} />;
   else if (card) main = <Catchup s={s} card={card} getCard={getCard} onPick={pick} onSay={text => act({ type: 'say', cardId: card.id, text })} onDraft={(key, text) => act({ type: 'draft', cardId: card.id, key, text })}
     onFocus={id => act({ type: 'focus', cardId: id })} onUnsnooze={id => act({ type: 'unsnooze', cardId: id })} list={list} setList={setList} searchRef={searchRef}
-    onSnooze={snooze} onHandoff={handoff} onUndo={() => undo()} onMenu={menu} composerRef={composerRef} toast={view} leaveRef={leaveRef}
+    onSnooze={snooze} onHandoff={handoff} onMenu={menu} composerRef={composerRef} toast={view} leaveRef={leaveRef}
     talk={live ? { open: () => setTalk(true), ref: talkBtn } : undefined} />;
   else main = <Done s={s} ds={ds} onMenu={menu} onNav={nav} onMore={more} onUndoAuto={id => act({ type: 'undoAuto', id })} />;
 
   return (
-    <div className="shell">
+    <MenuDot.Provider value={dot && !docked}>
+    <div className={`shell${docked ? ' pinned' : ''}`}>
       <Sprite />
-      {s.started && <Sidebar {...sideProps} inert={talkOpen} />}
+      {s.started && docked && <Sidebar {...sideProps} inert={talkOpen} />}
       <main className="cu-main" inert={talkOpen}>{main}</main>
       {/* 덱 위의 시트 — 목록 보기에서는 '보고 있는 카드'가 없어요 */}
       {talkOpen && <TalkSheet card={list ? undefined : card} mine={talkMine} onSaid={id => setTalkMine(ids => [...ids, id])} onClose={closeTalk} onNav={nav} />}
-      {drawer && <><div className="drawer-bg" onClick={() => setDrawer(false)} /><Sidebar {...sideProps} drawer onClose={() => setDrawer(false)} /></>}
+      {drawer && !docked && <><div className="drawer-bg" onClick={() => setDrawer(false)} /><Sidebar {...sideProps} drawer onClose={() => setDrawer(false)} /></>}
+      {keys && <KeysPop talk={live} onClose={() => setKeys(false)} />}
       {/* 덱에서는 토스트가 덱 안의 제자리에 서요(Catchup). 다른 화면에서는 아래 가운데예요 */}
       {!onDeck && <div className="toasts" aria-live="polite">{view && <Toast key={toast && !latest && !snoozedNow ? toast.n : 'now'} v={view} />}</div>}
     </div>
+    </MenuDot.Provider>
   );
 }

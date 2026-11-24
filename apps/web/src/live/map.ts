@@ -112,14 +112,14 @@ export function build(snap: Snapshot, device: Device, t: TFunction, lang: string
     const status = STATUS[state];
     const line = {
       title: status ? a.question : option.done, source: src.type,
-      sub: [t('log.byMe'), status && t(status), a.turn_seq > 0 ? t('log.inWords') : null, a.edited ? t('log.edited') : null].filter(Boolean).join(' · '),
+      sub: [t('log.byMe'), status && t(status), a.turn_seq > 0 ? t('log.inWords') : null, a.edited ? t('log.edited') : null].filter(Boolean).join(', '),
     };
     const waits = state === 'waiting' && (a.remaining_ms ?? 0) > 0;
     const justCopied = state === 'succeeded' && option.effect.kind === 'copy' && latest && a.card_state === 'answered' && snap.at - at < HOLD_MS;
     if (waits || justCopied) {
       const since = waits ? snap.at + (a.remaining_ms ?? 0) - HOLD_MS : Math.min(at, snap.at);
       pending.push({ cardId: a.card, pick: 0, alt: false, at: since, edited: a.edited, receipt: a.receipt ?? undefined,
-        line: { ...line, title: option.done, sub: [t('log.pending'), a.edited ? t('log.edited') : null].filter(Boolean).join(' · ') } });
+        line: { ...line, title: option.done, sub: [t('log.pending'), a.edited ? t('log.edited') : null].filter(Boolean).join(', ') } });
       continue;
     }
     if (today(a.created_at)) {
@@ -146,7 +146,7 @@ export function build(snap: Snapshot, device: Device, t: TFunction, lang: string
     runs: snap.sessions.filter(x => !['done', 'failed', 'cancelled'].includes(x.state))
       .map(x => ({ id: x.id, title: x.title, agent: 'Codex', status: t(`sessions.state.${x.state}`), waiting: x.state === 'waiting' || x.state === 'blocked' })),
     routines: [], autoDone: [],
-    fyi: snap.open.filter(c => c.kind === 'fyi' && !device.leaving.has(c.id)).map(c => { const x = sourceOf(c.source); return { id: c.id, source: x.type, title: c.question, sub: [x.who, x.meta].filter(Boolean).join(' · ') }; }),
+    fyi: snap.open.filter(c => c.kind === 'fyi' && !device.leaving.has(c.id)).map(c => { const x = sourceOf(c.source); return { id: c.id, source: x.type, title: c.question, sub: [x.who, x.meta].filter(Boolean).join(', ') }; }),
     sources: [...sources].map(([source, count]) => ({ source, name: t(`src.${source}`), count })),
   };
   return { s, ds, cards };

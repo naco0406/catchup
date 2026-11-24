@@ -1,5 +1,5 @@
 import {
-  Archive, ArrowLeft, ArrowRight, ArrowUp, ArrowUUpLeft, Brain, ClockCounterClockwise, CalendarBlank, CalendarCheck, Cards, CaretRight, ChatCircle, Check, CheckCircle, Clock, Code, Copy,
+  Archive, ArrowLeft, Bell, GearSix, Info, Keyboard, Paperclip, PushPin, SignOut, Translate, ArrowRight, ArrowUp, ArrowUUpLeft, Brain, ClockCounterClockwise, CalendarBlank, CalendarCheck, Cards, CaretRight, ChatCircle, Check, CheckCircle, Clock, Code, Copy,
   CurrencyDollar, EnvelopeSimple, FilePdf, FileText, Image, GitBranch, GithubLogo, HandTap, Lightning, List, ListChecks, LockSimple, MagnifyingGlass,
   Microphone, PaperPlaneTilt, PlugsConnected, Receipt, Rows, ShieldCheck, SidebarSimple, SlackLogo, TerminalWindow, Warning, X,
 } from '@phosphor-icons/react';
@@ -13,6 +13,7 @@ export const I = {
   file: FileText, pdf: FilePdf, image: Image, branch: GitBranch, github: GithubLogo, hand: HandTap, bolt: Lightning, list: List, listChecks: ListChecks, lock: LockSimple,
   search: MagnifyingGlass, mic: Microphone, send: PaperPlaneTilt, receipt: Receipt, rows: Rows, shield: ShieldCheck, sidebar: SidebarSimple,
   slack: SlackLogo, plug: PlugsConnected, terminal: TerminalWindow, warning: Warning, close: X,
+  bell: Bell, gear: GearSix, info: Info, keyboard: Keyboard, clip: Paperclip, pin: PushPin, signOut: SignOut, translate: Translate,
 };
 
 const bySource: Record<Source, typeof Archive> = { gmail: EnvelopeSimple, calendar: CalendarBlank, slack: SlackLogo, kakao: ChatCircle, github: GithubLogo, claude: TerminalWindow, codex: Code, local: ChatCircle };

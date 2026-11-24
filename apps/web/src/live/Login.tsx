@@ -38,9 +38,8 @@ export function Login({ onDone }: { onDone: () => void }) {
         <button type="button" className="cu-btn primary lg" disabled={busy} onClick={() => void withPasskey()}><I.lock aria-hidden />{t('passkey.signIn')}</button>
         <p className="login-or">{t('passkey.or')}</p>
       </>}
-      <p className="cu-sub">{t('live.loginSub')}</p>
       <div className="cu-composer"><input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} placeholder={t('live.email')} aria-label={t('live.email')} /></div>
-      <div className="cu-composer"><input inputMode="numeric" autoComplete="one-time-code" required value={code} onChange={e => setCode(e.target.value)} placeholder={t('live.code')} aria-label={t('live.code')} /></div>
+      <div className="cu-composer"><input inputMode="numeric" autoComplete="one-time-code" required value={code} onChange={e => setCode(e.target.value)} placeholder={t('live.codePh')} aria-label={t('live.code')} /></div>
       <p className="login-bad" role="alert">{bad}</p>
       <button type="submit" className={`cu-btn lg${passkey ? '' : ' primary'}`} disabled={busy}>{t('live.signIn')}</button>
     </form></div>

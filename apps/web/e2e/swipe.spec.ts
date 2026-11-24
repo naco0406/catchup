@@ -66,7 +66,7 @@ test.describe('터치로 밀기', () => {
     const cancel = await drag(page, '[data-card] .cu-ask', 200, 'hold');
     await expect(root(page)).toHaveAttribute('data-pull', 'right');
     await expect(root(page)).toHaveAttribute('data-armed', '');
-    await expect(toast(page)).toContainText('놓으면 보내요 · 박서연');
+    await expect(toast(page)).toContainText('놓으면 박서연에게 보내요');
     await expect(toast(page)).toContainText('서연 님, 검토해 보니 B안으로'); // 나갈 글의 첫머리
     await expect(page.locator('[data-card] .cu-fill .cu-opt.picked')).toBeVisible();
     expect(await cssVar(page, '[data-card]', '--f')).toBe(1);
@@ -79,7 +79,7 @@ test.describe('터치로 밀기', () => {
     const cancel = await drag(page, '[data-card] .cu-ask', 50, 'hold', 0, { pause: 100 });
     await expect(root(page)).toHaveAttribute('data-pull', 'right');
     await expect(root(page)).not.toHaveAttribute('data-armed', '');
-    await expect(toast(page)).toContainText('답장을 보내요 · 박서연');
+    await expect(toast(page)).toContainText('박서연에게 답장을 보내요');
     const p = await cssVar(page, '.cu-main', '--p');
     expect(p).toBeGreaterThan(0.2); expect(p).toBeLessThan(0.8);
     await cancel!();

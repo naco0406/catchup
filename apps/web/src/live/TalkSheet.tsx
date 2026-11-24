@@ -34,12 +34,11 @@ export function TalkSheet({ card, mine, onSaid, onClose, onNav }: {
           <I.chat aria-hidden /><h2>{t('nav.assistant')}</h2>
           <button type="button" className="cu-ib" onClick={onClose} aria-label={t('side.close')}><I.close aria-hidden /></button>
         </header>
-        {card && <div className="cu-work talk-seen"><SourceIcon source={card.source} /><span>{t('assistant.seen', { who: card.who })} · {card.question}</span></div>}
+        {card && <div className="cu-work talk-seen"><SourceIcon source={card.source} /><span>{card.who}, {card.question}</span></div>}
         <div className="talk-sheet-body">
-          {turns.length === 0 && (
+          {turns.length === 0 && card && (
             <div className="talk-empty">
-              <p className="cu-sub">{t(card ? 'assistant.deckEmpty' : 'assistant.empty')}</p>
-              {card && <div className="talk-examples">{examples.map(x => <button type="button" key={x} className="cu-chip line" onClick={() => talk.write(x)}>{x}</button>)}</div>}
+              <div className="talk-examples">{examples.map(x => <button type="button" key={x} className="cu-chip line" onClick={() => talk.write(x)}>{x}</button>)}</div>
             </div>
           )}
           {turns.map(m => <TalkTurn key={m.id} m={m} talk={talk} onNav={onNav} />)}

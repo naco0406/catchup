@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Dataset, FyiItem } from '../data/types';
 import { stateOf, type State } from '../state/store';
 import { I, SourceIcon } from '../components/icons';
+import { MenuButton } from '../components/MenuButton';
 import { Toast, type ToastView } from '../components/Toast';
 import { useDeck, type Pull } from '../components/useDeck';
 import { Empty } from './Pages';
@@ -75,7 +76,7 @@ export function FyiDeck({ s, ds, onMenu, onPromote, onRead, onUnread, toast, lat
   return (
     <>
       <div className="cu-top deck-top-bar">
-        <span className="ttl"><button type="button" className="cu-ib menu" onClick={onMenu} aria-label={t('side.menu')}><I.list aria-hidden /></button><h1>{t('fyi.title')}</h1>{f && <span className="left">{t('fyi.sub', { count: order.length })}</span>}</span>
+        <span className="ttl"><MenuButton onClick={onMenu} /><h1>{t('fyi.title')}</h1>{f && <span className="left">{t('fyi.sub', { count: order.length })}</span>}</span>
         {say ? <div className="top-toast" aria-live="polite">{toastEl}</div> : <span />}
         <span className="tools" />
       </div>
@@ -89,10 +90,10 @@ export function FyiDeck({ s, ds, onMenu, onPromote, onRead, onUnread, toast, lat
               {order.length > 2 && <div className="cu-peek p2" />}
             </div>
             <div className="cu-acts">
-              <button type="button" className="cu-btn ghost act-l" onClick={tap(putOff)} disabled={!next} aria-keyshortcuts="ArrowLeft"><span className="cu-kbd">←</span>{t('fyi.later')}</button>
+              <button type="button" className="cu-btn ghost act-l" onClick={tap(putOff)} disabled={!next} aria-keyshortcuts="ArrowLeft" title="←"><I.left aria-hidden />{t('fyi.later')}</button>
               <button type="button" className="cu-btn ghost act-m" onClick={tap(promote)}><I.cards aria-hidden />{t('fyi.promote')}</button>
               <span className="sp" />
-              <button type="button" className="cu-btn ghost act-r ink" onClick={tap(read)} aria-keyshortcuts="ArrowRight">{t('fyi.read')}<span className="cu-kbd">→</span></button>
+              <button type="button" className="cu-btn ghost act-r ink" onClick={tap(read)} aria-keyshortcuts="ArrowRight" title="→">{t('fyi.read')}<I.right aria-hidden /></button>
             </div>
           </div>
         </div>
@@ -116,7 +117,7 @@ function News({ f, top }: { f: FyiItem; top?: boolean }) {
   const { t } = useTranslation();
   return (
     <div className="cu-card" data-fyi={top ? f.id : undefined}>
-      <div className="cu-from"><span className="cu-tile"><SourceIcon source={f.source} /></span><span className="who">{t(`src.${f.source}`)}</span><span className="sp" /><span className="cu-due calm">{t('nav.fyi')}</span></div>
+      <div className="cu-from"><span className="cu-tile"><SourceIcon source={f.source} /></span><span className="who">{t(`src.${f.source}`)}</span></div>
       <h2 className="cu-ask">{f.title}</h2>
       {f.sub && <ul className="cu-sum"><li className="dim">{f.sub}</li></ul>}
     </div>

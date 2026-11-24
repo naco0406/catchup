@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card, Option } from '../data/types';
-import { altOptions, evidenceIcon, previewable, turnsOf, type EvidenceIcon } from '../data';
+import { altOptions, previewable, turnsOf } from '../data';
 import { draftKey, type Progress } from '../state/store';
 import { I, SourceIcon } from './icons';
 
@@ -28,9 +28,6 @@ export function DecisionCard({ card, prog, onPick, onSay, onDraft, composerRef, 
   const alt = prog?.alt && turns.length ? altOptions(card, t, turns) : null;
   const options = alt?.options ?? card.options;
   const rec = alt?.recommended ?? card.recommended;
-  // 카드가 위험하면(운영 데이터 · 돈 · 되돌릴 수 없음) 밀어서 정할 수 없어요. 위험한 '선택지'만 있으면 그 선택지만 두 번 확인해요.
-  const risky = card.due?.tone === 'risk';
-  const touch = useTouch();
 
   return (
       <div className="cu-card" data-card={preview ? undefined : card.id}>
@@ -43,7 +40,7 @@ export function DecisionCard({ card, prog, onPick, onSay, onDraft, composerRef, 
 
         {alt ? (
           <>
-            <div className="cu-work first">{t('card.firstOptions', { n: card.options.length, list: card.options.map(o => o.label).join(' · ') })}</div>
+            <div className="cu-work first">{t('card.firstOptions', { n: card.options.length, list: card.options.map(o => o.label).join(', ') })}</div>
             {alt.exchanges.map((x, i) => {
               const Icon = x.icon === 'calendar' ? I.calendarCheck : x.icon === 'file' ? I.file : I.chat;
               return (
@@ -65,7 +62,7 @@ export function DecisionCard({ card, prog, onPick, onSay, onDraft, composerRef, 
               <div className="cu-slots">{card.context.slots.map(s => <div key={s.name} className={`cu-slot${s.isNew ? ' new' : ''}`}><span className="tm">{s.time}</span><span className="nm">{s.name}</span><span className="wh">{s.who}</span></div>)}</div>
             )}
             {card.remembered?.map(text => <div className="cu-work recall" key={text}><I.history aria-hidden /><span>{t('card.recall', { text })}</span></div>)}
-            {card.evidence && <div className="cu-ev">{card.evidence.map(e => { const Icon = EV[evidenceIcon(e)]; return <span key={e} className="cu-chip"><Icon aria-hidden />{e}</span>; })}</div>}
+            {card.evidence && card.evidence.length > 0 && <div className="cu-evline"><I.clip aria-hidden /><span>{card.evidence.join(', ')}</span></div>}
           </>
         )}
 
@@ -75,22 +72,8 @@ export function DecisionCard({ card, prog, onPick, onSay, onDraft, composerRef, 
 
         <Previews key={turns.length} options={options} rec={rec} prog={prog} onDraft={onDraft} force={pulling ? rec : undefined} />
         <Composer onSay={onSay} placeholder={alt ? t('card.more') : t('card.composer')} inputRef={composerRef} />
-        {risky && <div className="cu-foot"><I.shield aria-hidden /><span>{t(touch ? 'card.risky' : 'card.riskyNoSwipe')}</span></div>}
       </div>
   );
-}
-
-const EV: Record<EvidenceIcon, typeof I.file> = { mail: I.mail, pdf: I.pdf, steps: I.listChecks, tests: I.checkCircle, chat: I.chat, image: I.image, money: I.money, warning: I.warning, file: I.file };
-
-/** 터치 화면인가 — 밀기 안내는 터치에서만 말해요 */
-function useTouch() {
-  const [touch, setTouch] = useState(() => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches);
-  useEffect(() => {
-    if (typeof matchMedia !== 'function') return;
-    const m = matchMedia('(pointer: coarse)'); const f = () => setTouch(m.matches);
-    m.addEventListener('change', f); return () => m.removeEventListener('change', f);
-  }, []);
-  return touch;
 }
 
 /** 위험한 답을 꾹 누르는 시간. 누르자마자가 아니라 조금 뒤(PRESS_WAIT)부터 차올라요 — 읽으려고 스크롤하는 손가락에는 반응하지 않게요 */
@@ -145,13 +128,13 @@ function OptionRow({ o, i, rec, confirm, onPick, fill }: { o: Option; i: number;
   const cls = ['cu-opt', rec && !risky ? 'rec' : '', confirm ? 'confirm' : ''].filter(Boolean).join(' ');
   const hint = press === 'full' ? t('card.holdFull') : press === 'holding' ? t('card.holding') : t(tapped ? 'card.holdHint' : 'card.confirmHint');
   const button = (
-    <button type="button" className={cls} aria-keyshortcuts={String(i + 1)} data-opt={i}
+    <button type="button" className={cls} aria-keyshortcuts={rec && !risky ? `${i + 1} Enter` : String(i + 1)} data-opt={i}
       {...(risky ? handlers : { onClick: e => { onPick(i); e.currentTarget.blur(); } })}>
       <span className="key">{i + 1}</span>
       <span className="l">{o.label}</span>
       <span className="d">{confirm || press !== 'idle' ? <><I.warning aria-hidden />{hint}</> : o.detail}</span>
       <span className="r">
-        {rec && !risky && <><span className="cu-rec">{t('card.suggested')}</span><span className="cu-kbd">↵</span></>}
+        {rec && !risky && <span className="cu-rec">{t('card.suggested')}</span>}
         {risky && <span className="risk"><I.warning aria-hidden />{t('card.riskWord')}</span>}
       </span>
     </button>
@@ -196,10 +179,10 @@ function Previews({ options, rec, prog, onDraft, force }: { options: Option[]; r
       {shows.map(i => <button key={i} type="button" className={i === at ? 'on' : ''} aria-pressed={i === at} aria-label={t('card.previewOf', { n: i + 1 })} onClick={() => setChosen(i)}>{i + 1}</button>)}
     </span>
   );
-  return <Preview key={key} o={options[at]!} n={at + 1} draft={prog?.drafts?.[key]} onDraft={text => onDraft(key, text)} tabs={tabs} />;
+  return <Preview key={key} o={options[at]!} draft={prog?.drafts?.[key]} onDraft={text => onDraft(key, text)} tabs={tabs} />;
 }
 
-function Preview({ o, n, draft, onDraft, tabs }: { o: Option; n: number; draft?: string; onDraft: (text: string) => void; tabs: React.ReactNode }) {
+function Preview({ o, draft, onDraft, tabs }: { o: Option; draft?: string; onDraft: (text: string) => void; tabs: React.ReactNode }) {
   const { t } = useTranslation();
   const e = o.effect;
   const [editing, setEditing] = useState(false);
@@ -208,7 +191,7 @@ function Preview({ o, n, draft, onDraft, tabs }: { o: Option; n: number; draft?:
   if (e.kind === 'tell' && e.code) {
     const c = e.code;
     return (
-      <div className="cu-code"><div className="fh"><I.branch aria-hidden /><span className="lb">{t('card.codeIf', { n })}</span><span className="file">{c.file}</span><span className="sp" />
+      <div className="cu-code"><div className="fh"><I.branch aria-hidden /><span className="lb">{t('card.codeIf')}</span><span className="file">{c.file}</span><span className="sp" />
         <span className="st"><span className="a">+{c.add}</span><span className="m">−{c.del}</span><span>{t('card.files', { count: c.files })}</span></span></div>
         {c.lines.map((l, i) => <div key={i} className={`ln ${l.t === 'ctx' ? '' : l.t}`}>{l.s}</div>)}</div>
     );
@@ -216,9 +199,9 @@ function Preview({ o, n, draft, onDraft, tabs }: { o: Option; n: number; draft?:
   // 글이 없는 답(바꾸기 · 기록만)을 확인하는 중이면 다른 답의 글을 보여 주지 않아요
   if (!('text' in e) || !e.text) return null;
   const text = draft ?? e.text;
-  const label = e.kind === 'copy' ? t('card.ifPickCopy', { n }) : t(e.kind === 'tell' ? 'card.ifPickTell' : 'card.ifPick', { n, to: e.to });
+  const label = e.kind === 'copy' ? t('card.ifPickCopy') : t(e.kind === 'tell' ? 'card.ifPickTell' : 'card.ifPick', { to: e.to });
   return (
-    <div className="cu-prev"><div className="h">{e.kind === 'copy' ? <I.copy aria-hidden /> : <I.send aria-hidden />}<span>{label}{draft !== undefined && !editing ? ` · ${t('card.edited')}` : ''}</span><span className="sp" />
+    <div className="cu-prev"><div className="h">{e.kind === 'copy' ? <I.copy aria-hidden /> : <I.send aria-hidden />}<span>{label}{draft !== undefined && !editing ? `, ${t('card.edited')}` : ''}</span><span className="sp" />
       <button type="button" onClick={() => setEditing(x => !x)} aria-expanded={editing}>{editing ? t('card.editDone') : t('card.edit')}</button></div>
       {editing
         ? <textarea ref={area} defaultValue={text} rows={3} aria-label={label}

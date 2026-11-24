@@ -9,8 +9,8 @@ test('알려 준 것과 답한 것이 쌓이고, 고치고 지울 수 있어요'
   await start(page);
   await go(page, 'memory');
   await expect(page.getByText('아직 아는 것이 없어요')).toBeVisible();
-  await page.getByRole('textbox', { name: '직접 알려 주기' }).fill('메일은 세 문장 안으로 써 주세요');
-  await page.getByRole('button', { name: '직접 알려 주기' }).click();
+  await page.getByRole('textbox', { name: '토마토에게 알려 주기' }).fill('메일은 세 문장 안으로 써 주세요');
+  await page.getByRole('button', { name: '토마토에게 알려 주기' }).click();
   await expect(rows(page).filter({ hasText: '세 문장 안으로' })).toBeVisible();
 
   await go(page, 'catchup');

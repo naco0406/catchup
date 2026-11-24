@@ -11,8 +11,9 @@ type Status = components['schemas']['CodexStatus'];
 type Limits = { primary?: { usedPercent?: number; resetsAt?: number } };
 
 /** 연결 — Codex(ChatGPT) 로그인과, 이 계정에 들어오는 패스키.
- *  Codex 의 코드는 이 화면에만 보이고 어디에도 저장하지 않아요. 패스키는 서버에 공개 열쇠만 남아요. */
-export function Connections({ onMenu }: { onMenu: () => void }) {
+ *  Codex 의 코드는 이 화면에만 보이고 어디에도 저장하지 않아요. 패스키는 서버에 공개 열쇠만 남아요.
+ *  보안 설명은 늘 두지 않고 그 일을 하는 순간에만 보여요: 코드 옆(연결하는 중), 실패한 이유 옆, 패스키를 지운 직후의 알림. */
+export function Connections({ onMenu, onSay }: { onMenu: () => void; /** 잠깐 뜨는 알림(토스트) */ onSay: (text: string) => void }) {
   const { t, i18n } = useTranslation();
   const [status, setStatus] = useState<Status>();
   const [failed, setFailed] = useState('');
@@ -30,6 +31,10 @@ export function Connections({ onMenu }: { onMenu: () => void }) {
     return () => clearInterval(every);
   }, [waiting, read]);
   useEffect(() => { setCopied(false); }, [status?.code]);
+  // 코드는 15분쯤 뒤에 못 쓰게 돼요 — 문장 대신 줄어드는 숫자로 보여 줘요(이 화면이 코드를 처음 본 때부터 세요)
+  const [codeAt, setCodeAt] = useState(0);
+  useEffect(() => { setCodeAt(status?.code ? Date.now() : 0); }, [status?.code]);
+  const minsLeft = codeAt ? Math.max(1, 15 - Math.floor((Date.now() - codeAt) / 60_000)) : 0;
 
   // 패스키 — 얼굴 · 지문으로 로그인. 등록은 이미 로그인한 여기서만 해요
   const [keys, setKeys] = useState<Passkey[]>();
@@ -44,7 +49,7 @@ export function Connections({ onMenu }: { onMenu: () => void }) {
     if (typeof made === 'string') { if (made !== 'cancelled') setKeyNote(t(`passkey.${made}`)); return; }
     await readKeys();
   };
-  const removeKey = async (id: string) => { setKeyNote(''); try { await call('DELETE', `/me/passkeys/${id}`); await readKeys(); } catch { setKeyNote(t('live.error')); } };
+  const removeKey = async (id: string) => { setKeyNote(''); try { await call('DELETE', `/me/passkeys/${id}`); await readKeys(); onSay(t('passkey.removed')); } catch { setKeyNote(t('live.error')); } };
   const day = (at: string) => new Date(at).toLocaleDateString(i18n.language === 'ko' ? 'ko-KR' : 'en-US', { month: 'short', day: 'numeric' });
 
   const send = async (method: 'POST' | 'DELETE', path: string) => {
@@ -55,7 +60,7 @@ export function Connections({ onMenu }: { onMenu: () => void }) {
   const used = (status?.limits as Limits | null | undefined)?.primary;
   const resets = used?.resetsAt ? new Date(used.resetsAt * 1000).toLocaleString(i18n.language === 'ko' ? 'ko-KR' : 'en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
   const sub = !status ? t('live.loading')
-    : state === 'in' ? [t('codex.in'), status.plan, used?.usedPercent !== undefined ? t('codex.used', { n: used.usedPercent }) : null, resets ? t('codex.resets', { when: resets }) : null].filter(Boolean).join(' · ')
+    : state === 'in' ? [t('codex.in'), status.plan, used?.usedPercent !== undefined ? t('codex.used', { n: used.usedPercent }) : null, resets ? t('codex.resets', { when: resets }) : null].filter(Boolean).join(', ')
     : state === 'waiting' ? t('codex.waiting')
     : state === 'starting' ? t('codex.starting')
     : state === 'expired' ? t('codex.expired')
@@ -82,18 +87,20 @@ export function Connections({ onMenu }: { onMenu: () => void }) {
             <div className="device-acts">
               <a className="cu-btn primary" href={status.verification_url} target="_blank" rel="noopener noreferrer">{t('codex.open')}</a>
               <button type="button" className="cu-btn" onClick={() => void copyText(status.code!).then(setCopied)}><I.copy aria-hidden />{t(copied ? 'codex.copied' : 'codex.copy')}</button>
+              {minsLeft > 0 && <span className="cu-work device-left" role="timer"><I.clock aria-hidden /><span>{t('codex.left', { n: minsLeft })}</span></span>}
             </div>
-            <ul className="cu-sum"><li>{t('codex.only')}</li><li className="dim">{t('codex.setting')}</li></ul>
+            {/* 로그인을 맡기는 이 순간에만 필요한 말이에요 */}
+            <div className="cu-foot"><I.shield aria-hidden /><span>{t('codex.only')} {t('codex.note')}</span></div>
           </div>
         )}
+        {state === 'failed' && <p className="cu-sub conn-hint">{t('codex.setting')}</p>}
         {failed && <p className="login-bad" role="alert">{failed}</p>}
-        <p className="cu-promise conn-note"><I.shield aria-hidden /><span>{t('codex.note')}</span></p>
 
         <div className="cu-h passkeys-h"><b>{t('passkey.section')}</b>{keys && keys.length > 0 && <span>{keys.length}</span>}</div>
         {keys?.map(k => (
           <div className="cu-row conn" key={k.id} data-passkey>
             <span className="cu-tile"><I.lock aria-hidden /></span>
-            <div><div className="t">{t('passkey.title')} · {k.label}</div><div className="s">{t('passkey.added', { when: day(k.created_at) })} · {k.last_used_at ? t('passkey.used', { when: day(k.last_used_at) }) : t('passkey.never')}</div></div>
+            <div><div className="t">{t('passkey.on', { label: k.label })}</div><div className="s">{t('passkey.added', { when: day(k.created_at) })}, {k.last_used_at ? t('passkey.used', { when: day(k.last_used_at) }) : t('passkey.never')}</div></div>
             <button type="button" className="cu-link" onClick={() => void removeKey(k.id)}>{t('passkey.remove')}</button>
           </div>
         ))}
@@ -103,7 +110,6 @@ export function Connections({ onMenu }: { onMenu: () => void }) {
           <button type="button" className={`cu-btn${keys?.length ? '' : ' primary'}`} disabled={adding || !canPasskey()} onClick={() => void add()}>{t('passkey.add')}</button>
         </div>
         {keyNote && <p className="login-bad" role="alert">{keyNote}</p>}
-        <p className="cu-promise conn-note"><I.shield aria-hidden /><span>{t('passkey.note')}</span></p>
       </div></div>
     </>
   );

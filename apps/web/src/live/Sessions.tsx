@@ -54,7 +54,7 @@ export function Sessions({ sessions, onMenu, onCards, onConnect, refresh }: {
         {signedIn === false ? (
           <div className="cu-row need-login">
             <span className="cu-tile"><I.plug aria-hidden /></span>
-            <div><div className="t">{t('sessions.needLogin')}</div><div className="s">{t('sessions.needLoginSub')}</div></div>
+            <div><div className="t">{t('sessions.needLogin')}</div></div>
             <button type="button" className="cu-btn primary" onClick={onConnect}>{t('sessions.connect')}</button>
           </div>
         ) : (
@@ -96,7 +96,7 @@ function Row({ s, onCards, onStop }: { s: ApiSession; onCards: () => void; onSto
   };
   const state = s.cancel_wanted && active ? t('sessions.state.stopping') : t(`sessions.state.${s.state}`);
   const reason = s.state !== 'cancelled' && s.error_code ? t([`sessions.why.${s.error_code}`, 'sessions.why.other']) : null;
-  const sub = [state, s.repo, reason].filter(Boolean).join(' · ');
+  const sub = [state, s.repo, reason].filter(Boolean).join(', ');
   return (
     <div className="session" data-session={s.state}>
       <div className="cu-row">

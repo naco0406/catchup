@@ -74,7 +74,7 @@ export function TalkTurn({ m, talk, onNav }: { m: Msg; talk: Talk; onNav: (r: Ta
       <div className="cu-said">{m.said}</div>
       {m.state === 'thinking' && <div className="cu-work" role="status"><I.chat aria-hidden /><span>{t('assistant.thinking')}</span></div>}
       {m.state === 'failed' && <>
-        <div className="cu-work"><I.warning aria-hidden /><span>{t('assistant.failed')} · {t(`assistant.why.${WHY.has(m.error_code ?? '') ? m.error_code : 'other'}`)}</span></div>
+        <div className="cu-work"><I.warning aria-hidden /><span>{t('assistant.failed')}. {t(`assistant.why.${WHY.has(m.error_code ?? '') ? m.error_code : 'other'}`)}</span></div>
         <div className="talk-acts">
           <button type="button" className="cu-btn" onClick={() => void act(() => call<Msg>('POST', `/me/assistant/${m.id}/keep`))}>{t('assistant.keep')}</button>
           {m.error_code === 'signed_out' && <button type="button" className="cu-btn ghost" onClick={() => onNav('connections')}>{t('assistant.connect')}</button>}
@@ -89,7 +89,7 @@ export function TalkTurn({ m, talk, onNav }: { m: Msg; talk: Talk; onNav: (r: Ta
         </div>}
       </>}
       {m.state === 'done' && m.intent === 'task' && <>
-        <div className="cu-work"><I.terminal aria-hidden /><span>{t('assistant.proposal')} · {m.repo ?? t('assistant.noRepo')}</span></div>
+        <div className="cu-work"><I.terminal aria-hidden /><span>{t('assistant.proposal')}: {m.repo ?? t('assistant.noRepo')}</span></div>
         <p className="cu-reply task">{m.task}</p>
         <div className="talk-acts">
           {m.session

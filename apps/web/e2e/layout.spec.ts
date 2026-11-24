@@ -8,7 +8,7 @@ for (const lang of ['ko', 'en'] as const) {
     await noOverflow(page);
     const more = page.getByRole('button', { name: lang === 'ko' ? '카드 더 받기' : 'Get more cards' });
     if (await more.first().isVisible()) await more.first().click();
-    else { await page.getByRole('button', { name: lang === 'ko' ? '메뉴' : 'Menu' }).first().click(); await page.locator('.drawer').getByRole('button', { name: lang === 'ko' ? '카드 더 받기' : 'Get more cards' }).click(); }
+    else { await page.getByRole('button', { name: lang === 'ko' ? '메뉴' : 'Menu' }).first().click(); await page.locator('.drawer').getByRole('button', { name: lang === 'ko' ? '설정' : 'Settings' }).click(); await noOverflow(page); await page.locator('.drawer').getByRole('button', { name: lang === 'ko' ? '카드 더 받기' : 'Get more cards' }).click(); }
     for (let i = 0; i < 20; i++) {
       const card = page.locator('[data-card]');
       if (!(await card.count())) break;

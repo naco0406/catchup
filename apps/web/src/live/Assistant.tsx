@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { I } from '../components/icons';
 import { Top } from '../screens/Pages';
 import { TalkForm, TalkTurn, useTalk, type TalkNav } from './talk';
 
@@ -23,7 +22,6 @@ export function Assistant({ onMenu, onNav }: { onMenu: () => void; onNav: (r: Ta
       <div className="cu-page talk"><div className="cu-page-in">
         {items?.length === 0 && (
           <div className="talk-empty">
-            <p className="cu-sub">{t('assistant.empty')}</p>
             <div className="talk-examples">{examples.map(x => <button type="button" key={x} className="cu-chip line" onClick={() => talk.write(x)}>{x}</button>)}</div>
           </div>
         )}
@@ -33,7 +31,6 @@ export function Assistant({ onMenu, onNav }: { onMenu: () => void; onNav: (r: Ta
       <div className="talk-dock"><div className="cu-page-in">
         {talk.bad && <p className="cu-fail" role="alert">{talk.bad}</p>}
         <TalkForm talk={talk} onSend={() => void talk.send()} label={t('nav.assistant')} placeholder={t('assistant.ph')} />
-        <div className="cu-foot"><I.shield aria-hidden /><span>{t('assistant.promise')}</span></div>
       </div></div>
     </>
   );
