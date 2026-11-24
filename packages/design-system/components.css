@@ -480,3 +480,26 @@ details.cu-tidied > summary::-webkit-details-marker { display: none; }
 details.cu-tidied > summary::after { content: '+'; margin-left: 8px; color: var(--cu-fg-3); }
 details.cu-tidied[open] > summary::after { content: '−'; }
 details.cu-tidied > summary:focus-visible { outline: none; box-shadow: var(--cu-focus); border-radius: var(--cu-r-inset); }
+
+/* ── 터치 영역 44pt(iOS 기준, 모바일 검토 2026-11-24) — 모양은 그대로, 누르는 곳만 넓혀요 ── */
+/* 아이콘 단추(36) · 보내기(36): 둘레 4씩 → 44 */
+.cu-ib, .cu-send { position: relative; }
+.cu-ib::after, .cu-send::after { content: ''; position: absolute; inset: -4px; border-radius: inherit; }
+/* 보낼 글의 '고치기'(글 단추) · 번호 탭: 위아래로 넓혀요 */
+.cu-prev .h button { position: relative; }
+.cu-prev .h button::after { content: ''; position: absolute; inset: -12px -8px; }
+.pv-tabs button { position: relative; }
+.pv-tabs button::after { content: ''; position: absolute; inset: -8px 0; }
+/* 켜고 끄기(44×26): 손잡이가 ::after 라서 ::before 로 */
+.cu-switch::before { content: ''; position: absolute; inset: -9px 0; }
+/* '다르게 답하기'는 둥근 틀 전체가 글 칸이에요(전에는 가운데 24만 눌렸어요) */
+.cu-composer input { align-self: stretch; }
+/* 손가락으로 쓰는 기기에서는 40 짜리 단추와 메뉴 줄을 44로 */
+/* 나눔 단추(언어, 처리 기록 거르기, 28) */
+.cu-seg button { position: relative; }
+.cu-seg button::after { content: ''; position: absolute; inset: -8px 0; }
+@media (pointer: coarse) {
+  .cu-btn:not(.lg) { min-height: 44px; }
+  .cu-nav { height: 44px; }
+  button.cu-link { min-height: 44px; }
+}
