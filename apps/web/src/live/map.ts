@@ -152,10 +152,4 @@ export function build(snap: Snapshot, device: Device, t: TFunction, lang: string
   return { s, ds, cards };
 }
 
-/** 다음 오후 2시 */
-export function snoozeUntil(now: number): Date {
-  const d = new Date(now);
-  d.setHours(14, 0, 0, 0);
-  if (d.getTime() <= now) d.setDate(d.getDate() + 1);
-  return d;
-}
+export { snoozeUntil } from '../snooze';

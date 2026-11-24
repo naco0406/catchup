@@ -5,6 +5,7 @@ import { canUndo, snoozedIds, type Entry, type State } from '../state/store';
 import { altOptions, turnsOf } from '../data';
 import { I, Mascot, SourceIcon } from '../components/icons';
 import { MenuButton } from '../components/MenuButton';
+import { snoozeWhen } from '../snooze';
 
 const hhmm = (ms: number, lang: string) => new Date(ms).toLocaleTimeString(lang === 'ko' ? 'ko-KR' : 'en-US', { hour: 'numeric', minute: '2-digit' });
 
@@ -67,11 +68,11 @@ export function Done({ s, ds, onMenu, onNav, onMore, onUndoAuto }: { s: State; d
       <div className="scroll"><div className="done-wrap">
         <div className="cu-done-head">
           <span className="cu-mascot md"><Mascot face="done" /></span>
-          <div><p className="cu-big">{t('done.title')}</p><p className="cu-sub">{decided === 0 ? t('done.subSnoozedOnly', { snoozed }) : t(snoozed ? 'done.sub' : 'done.subNone', { decided, time, snoozed })}</p></div>
+          <div><p className="cu-big">{t('done.title')}</p><p className="cu-sub">{decided === 0 ? t('done.subSnoozedOnly', { snoozed, when: snoozeWhen(Date.now(), t) }) : t(snoozed ? 'done.sub' : 'done.subNone', { decided, time, snoozed })}</p></div>
         </div>
         {(fyiLeft > 0 || snoozed > 0) && <div className="cu-h"><b>{t('done.left')}</b></div>}
         {fyiLeft > 0 && <div className="cu-row"><span className="cu-tile"><I.listChecks aria-hidden /></span><div><div className="t">{t('done.fyi', { count: fyiLeft })}</div><div className="s">{ds.today.length ? t('done.fyiSub') : ds.fyi.map(f => f.title).join(', ')}</div></div><button type="button" className="cu-btn" onClick={() => onNav('fyi')}>{t('done.skim')}</button></div>}
-        {snoozed > 0 && <div className="cu-row"><span className="cu-tile"><I.clock aria-hidden /></span><div><div className="t">{t('done.snoozed', { n: snoozed })}</div><div className="s">{t('done.snoozedSub')}</div></div><button type="button" className="cu-btn" onClick={() => onNav('snoozed')}>{t('done.view')}</button></div>}
+        {snoozed > 0 && <div className="cu-row"><span className="cu-tile"><I.clock aria-hidden /></span><div><div className="t">{t('done.snoozed', { n: snoozed })}</div><div className="s">{t('done.snoozedSub', { when: snoozeWhen(Date.now(), t) })}</div></div><button type="button" className="cu-btn" onClick={() => onNav('snoozed')}>{t('done.view')}</button></div>}
         {ds.autoDone.length > 0 && <div className="cu-h" style={{ marginTop: fyiLeft > 0 || snoozed > 0 ? 28 : undefined }}><b>{t('done.auto')}</b><span>{ds.autoDone.length}</span><span className="sp" /></div>}
         {ds.autoDone.map(a => (
           <div className="cu-row" key={a.id}><span className="cu-tile"><SourceIcon source={a.source} /></span><div><div className="t">{a.title}</div><div className="s">{a.sub}</div></div>
@@ -94,7 +95,7 @@ export function Snoozed({ s, getCard, onMenu, onBack }: { s: State; getCard: (id
       <div className="cu-page"><div className="cu-page-in">
         {ids.length === 0 && <Empty text={t('snoozed.empty')} />}
         {ids.map(id => { const c = getCard(id); if (!c) return null; return (
-          <div className="cu-row" key={id}><span className="cu-tile"><SourceIcon source={c.source} /></span><div><div className="t">{c.question}</div><div className="s">{c.who}, {t('snoozed.at')}</div></div>
+          <div className="cu-row" key={id}><span className="cu-tile"><SourceIcon source={c.source} /></span><div><div className="t">{c.question}</div><div className="s">{c.who}, {t('snoozed.at', { when: snoozeWhen(Date.now(), t) })}</div></div>
             <button type="button" className="cu-btn" onClick={() => onBack(id)}>{t('snoozed.back')}</button></div>
         ); })}
       </div></div>

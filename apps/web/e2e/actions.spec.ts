@@ -96,3 +96,26 @@ test('위험한 답은 확인하는 동안 그 답의 글을 보여 줘요', asy
   await opt(page, 2).click(); // A안(위험)은 셋째예요 — 돈이 걸린 카드는 되묻기를 추천해요
   await expect(page.locator('[data-card] .cu-prev p')).toContainText('A안으로');
 });
+
+// 앱을 떠난 사이(전환 · 잠금) 10초가 지나 나간 답은 돌아왔을 때 알려요(모바일 검토 2026-11-24). 10초는 멈추지 않아요
+const visible = (page: Page, on: boolean) => page.evaluate(v => {
+  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (v ? 'visible' : 'hidden') });
+  document.dispatchEvent(new Event('visibilitychange'));
+}, on);
+
+test('떠나 있는 동안 나간 답은 돌아오면 알려요', async ({ page }) => {
+  await page.locator('[data-card] button.cu-opt.rec').click();
+  await visible(page, false);
+  await page.clock.fastForward(11_000);
+  await visible(page, true);
+  await expect(page.getByText('떠나 있는 동안 답 1개가 나갔어요').locator('visible=true')).toBeVisible(); // 위 막대와 아래 막대 중 보이는 쪽
+});
+
+test('10초 안에 돌아오면 아무 말도 하지 않아요', async ({ page }) => {
+  await page.locator('[data-card] button.cu-opt.rec').click();
+  await visible(page, false);
+  await page.clock.fastForward(3_000);
+  await visible(page, true);
+  await expect(page.getByText(/초 뒤에/).locator('visible=true')).toBeVisible(); // 10초 토스트가 그대로예요
+  await expect(page.getByText('떠나 있는 동안')).toHaveCount(0);
+});

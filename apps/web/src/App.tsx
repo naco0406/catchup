@@ -18,6 +18,7 @@ import { Sprite } from './components/icons';
 import { MenuDot } from './components/MenuButton';
 import { KeysPop } from './components/Popover';
 import { Toast, type ToastView } from './components/Toast';
+import { snoozeWhen } from './snooze';
 import { Catchup } from './screens/Catchup';
 import type { PickHow } from './components/DecisionCard';
 import { Activity, Done, First, Snoozed } from './screens/Pages';
@@ -105,6 +106,20 @@ export function App() {
   }, [backend.auth, s.started, talk, docked, togglePin]);
 
   const say = useCallback((text: string) => { const n = Date.now(); setToast({ text, n }); setTimeout(() => setToast(x => (x?.n === n ? null : x)), 2800); }, []);
+
+  // 화면을 떠난 사이(앱 전환, 잠금) 10초가 지나 나간 답은 돌아왔을 때 알려요. 10초는 멈추지 않아요 — 덱은 아무 말 없이 다음 카드로 가 있었어요(모바일 검토 2026-11-24)
+  useEffect(() => {
+    let away: { at: number }[] | null = null;
+    const f = () => {
+      if (document.visibilityState === 'hidden') { away = sRef.current.pending.map(p => ({ at: p.at })); return; }
+      if (!away) return;
+      const now = Date.now(), gone = away.filter(p => p.at + HOLD_MS <= now).length;
+      away = null;
+      if (gone > 0) say(t('toast.away', { count: gone }));
+    };
+    document.addEventListener('visibilitychange', f);
+    return () => document.removeEventListener('visibilitychange', f);
+  }, [say, t]);
 
   useEffect(() => { if (backend.error) say(backend.error.text); }, [backend.error, say]);
 
@@ -200,7 +215,7 @@ export function App() {
   const waiting = !latestEffect ? '' : latestEffect.kind === 'copy' ? t('toast.copied', { to: t(`src.${latestCard!.source}`) }) : t(RUNS[latestEffect.kind], { s: left });
   const latestOption = latest && latestCard ? optsOf(latestCard).options[latest.pick] : undefined;
   // 토스트 한 장: 방금 미룬 것 → 기다리는 답(남은 초를 고리로) → 알림 → 서버에 다시 잇는 중
-  const view: ToastView | null = snoozedNow ? { text: t('toast.snoozed'), sub: getCard(snoozedNow.id)?.question, icon: 'clock', undo: () => undo() }
+  const view: ToastView | null = snoozedNow ? { text: t('toast.snoozed', { when: snoozeWhen(snoozedNow.at, t) }), sub: getCard(snoozedNow.id)?.question, icon: 'clock', undo: () => undo() }
     : latest ? { text: waiting, sub: latestOption?.label, undo: () => undo(), ...(latestEffect?.kind === 'copy' ? { icon: 'check' as const } : { count: left, ring: left / (HOLD_MS / 1000) }) }
     : toast ? { text: toast.text }
     : backend.offline ? { text: t('live.reconnecting') } : null;
@@ -224,7 +239,7 @@ export function App() {
   else if (live && route === 'memory') main = <Memory onMenu={menu} />;
   else if (route === 'memory') main = <MemoryView items={backend.memories} onMenu={menu} onTell={text => act({ type: 'tell', text, now: Date.now() })} onEdit={(key, text) => act({ type: 'fix', key, text })} onForget={key => act({ type: 'forget', key })} />;
   else if (live && route === 'sessions') main = <Sessions sessions={backend.sessions} onMenu={menu} refresh={backend.refresh} onConnect={() => nav('connections')} onCards={() => nav('catchup')} />;
-  else if (route === 'fyi') main = <FyiDeck s={s} ds={ds} onMenu={menu} onPromote={id => act({ type: 'promote', fyiId: id })} onRead={id => act({ type: 'read', fyiId: id, now: Date.now() })} onUnread={id => act({ type: 'unread', fyiId: id })} toast={view} later={fyiLater} setLater={setFyiLater} />;
+  else if (route === 'fyi') main = <FyiDeck s={s} ds={ds} onMenu={menu} onPromote={id => { act({ type: 'promote', fyiId: id }); say(t('fyi.promoted')); }} onRead={id => act({ type: 'read', fyiId: id, now: Date.now() })} onUnread={id => act({ type: 'unread', fyiId: id })} toast={view} later={fyiLater} setLater={setFyiLater} />;
   else if (route === 'snoozed') main = <Snoozed s={s} getCard={getCard} onMenu={menu} onBack={id => { act({ type: 'unsnooze', cardId: id }); nav('catchup'); }} />;
   else if (route === 'activity') main = <Activity s={s} ds={ds} getCard={getCard} onMenu={menu} onUndo={id => act({ type: 'undoEntry', entryId: id })} onUndoPending={undo} onUndoAuto={id => act({ type: 'undoAuto', id })} onRoutine={id => act({ type: 'routine', id })} />;
   else if (card) main = <Catchup s={s} card={card} getCard={getCard} onPick={pick} onSay={text => act({ type: 'say', cardId: card.id, text })} onDraft={(key, text) => act({ type: 'draft', cardId: card.id, key, text })}

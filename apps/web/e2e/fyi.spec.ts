@@ -40,7 +40,7 @@ test('나중에를 누르면 읽음으로 치지 않고 맨 뒤로 가요', asyn
 });
 
 test('카드로 올리면 알려만에서 빠지고 캐치업 덱에 들어가요', async ({ page }, info) => {
-  await acts(page, info.project.name === 'iphone').getByRole('button', { name: '카드로', exact: true }).click();
+  await acts(page, info.project.name === 'iphone').getByRole('button', { name: '할 일로', exact: true }).click();
   await expect(news(page)).toHaveText(SECOND);
   await go(page, 'catchup');
   await expect(page.locator('.cu-top .left')).toContainText('8개 남았어요');

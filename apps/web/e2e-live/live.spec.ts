@@ -126,7 +126,7 @@ test('미룬 카드를 다시 꺼내고, 알려만을 카드로 올려요', asyn
   await page.getByRole('button', { name: '지금 보기' }).click();
   await expect(question(page)).toHaveText('나중에 볼 카드');
   await page.evaluate(() => { location.hash = '#/fyi'; });
-  await page.getByRole('button', { name: '카드로', exact: true }).click();
+  await page.getByRole('button', { name: '할 일로', exact: true }).click();
   await expect(page.locator('.cu-row').filter({ hasText: '배포가 끝났어요' })).toHaveCount(0);
   await noOverflow(page);
 });

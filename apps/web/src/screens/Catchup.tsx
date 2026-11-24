@@ -9,6 +9,7 @@ import { Toast, type ToastView } from '../components/Toast';
 import { MenuButton } from '../components/MenuButton';
 import { useDeck, type Pull } from '../components/useDeck';
 import { Empty } from './Pages';
+import { snoozeWhen } from '../snooze';
 
 const none = () => undefined;
 const ICON: Record<Effect['kind'], NonNullable<ToastView['icon']>> = { send: 'send', tell: 'send', copy: 'copy', change: 'bolt', none: 'receipt' };
@@ -54,7 +55,18 @@ export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, on
   const next = nextId ? getCard(nextId) : undefined;
 
   const pulled = deck.pull && pullToast(deck.pull, card, best, best && withDraft(best.effect, prog?.drafts?.[draftKey(prog, recommended)]), t);
-  const say = pulled ?? toast;
+  // 밀기가 막힌 카드에서 놓으면, 미는 동안 보이던 안내를 2초 더 남겨요 — 빨리 밀고 놓으면 아무 반응이 없는 것처럼 보였어요(모바일 검토 2026-11-24)
+  const [blockedHint, setBlockedHint] = useState<ToastView | null>(null);
+  const wasBlocked = useRef<ToastView | null>(null);
+  useEffect(() => {
+    if (deck.pull?.blocked) { wasBlocked.current = pulled ? { ...pulled, preview: false } : null; return; }
+    if (deck.pull || !wasBlocked.current) return;
+    setBlockedHint(wasBlocked.current); wasBlocked.current = null;
+    const id = setTimeout(() => setBlockedHint(null), 2000);
+    return () => clearTimeout(id);
+  }, [deck.pull]); // eslint-disable-line react-hooks/exhaustive-deps -- 미는 모양이 바뀔 때만
+  useEffect(() => { setBlockedHint(null); }, [card.id]);
+  const say = pulled ?? blockedHint ?? toast;
   const toastEl = say && <Toast v={say} />;
 
   return (
@@ -110,7 +122,7 @@ function pullToast(pull: Pull, card: Card, best: Option | undefined, effect: Eff
     return { text: t('swipe.blocked'), sub: why, icon: 'warning', ring: 0, preview: true };
   }
   const ring = pull.armed ? 'full' : 'pull';
-  if (pull.side === 'left') return { text: t(pull.armed ? 'swipe.snoozeArmed' : 'swipe.snooze'), sub: t('snoozed.at'), icon: 'clock', ring, preview: true };
+  if (pull.side === 'left') return { text: t(pull.armed ? 'swipe.snoozeArmed' : 'swipe.snooze'), sub: t('snoozed.at', { when: snoozeWhen(Date.now(), t) }), icon: 'clock', ring, preview: true };
   const key = `swipe.${effect.kind}${pull.armed ? 'Armed' : ''}`;
   const to = 'to' in effect ? effect.to : '';
   const sub = 'text' in effect && effect.text ? effect.text : best.label;
@@ -121,7 +133,8 @@ function pullToast(pull: Pull, card: Card, best: Option | undefined, effect: Eff
 function CardList({ s, getCard, searchRef, onFocus, onUnsnooze }: { s: State; getCard: (id: string) => Card | undefined; searchRef: React.RefObject<HTMLInputElement | null>; onFocus: (id: string) => void; onUnsnooze: (id: string) => void }) {
   const { t } = useTranslation();
   const [q, setQ] = useState('');
-  useEffect(() => { searchRef.current?.focus({ preventScroll: true }); }, [searchRef]);
+  // 키보드가 목록을 가리지 않게, 손가락 기기에서는 검색창에 저절로 커서를 두지 않아요
+  useEffect(() => { if (matchMedia('(hover: hover) and (pointer: fine)').matches) searchRef.current?.focus({ preventScroll: true }); }, [searchRef]);
   const match = (c: Card) => !q.trim() || [c.question, c.who, c.meta].join(' ').toLowerCase().includes(q.trim().toLowerCase());
   const open = openIds(s).map(getCard).filter((c): c is Card => Boolean(c && match(c)));
   const snoozed = snoozedIds(s).map(getCard).filter((c): c is Card => Boolean(c && match(c)));
@@ -140,7 +153,7 @@ function CardList({ s, getCard, searchRef, onFocus, onUnsnooze }: { s: State; ge
       {snoozed.map(c => (
         <button type="button" className="cu-row list-row" key={c.id} onClick={() => onUnsnooze(c.id)}>
           <span className="cu-tile"><SourceIcon source={c.source} /></span>
-          <span><span className="t">{c.question}</span><span className="s">{c.who}, {t('snoozed.at')}</span></span>
+          <span><span className="t">{c.question}</span><span className="s">{c.who}, {t('snoozed.at', { when: snoozeWhen(Date.now(), t) })}</span></span>
           <span className="e"><I.caret aria-hidden /></span>
         </button>
       ))}
