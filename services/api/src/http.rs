@@ -62,7 +62,7 @@ pub fn router(app: App) -> Router {
         .route("/v1/me/passkeys/options", post(passkey_start))
         .route("/v1/me/passkeys", get(passkeys).post(passkey_add))
         .route("/v1/me/passkeys/{id}", axum::routing::delete(passkey_remove))
-        .route("/v1/me", get(me))
+        .route("/v1/me", get(me).put(set_me))
         .route("/v1/me/cards", get(list_cards))
         .route("/v1/me/cards/{id}/answer", post(answer))
         .route("/v1/me/cards/{id}/turns", post(say))
@@ -192,6 +192,24 @@ async fn me(State(app): State<App>, session: Session) -> Result<Json<Me>> {
     let me = sqlx::query_as("SELECT cell, lang, time_zone FROM catchup.cells").fetch_one(&mut *tx).await?;
     tx.commit().await?;
     Ok(Json(me))
+}
+
+#[derive(Deserialize, ToSchema)]
+pub struct MeInput {
+    /// "en" 또는 "ko"
+    lang: String,
+}
+
+/// 화면 언어를 바꾸면 계정 언어도 바뀌어요 — 토마토가 쓰는 글(카드, 답, 초안)이 다음부터 그 언어로 나와요
+#[utoipa::path(put, path = "/v1/me", request_body = MeInput, responses((status = 204), (status = 401), (status = 422)))]
+async fn set_me(State(app): State<App>, session: Session, Json(input): Json<MeInput>) -> Result<StatusCode> {
+    if !matches!(input.lang.as_str(), "en" | "ko") {
+        return Err(Error::Invalid("bad_lang"));
+    }
+    let mut tx = app.db.cell_tx(session.cell).await?;
+    sqlx::query("UPDATE catchup.cells SET lang = $1").bind(&input.lang).execute(&mut *tx).await?;
+    tx.commit().await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[derive(Deserialize)]
@@ -517,6 +535,7 @@ async fn session_patch(State(app): State<App>, session: Session, Path(id): Path<
         sorted_inbox,
         raise_item,
         me,
+        set_me,
         list_cards,
         answer,
         say,
@@ -563,6 +582,7 @@ async fn session_patch(State(app): State<App>, session: Session, Path(id): Path<
         CardList,
         Activity,
         Me,
+        MeInput,
         Connection,
         Subscription
     ))

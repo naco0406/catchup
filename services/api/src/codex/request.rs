@@ -175,7 +175,7 @@ impl Asking<'_> {
         }
         let cwd = self.params["cwd"].as_str().unwrap_or("/workspace");
         let place = self.say("인터넷과 비밀값이 없는 샌드박스", "A sandbox with no internet and no secrets");
-        summary.push(json!({ "text": format!("{place} · {}", clip(cwd, 200)), "dim": true }));
+        summary.push(json!({ "text": format!("{place}, {}", clip(cwd, 200)), "dim": true }));
         if command.chars().any(hidden) {
             let warning =
                 self.say("보이지 않는 글자가 들어 있어서 드러내 보였어요.", "It has hidden characters. They’re shown escaped.");

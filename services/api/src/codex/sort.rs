@@ -32,7 +32,7 @@ buy or approve spending, \"irreversible\" when it accepts terms, signs, cancels 
 sharing secrets. If the message looks like fraud or pressure, say so in `summary` and recommend the cautious answer. \
 `due` is the deadline as YYYY-MM-DD worked out from `today` when the message gives one, otherwise an empty string. \
 For \"fyi\": `question` is the news as one line and `summary` up to two lines; leave `options` empty. For \"skip\": leave them all empty. \
-`reason` is one short sentence on why this lane. Write question, summary, label, detail and reason in the language given as `language`. \
+`reason` is one short sentence on why this lane. Write question, summary, label, detail and reason in the language given as `language`. Do not join words with a middle dot (·); use commas or sentences. \
 When that language is Korean, write them in the polite 해요 style the product uses (\"B안으로 진행해요\", \"더 알아보고 정해요\", \"출시일이 1월 12일로 정해졌어요\"), \
 not 합니다 endings or bare nouns; `reply` keeps the tone that fits the sender.";
 

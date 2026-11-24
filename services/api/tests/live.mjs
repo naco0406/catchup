@@ -28,7 +28,7 @@ const card = (key, text = 'B안으로 진행할게요', extra = {}) => ({
 
 async function device(name) {
   const email = `${name}-${run}@example.test`;
-  const cell = local(['ops', 'provision', email]);
+  const cell = local(['ops', 'provision', email, 'ko']);
   const code = local(['ops', 'login-code', email]);
   const r = await fetch(`${API}/v1/auth/session`, { method: 'POST', headers: { 'content-type': 'application/json', origin: ORIGIN }, body: JSON.stringify({ email, code, label: 'live test' }) });
   if (r.status !== 204) throw new Error(`login ${r.status}`);

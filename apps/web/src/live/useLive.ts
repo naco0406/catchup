@@ -39,6 +39,16 @@ export function useLive(): Backend {
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  // 언어 잇기 — 화면의 언어가 계정의 언어예요. 토마토가 쓰는 글(카드, 답, 초안)이 그 언어로 나와요.
+  // 로그인하면 한 번 맞추고, 화면에서 언어를 바꾸면 따라 바꿔요. 서버가 아직 이 주소를 모르면 조용히 넘어가요.
+  useEffect(() => {
+    if (auth !== 'in') return;
+    let here = true;
+    const push = (lang: string) => { void call('PUT', '/me', { lang }).catch(() => undefined); };
+    void call<{ lang: string }>('GET', '/me').then(me => { if (here && me.lang !== i18n.language) push(i18n.language); }, () => undefined);
+    i18n.on('languageChanged', push);
+    return () => { here = false; i18n.off('languageChanged', push); };
+  }, [auth, i18n]);
   // 처음 못 닿았으면 닿을 때까지
   useEffect(() => {
     if (!offline) return;

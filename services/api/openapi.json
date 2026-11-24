@@ -105,6 +105,32 @@
             "description": ""
           }
         }
+      },
+      "put": {
+        "tags": [],
+        "summary": "화면 언어를 바꾸면 계정 언어도 바뀌어요 — 토마토가 쓰는 글(카드, 답, 초안)이 다음부터 그 언어로 나와요",
+        "operationId": "set_me",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": ""
+          },
+          "422": {
+            "description": ""
+          }
+        }
       }
     },
     "/v1/me/activity": {
@@ -1855,6 +1881,18 @@
           },
           "time_zone": {
             "type": "string"
+          }
+        }
+      },
+      "MeInput": {
+        "type": "object",
+        "required": [
+          "lang"
+        ],
+        "properties": {
+          "lang": {
+            "type": "string",
+            "description": "\"en\" 또는 \"ko\""
           }
         }
       },

@@ -169,7 +169,7 @@ const docker = (...args) => run('docker', args, dockerEnv);
 const API = 'http://127.0.0.1:4320', TERMINAL = ['done', 'failed', 'cancelled'];
 async function person(label) {
   const email = `session-${label}-${randomUUID()}@example.test`;
-  const cell = await local('ops', 'provision', email);
+  const cell = await local('ops', 'provision', email, 'ko');
   const code = await local('ops', 'login-code', email);
   const headers = { 'content-type': 'application/json', origin: 'http://127.0.0.1:5181' };
   const login = await fetch(`${API}/v1/auth/session`, { method: 'POST', headers, body: JSON.stringify({ email, code }) });

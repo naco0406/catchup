@@ -18,7 +18,7 @@ const sql = q => local(['compose', 'exec', '-T', 'postgres', 'psql', '-X', '-U',
 
 async function device(name) {
   const email = `${name}-${Date.now()}@example.test`;
-  const cell = local(['ops', 'provision', email]);
+  const cell = local(['ops', 'provision', email, 'ko']);
   const code = local(['ops', 'login-code', email]);
   const headers = { 'content-type': 'application/json', origin: 'http://127.0.0.1:5181' };
   const r = await fetch(`${API}/v1/auth/session`, { method: 'POST', headers, body: JSON.stringify({ email, code }) });

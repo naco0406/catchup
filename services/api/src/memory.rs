@@ -76,8 +76,8 @@ impl Row {
             (None, "session") if ko => format!("‘{a}’ 일을 맡겼고 끝났어요. {b}").trim_end().to_owned(),
             (None, "session") => format!("Finished “{a}”. {b}").trim_end().to_owned(),
             (None, "promised") => match (b.parse::<chrono::NaiveDate>().ok(), ko) {
-                (Some(due), true) => format!("약속했어요: “{a}” · {}월 {}일까지", due.format("%-m"), due.format("%-d")),
-                (Some(due), false) => format!("You promised: “{a}” · by {}", due.format("%b %-d")),
+                (Some(due), true) => format!("약속했어요: “{a}”, {}월 {}일까지", due.format("%-m"), due.format("%-d")),
+                (Some(due), false) => format!("You promised: “{a}”, by {}", due.format("%b %-d")),
                 (None, true) => format!("약속했어요: “{a}”"),
                 (None, false) => format!("You promised: “{a}”"),
             },

@@ -60,7 +60,7 @@ const SHAPE = `SELECT (SELECT count(*) FROM pg_policies WHERE schemaname IN ('ca
 try {
   // 1) 있던 일
   const email = `backup-${run}@example.test`;
-  local(['ops', 'provision', email]);
+  local(['ops', 'provision', email, 'ko']);
   local(['ops', 'seed', email], { input: JSON.stringify([card(`backup-${run}-a`, '되살린 뒤에도 영수증이 보이나요?'), card(`backup-${run}-b`, '되살린 뒤에도 열려 있나요?')]) });
   const mine = await signIn('http://127.0.0.1:4320', email, local(['ops', 'login-code', email]));
   const first = (await mine('GET', '/v1/me/cards')).json.cards.find(c => c.question.includes('영수증'));

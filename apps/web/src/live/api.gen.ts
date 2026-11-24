@@ -61,7 +61,8 @@ export interface paths {
             cookie?: never;
         };
         get: operations["me"];
-        put?: never;
+        /** 화면 언어를 바꾸면 계정 언어도 바뀌어요 — 토마토가 쓰는 글(카드, 답, 초안)이 다음부터 그 언어로 나와요 */
+        put: operations["set_me"];
         post?: never;
         delete?: never;
         options?: never;
@@ -755,6 +756,10 @@ export interface components {
             lang: string;
             time_zone: string;
         };
+        MeInput: {
+            /** @description "en" 또는 "ko" */
+            lang: string;
+        };
         /** @description 기억 한 줄. `key` 는 어디서 알았는지예요(answer · draft · said · session · note · promise) */
         Memory: {
             /** Format: date-time */
@@ -1019,6 +1024,39 @@ export interface operations {
                 };
             };
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeInput"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

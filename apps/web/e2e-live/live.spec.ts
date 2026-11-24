@@ -24,7 +24,7 @@ const send = (text: string) => ({ kind: 'send', to: '서연', text });
 /** 시험 계정으로 로그인 화면을 거쳐 들어가요 */
 async function signIn(page: Page, cards: object[]) {
   const email = `e2e-${randomUUID()}@example.test`;
-  const cell = local(['ops', 'provision', email]);
+  const cell = local(['ops', 'provision', email, 'ko']);
   const seed = (more: object[]) => local(['ops', 'seed', email], JSON.stringify(more));
   if (cards.length) seed(cards);
   const code = local(['ops', 'login-code', email]);
@@ -285,7 +285,7 @@ test('내가 보낸 글의 약속이 맨 위 칸에 보이고, 같은 사람의 
   await expect(page.locator('[data-card] .recall').filter({ hasText: '견적서 보내기' })).toContainText('11월 27일까지');
   await page.evaluate(() => { location.hash = '#/memory'; });
   await expect(page.locator('section').first()).toHaveAttribute('data-kind', 'promise');
-  await expect(page.locator('[data-kind="promise"] [data-memory]')).toContainText('약속했어요: “견적서 보내기” · 11월 27일까지');
+  await expect(page.locator('[data-kind="promise"] [data-memory]')).toContainText('약속했어요: “견적서 보내기”, 11월 27일까지');
   await noOverflow(page);
 });
 

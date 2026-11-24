@@ -16,7 +16,7 @@ test.use({ trace: 'off', screenshot: 'off', video: 'off' });
 
 test('연결에서 진짜 기기 코드를 받고 취소해요', async ({ page }) => {
   const email = `connect-${randomUUID()}@example.test`;
-  local('ops', 'provision', email);
+  local('ops', 'provision', email, 'ko');
   const code = local('ops', 'login-code', email);
   await fakeClipboard(page);
   await page.goto('/?lang=ko');

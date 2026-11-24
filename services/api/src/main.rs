@@ -168,7 +168,7 @@ async fn main() -> anyhow::Result<()> {
         }
         ["provision", email, rest @ ..] => {
             let master = Key::from_hex(&env("CATCHUP_MASTER_KEY")?)?;
-            println!("{}", ops::provision(owner()?, &master, email, rest.first().copied().unwrap_or("ko")).await?);
+            println!("{}", ops::provision(owner()?, &master, email, rest.first().copied().unwrap_or("en")).await?);
         }
         ["login-code", email] => println!("{}", ops::login_code(owner()?, email).await?),
         // 손으로 넣는 카드: 표준 입력으로 NewCard 배열
@@ -177,7 +177,7 @@ async fn main() -> anyhow::Result<()> {
             std::io::stdin().read_to_string(&mut text)?;
             let new: Vec<NewCard> = serde_json::from_str(&text)?;
             let master = Key::from_hex(&env("CATCHUP_MASTER_KEY")?)?;
-            let cell = ops::provision(owner()?, &master, email, "ko").await?;
+            let cell = ops::provision(owner()?, &master, email, "en").await?;
             let db = app_db(2).await?;
             for card in &new {
                 cards::create(&db, cell, card).await?;
@@ -190,7 +190,7 @@ async fn main() -> anyhow::Result<()> {
             std::io::stdin().read_to_string(&mut text)?;
             let items: Vec<catchup_api::inbox::Incoming> = serde_json::from_str(&text)?;
             let master = Key::from_hex(&env("CATCHUP_MASTER_KEY")?)?;
-            let cell = ops::provision(owner()?, &master, email, "ko").await?;
+            let cell = ops::provision(owner()?, &master, email, "en").await?;
             println!("{}", catchup_api::inbox::receive(&app_db(2).await?, cell, "local", &items).await?);
         }
         ["openapi"] => println!("{}", serde_json::to_string_pretty(&Api::openapi())?),

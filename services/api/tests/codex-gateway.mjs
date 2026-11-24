@@ -74,8 +74,8 @@ try {
   for (let i = 0; i < 100 && !(await fetch(`${base}/health/live`).then(r => r.ok, () => false)); i++) await sleep(200);
 
   const stamp = Date.now();
-  const cell = await local('ops', 'provision', `gateway-${stamp}@example.test`);
-  const other = await local('ops', 'provision', `gateway-other-${stamp}@example.test`);
+  const cell = await local('ops', 'provision', `gateway-${stamp}@example.test`, 'ko');
+  const other = await local('ops', 'provision', `gateway-other-${stamp}@example.test`, 'ko');
   mine = cell;
   const signIn = () => sql(`INSERT INTO catchup.codex_logins (cell, state) VALUES ('${cell}', 'in') ON CONFLICT (cell) DO UPDATE SET state = 'in'`);
   await signIn();
