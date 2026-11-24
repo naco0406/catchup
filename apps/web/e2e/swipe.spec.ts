@@ -34,7 +34,7 @@ test.describe('터치로 밀기', () => {
     await drag(page, '[data-card] .cu-ask', 220);
     await expect(card(page)).toHaveAttribute('data-card', 'c02');
     await activity(page);
-    await expect(page.getByText('박서연 님께 B안으로 진행한다고 답장했어요')).toBeVisible();
+    await expect(page.getByText('박서연 님께 A안을 예산에 맞출 수 있는지 여쭤봤어요')).toBeVisible();
     await expect(page.getByText('아직 되돌릴 수 있어요')).toHaveCount(1);
   });
 
@@ -67,10 +67,10 @@ test.describe('터치로 밀기', () => {
     await expect(root(page)).toHaveAttribute('data-pull', 'right');
     await expect(root(page)).toHaveAttribute('data-armed', '');
     await expect(toast(page)).toContainText('놓으면 박서연에게 보내요');
-    await expect(toast(page)).toContainText('서연 님, 검토해 보니 B안으로'); // 나갈 글의 첫머리
+    await expect(toast(page)).toContainText('서연 님, A안이 마음에 드는데'); // 나갈 글의 첫머리(추천은 돈이 걸리면 되묻기, 2026-11-23)
     await expect(page.locator('[data-card] .cu-fill .cu-opt.picked')).toBeVisible();
     expect(await cssVar(page, '[data-card]', '--f')).toBe(1);
-    await expect(page.locator('[data-card] .cu-prev p')).toContainText('B안으로'); // 보여 준 글 = 나가는 글
+    await expect(page.locator('[data-card] .cu-prev p')).toContainText('A안이 마음에 드는데'); // 보여 준 글 = 나가는 글
     await cancel!();
     await expect(root(page)).not.toHaveAttribute('data-pull', /.+/);
   });
@@ -211,17 +211,17 @@ test.describe('단추의 자리가 방향이에요', () => {
   test('왼쪽은 미루기, 오른쪽은 추천대로', async ({ page }, info) => {
     const a = acts(page, info.project.name === 'iphone');
     const names = await a.getByRole('button').allInnerTexts();
-    expect(names[0]).toContain('미루기'); expect(names.at(-1)).toContain('추천대로');
-    await a.getByRole('button', { name: /추천대로/ }).click();
+    expect(names[0]).toContain('미루기'); expect(names.at(-1)).toContain('되물어요'); // 오른쪽 단추는 추천 답의 이름을 말해요
+    await a.getByRole('button', { name: /^추천:/ }).click();
     await expect(card(page)).toHaveAttribute('data-card', 'c02');
     await activity(page);
-    await expect(page.getByText('박서연 님께 B안으로 진행한다고 답장했어요')).toBeVisible();
+    await expect(page.getByText('박서연 님께 A안을 예산에 맞출 수 있는지 여쭤봤어요')).toBeVisible();
   });
 
   test('위험한 카드에는 추천대로 단추가 없어요', async ({ page }, info) => {
     await at(page, 'c05');
     const a = acts(page, info.project.name === 'iphone');
     await expect(a.getByRole('button', { name: /미루기/ })).toBeVisible();
-    await expect(a.getByRole('button', { name: /추천대로/ })).toHaveCount(0);
+    await expect(a.getByRole('button', { name: /^추천:/ })).toHaveCount(0);
   });
 });

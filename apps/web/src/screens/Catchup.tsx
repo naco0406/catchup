@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card, Effect, Option } from '../data/types';
 import { altOptions, swipeRules, turnsOf, withDraft } from '../data';
@@ -47,6 +47,9 @@ export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, on
   leaveRef.current = deck.capture;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- 카드가 바뀔 때 한 번만 정해요
   const arrive = useMemo(() => deck.arrival(card.id), [card.id]);
+  // 새 카드는 늘 맨 위부터 — 앞 카드에서 내려 읽던 자리를 물려받지 않아요(모바일 검토 2026-11-24, 세 명이 따로 겪음)
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => { scrollRef.current?.scrollTo({ top: 0 }); }, [card.id, list]);
   const nextId = openIds(s).find(id => id !== card.id);
   const next = nextId ? getCard(nextId) : undefined;
 
@@ -66,7 +69,7 @@ export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, on
       </div>
       {list ? <CardList s={s} getCard={getCard} searchRef={searchRef} onFocus={id => { onFocus(id); setList(false); }} onUnsnooze={id => { onUnsnooze(id); setList(false); }} /> : <>
         <div className="cu-pbar" role="img" aria-label={`${t('top.progress')}: ${t('top.left', { n: openCount })}`}>{s.deck.slice(0, 12).map(id => <i key={id} className={id === card.id ? 'on' : stateOf(s, id) !== 'open' ? 'd' : ''} />)}</div>
-        <div className="scroll">
+        <div className="scroll" ref={scrollRef}>
           <div className="cu-stage">
             <div className="cu-deck" ref={deck.deckRef} {...deck.handlers}>
               {next && <div className="deck-next" inert aria-hidden><DecisionCard key={next.id} card={next} prog={s.progress[next.id]} onPick={none} onSay={none} onDraft={none} preview /></div>}
@@ -80,7 +83,7 @@ export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, on
               <button type="button" className="cu-btn ghost act-l" onClick={tap(onSnooze)} aria-keyshortcuts={can.left ? 'S ArrowLeft' : 'S'} title={can.left ? '← S' : 'S'}>{can.left ? <I.left aria-hidden /> : <I.clock aria-hidden />}{t('card.snooze')}</button>
               <button type="button" className="cu-btn ghost act-m" onClick={tap(onHandoff)} aria-keyshortcuts="D" title="D"><I.hand aria-hidden />{t('card.myself')}</button>
               <span className="sp" />
-              {can.right && <button type="button" className="cu-btn ghost act-r" onClick={tap(pickBest)} aria-keyshortcuts="ArrowRight Enter" title="→ ↵">{t('card.asSuggested')}<I.right aria-hidden /></button>}
+              {can.right && best && <button type="button" className="cu-btn ghost act-r named" onClick={tap(pickBest)} aria-keyshortcuts="ArrowRight Enter" title="→ ↵" aria-label={t('card.asSuggestedNamed', { label: best.label })}><span className="lbl">{t('card.asSuggestedNamed', { label: best.label })}</span><I.right aria-hidden /></button>}
             </div>
           </div>
         </div>
@@ -89,9 +92,10 @@ export function Catchup({ s, card, getCard, onPick, onSay, onDraft, onSnooze, on
           <Composer key={card.id} onSay={onSay} placeholder={prog?.alt ? t('card.more') : t('card.composer')} />
           {/* 단추의 자리가 미는 방향이에요. 화살표가 붙은 단추는 밀어서도 돼요(넓은 화면은 키 표시 ← → 가 그 화살표예요) */}
           <div className={`cu-pacts${can.right ? '' : ' two'}`}>
-            <button type="button" className="act-l" onClick={tap(onSnooze)}>{can.left ? <I.left aria-hidden /> : <I.clock aria-hidden />}{t('card.snooze')}</button>
-            <button type="button" className="act-m" onClick={tap(onHandoff)}><I.hand aria-hidden />{t('card.myself')}</button>
-            {can.right && <button type="button" className="act-r" onClick={tap(pickBest)}>{t('card.asSuggestedShort')}<I.right aria-hidden /></button>}
+            <button type="button" className="act-l" onClick={tap(onSnooze)}>{can.left ? <I.left aria-hidden /> : <I.clock aria-hidden />}<span className="t">{t('card.snooze')}</span></button>
+            <button type="button" className="act-m" onClick={tap(onHandoff)}><I.hand aria-hidden /><span className="t">{t('card.myself')}</span></button>
+            {/* 오른쪽은 추천 답의 이름을 말해요 — 밀거나 누르기 전에 무엇이 일어날지 보여요 */}
+            {can.right && best && <button type="button" className="act-r named" onClick={tap(pickBest)} aria-label={t('card.asSuggestedNamed', { label: best.label })}><span className="lbl">{best.label}</span><I.right aria-hidden /></button>}
           </div>
         </div>
       </>}

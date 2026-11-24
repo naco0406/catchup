@@ -36,8 +36,8 @@ test('10초 안에 되돌리면 아무것도 나가지 않아요 · 지나면 �
   await page.locator('[data-card] button.cu-opt.rec').click();
   await page.clock.fastForward(11_000);
   await page.goto('/#/activity');
-  await expect(page.getByText('박서연 님께 B안으로 진행한다고 답장했어요')).toBeVisible();
-  await expect(page.getByText('박서연 님께 B안으로 진행한다고 답장했어요')).toHaveCount(1);
+  await expect(page.getByText('박서연 님께 A안을 예산에 맞출 수 있는지 여쭤봤어요')).toBeVisible();
+  await expect(page.getByText('박서연 님께 A안을 예산에 맞출 수 있는지 여쭤봤어요')).toHaveCount(1);
 });
 
 test('위험한 답은 꾹 눌러야 정해져요. 짧게 누르면 안내만 떠요', async ({ page }) => {
@@ -88,7 +88,7 @@ test('말로 답하면 선택지를 다시 만들어 와요', async ({ page }, i
   const input = info.project.name === 'iphone' ? page.locator('.phone-dock input') : page.locator('[data-card] .cu-composer input');
   await input.fill('토요일은 결혼식이 있어. 일요일 점심으로 여쭤봐 줘');
   await input.press('Enter');
-  await expect(page.getByText('일요일 12시 30분이 어떤지 여쭤봐요')).toBeVisible();
+  await expect(page.locator('[data-card]').getByText('일요일 12시 30분이 어떤지 여쭤봐요')).toBeVisible(); // 아래 단추도 추천 답의 이름을 말해요
   await expect(page.locator('[data-card] .cu-said')).toHaveText('토요일은 결혼식이 있어. 일요일 점심으로 여쭤봐 줘');
 });
 
@@ -97,7 +97,7 @@ test('새로 고침해도 기다리던 답이 사라지지 않아요', async ({ 
   await page.locator('[data-card] button.cu-opt.rec').click();
   await page.reload();
   await page.goto('/#/activity');
-  await expect(page.getByText('박서연 님께 B안으로 진행한다고 답장했어요')).toBeVisible();
+  await expect(page.getByText('박서연 님께 A안을 예산에 맞출 수 있는지 여쭤봤어요')).toBeVisible();
 });
 
 test('아이폰: 왼쪽으로 밀면 미뤄요 · 위험한 카드는 밀리지 않아요', async ({ page }, info) => {

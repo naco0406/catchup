@@ -14,16 +14,16 @@ export const en: Dataset = {
       ],
       evidence: ['3 emails', 'quote_hanbit_v2.pdf', 'Q4 budget'],
       options: [
+        { label: 'Ask if plan A can fit $9,800', detail: 'You’ll get a new card when they reply', done: 'Asked Seoyeon whether plan A can fit the budget', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, we like plan A, but our budget is $9,800. Could you trim the scope to fit?' } },
         { label: 'Go with plan B', detail: 'Fits the budget and leaves two weeks before launch', done: 'Told Seoyeon you’re going with plan B', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, we’d like to go ahead with plan B. Send over the contract draft and I’ll review it this week.' } },
         { label: 'Go with plan A', detail: '$1,400 over budget', risk: 'money', done: 'Told Seoyeon you’re going with plan A', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, we’d like to go ahead with plan A. Send over the contract draft and I’ll review it this week.' } },
-        { label: 'Ask if plan A can fit $9,800', detail: 'You’ll get a new card when they reply', done: 'Asked Seoyeon whether plan A can fit the budget', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, we like plan A, but our budget is $9,800. Could you trim the scope to fit?' } },
       ],
       recommended: 0,
       followUp: {
         work: 'Checked the quote and the Q4 budget again', workIcon: 'file', reply: 'Adding one more round of edits should still fit the budget. Here are new options.', recommended: 0,
         options: [
           { label: 'Ask for one more round of edits', detail: 'Usually under $800 extra', done: 'Asked Seoyeon to add a round of edits to plan B', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, could you add one more round of edits to plan B? Please include the extra cost if there is one.' } },
-          { label: 'Go with plan B as is', detail: 'Same as the first suggestion', done: 'Told Seoyeon you’re going with plan B', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, we’ll go with plan B as is. Could you send over the contract draft?' } },
+          { label: 'Go with plan B as is', detail: 'Fits the budget as quoted', done: 'Told Seoyeon you’re going with plan B', effect: { kind: 'send', to: 'Seoyeon', text: 'Hi Seoyeon, we’ll go with plan B as is. Could you send over the contract draft?' } },
         ],
       },
     },

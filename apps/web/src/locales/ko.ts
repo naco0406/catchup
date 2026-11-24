@@ -37,7 +37,7 @@ export const ko: Messages = {
     codeIf: '바뀌는 코드', files_one: '파일 {{count}}개', files_other: '파일 {{count}}개', riskWord: '위험', command: '명령', confirmHint: '한 번 더 누르면 실행해요', holdHint: '꾹 누르면 실행해요', holding: '계속 눌러 주세요', holdFull: '손을 떼면 실행해요',
     composer: '다르게 답하기', more: '더 말하기', send: '보내기',
     firstOptions: '처음 선택지 {{n}}개: {{list}}', snooze: '미루기', myself: '내가 할게요',
-    asSuggested: '추천대로', asSuggestedShort: '추천대로', options: '답',
+    asSuggested: '추천대로', asSuggestedShort: '추천대로', asSuggestedNamed: '추천: {{label}}', options: '답',
   },
   generic: { reply: '알겠어요. 말씀하신 대로 선택지를 만들어 봤어요.', work: '남기신 말을 읽었어요', asSaid: '말씀하신 대로 답해요', notedDone: '하신 말을 남겨 뒀어요: “{{text}}”', asSaidDone: '말한 대로 답했어요: “{{text}}”' },
   memory: { count_one: '{{count}}개', count_other: '{{count}}개', tell: '토마토에게 알려 주기', tellPh: '기억해 둘 것', about: '기억이 생기는 곳', edit: '고치기', save: '저장', cancel: '취소', forget: '지우기', edited: '내가 고쳤어요', empty: '아직 아는 것이 없어요. 카드에 답하면 여기에 쌓여요.', promise: '내 답, 내가 고친 글, 내가 한 말, 끝난 코딩 세션에서만 생겨요. 지우면 다음 카드부터 쓰지 않아요.', kind: { promise: '내가 한 약속', preference: '내 말과 내가 고친 것', person: '사람과 정한 것', project: '프로젝트' },

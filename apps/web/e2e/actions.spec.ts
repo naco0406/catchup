@@ -7,7 +7,7 @@ const opt = (page: Page, i: number) => page.locator(`[data-card] button.cu-opt[d
 const toActivity = (page: Page) => page.evaluate(() => { location.hash = '#/activity'; });
 const copied = (page: Page) => page.evaluate(() => (window as unknown as { copied: string[] }).copied);
 const WAITING = '아직 되돌릴 수 있어요';
-const SENT = '박서연 님께 B안으로 진행한다고 답장했어요';
+const SENT = '박서연 님께 A안을 예산에 맞출 수 있는지 여쭤봤어요';
 const row = (page: Page, text: string) => page.locator('.cu-row').filter({ hasText: text });
 
 async function at(page: Page, id: string) {
@@ -93,6 +93,6 @@ test('고른 번호의 글을 고르기 전에 볼 수 있고, 고친 글 그대
 });
 
 test('위험한 답은 확인하는 동안 그 답의 글을 보여 줘요', async ({ page }) => {
-  await opt(page, 1).click();
+  await opt(page, 2).click(); // A안(위험)은 셋째예요 — 돈이 걸린 카드는 되묻기를 추천해요
   await expect(page.locator('[data-card] .cu-prev p')).toContainText('A안으로');
 });

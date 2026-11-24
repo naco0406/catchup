@@ -35,7 +35,7 @@ export const en = {
     codeIf: 'Code change', files_one: '{{count}} file', files_other: '{{count}} files', riskWord: 'Risky', command: 'Command', confirmHint: 'Press again to run', holdHint: 'Hold to run', holding: 'Keep holding', holdFull: 'Release to run',
     composer: 'Answer differently', more: 'Say more', send: 'Send',
     firstOptions: 'First {{n}} options: {{list}}', snooze: 'Snooze', myself: 'I’ll do it',
-    asSuggested: 'Go with suggestion', asSuggestedShort: 'Suggested', options: 'Answers',
+    asSuggested: 'Go with suggestion', asSuggestedShort: 'Suggested', asSuggestedNamed: 'Suggested: {{label}}', options: 'Answers',
   },
   generic: { reply: 'Got it. Here’s a new option based on what you said.', work: 'Read your note', asSaid: 'Answer the way you said', notedDone: 'Noted your words: “{{text}}”', asSaidDone: 'Answered in your words: “{{text}}”' },
   memory: { count_one: '{{count}} item', count_other: '{{count}} items', tell: 'Tell Tomato', tellPh: 'Something to remember', about: 'Where this comes from', edit: 'Edit', save: 'Save', cancel: 'Cancel', forget: 'Forget', edited: 'Edited by you', empty: 'Nothing yet. It builds up as you answer cards.', promise: 'Only your answers, your edits, your own words and finished coding sessions. Forgotten items stop being used from the next card.', kind: { promise: 'Promises you made', preference: 'Your words and edits', person: 'Decisions with people', project: 'Projects' },
