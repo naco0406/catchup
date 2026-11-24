@@ -19,3 +19,4 @@ __pycache__/
 docs/design-system/check/
 docs/design/decision-inbox/check/
 dist-live/
+docs/**/.review/
