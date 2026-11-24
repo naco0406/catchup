@@ -1,3 +1,6 @@
+/* Hallmark · checked: 2026-11-24 · genre: modern-minimal (inferred) · shape: app screen
+ * floor: fixed 27, 39a, 40, 48 · structural: none printed, spacing gates are notes at polish
+ * built: the project · redesign: polish · v2.0.0 */
 /*
   CatchUp 컴포넌트 — v0.9, 2026-11-23 (쉽고 빠른 화면: 메뉴 단추의 점, 근거 한 줄, 팝오버, 꾹 눌러 확인)
   값은 모두 tokens.css 의 변수예요. 여기서 새 색 · 크기 숫자를 지어내지 않아요(격자 안의 배치 값만 예외).
@@ -144,7 +147,7 @@
 .cu-opt.rec { background: var(--cu-accent-soft); box-shadow: inset 0 0 0 2px var(--cu-accent); }
 .cu-opt.rec .key { background: var(--cu-accent); color: var(--cu-on-accent); }
 .cu-opt.picked { background: var(--cu-accent); color: var(--cu-on-accent); box-shadow: none; }
-.cu-opt.picked .d, .cu-opt.picked .r { color: rgb(255 255 255 / .82); }
+.cu-opt.picked .d, .cu-opt.picked .r { color: var(--cu-on-accent-2); }
 .cu-opt.picked .key { background: var(--cu-warm-0); color: var(--cu-accent-text); }
 .cu-opt.dimmed { opacity: .45; }
 .cu-opt .l, .cu-opt .d { width: fit-content; }
@@ -153,7 +156,7 @@
 /* <KeyHint> */
 .cu-kbd { min-width: 24px; height: 24px; padding: 0 7px; border-radius: var(--cu-r-full); box-shadow: inset 0 0 0 1px var(--cu-line-strong); display: inline-grid; place-items: center; font: 500 12px/1 var(--cu-font); color: var(--cu-fg-2); letter-spacing: 0; }
 .cu-opt.rec .cu-kbd { box-shadow: inset 0 0 0 1px var(--cu-tomato-200); color: var(--cu-accent-text); }
-.cu-kbd.inv { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .45); color: var(--cu-on-accent); }
+.cu-kbd.inv { box-shadow: inset 0 0 0 1px var(--cu-on-accent-line); color: var(--cu-on-accent); }
 
 /* ── <EffectPreview> — 고르면 일어나는 일 ── */
 .cu-prev { margin-top: 12px; padding: 14px 20px 16px; border-radius: var(--cu-r-panel); background: var(--cu-bg-soft); }
@@ -183,7 +186,7 @@
 .cu-slot.new { background: var(--cu-bg-surface); box-shadow: none; outline: 1px dashed var(--cu-warm-300); outline-offset: -1px; }
 
 /* ── <Composer> — 다르게 답하기 ── */
-.cu-composer { margin-top: 12px; height: var(--cu-h-lg); display: flex; align-items: center; gap: 6px; padding: 0 8px 0 22px; border-radius: var(--cu-r-full); box-shadow: inset 0 0 0 1px var(--cu-line-strong); background: var(--cu-bg-surface); font: var(--cu-t-body); color: var(--cu-fg-3); }
+.cu-composer { margin-top: 12px; height: var(--cu-h-lg); display: flex; align-items: center; gap: 6px; padding: 0 8px 0 22px; border-radius: var(--cu-r-full); box-shadow: inset 0 0 0 1px var(--cu-line-field); background: var(--cu-bg-surface); font: var(--cu-t-body); color: var(--cu-fg-3); }
 .cu-composer .sp { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cu-composer.typed { color: var(--cu-fg); box-shadow: inset 0 0 0 2px var(--cu-fg); }
 .cu-send { width: 36px; height: 36px; border-radius: 50%; background: var(--cu-bg-soft); color: var(--cu-fg-3); display: grid; place-items: center; flex: none; }
@@ -243,7 +246,7 @@
 
 /* ── <Toast> — 되돌리기가 붙은 알림 ── */
 .cu-toast { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 8px 0 22px; border-radius: var(--cu-r-full); background: var(--cu-bg-inverse); color: var(--cu-fg-on-inverse); font: var(--cu-t-caption); white-space: nowrap; box-shadow: var(--cu-shadow-pop); z-index: 5; }
-.cu-toast .u { height: 32px; padding: 0 14px; border-radius: var(--cu-r-full); background: rgb(255 255 255 / .16); display: inline-flex; align-items: center; font-weight: 600; }
+.cu-toast .u { height: 32px; padding: 0 14px; border-radius: var(--cu-r-full); background: var(--cu-on-inverse-soft); display: inline-flex; align-items: center; font-weight: 600; }
 
 /* ── 가운데 선 화면(처음 · 다 봤어요) · <EmptyState> ── */
 .cu-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
@@ -307,16 +310,16 @@
 .cu-card.p .cu-opt.rec::after { box-shadow: inset 0 0 0 2px var(--cu-accent); }
 
 /* ── 잠금 화면 알림(iOS 가 그리는 부분은 시스템 모양을 따라요) ── */
-.cu-lock { height: 100%; background: linear-gradient(180deg, #2b2927, #121110); color: #fff; padding: 56px 12px 0; display: flex; flex-direction: column; align-items: center; }
+.cu-lock { height: 100%; background: linear-gradient(180deg, var(--cu-ios-lock-top), var(--cu-ios-lock-bottom)); color: var(--cu-ios-ink); padding: 56px 12px 0; display: flex; flex-direction: column; align-items: center; }
 .cu-ldate { font: 500 18px/28px var(--cu-font); opacity: .85; }
 .cu-ltime { font: 700 84px/92px var(--cu-font); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-.cu-noti { width: 100%; margin-top: 40px; padding: 14px 16px 16px; border-radius: var(--cu-r-panel); background: rgb(255 255 255 / .92); color: var(--cu-warm-950); }
+.cu-noti { width: 100%; margin-top: 40px; padding: 14px 16px 16px; border-radius: var(--cu-r-panel); background: var(--cu-ios-glass); color: var(--cu-warm-950); }
 .cu-noti .h { display: flex; align-items: center; gap: 8px; font: var(--cu-t-caption); color: var(--cu-warm-700); }
 .cu-noti .h .sp { flex: 1; }
 .cu-noti .t { margin-top: 8px; font: var(--cu-t-body-strong); }
 .cu-noti .b { font: var(--cu-t-body); }
-.cu-nacts { width: 100%; margin-top: 8px; border-radius: var(--cu-r-panel); background: rgb(255 255 255 / .92); color: var(--cu-warm-950); overflow: hidden; }
-.cu-nacts div { height: 52px; display: flex; align-items: center; justify-content: center; font: 500 16px/24px var(--cu-font); border-top: 1px solid rgb(0 0 0 / .1); }
+.cu-nacts { width: 100%; margin-top: 8px; border-radius: var(--cu-r-panel); background: var(--cu-ios-glass); color: var(--cu-warm-950); overflow: hidden; }
+.cu-nacts div { height: 52px; display: flex; align-items: center; justify-content: center; font: 500 16px/24px var(--cu-font); border-top: 1px solid var(--cu-ios-sep); }
 .cu-nacts div:first-child { border-top: 0; font-weight: 600; }
 .cu-lhint { margin-top: 16px; font: var(--cu-t-caption); opacity: .7; }
 
@@ -357,13 +360,13 @@ button.cu-nav:not(.on):hover, a.cu-nav:not(.on):hover { background: var(--cu-bg-
 /* <Composer> 받아쓰는 중 — 잉크로 칠해요(빨강은 고를 곳에만) */
 button.cu-ib.listening { background: var(--cu-fg); color: var(--cu-fg-on-inverse); }
 /* <SearchField> */
-.cu-search { height: var(--cu-h-md); display: flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: var(--cu-r-full); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-strong); color: var(--cu-fg-3); }
+.cu-search { height: var(--cu-h-md); display: flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: var(--cu-r-full); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-field); color: var(--cu-fg-3); }
 .cu-search svg { width: 16px; height: 16px; }
 .cu-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: var(--cu-t-body); color: var(--cu-fg); }
 .cu-search input::placeholder { color: var(--cu-fg-3); }
 .cu-search:focus-within { box-shadow: inset 0 0 0 2px var(--cu-fg); }
 /* <TextArea> — 여러 줄 입력(v0.5). 입력창과 같은 선 · 같은 초점 */
-.cu-textarea { display: block; width: 100%; min-height: 96px; padding: 14px 20px; border: 0; border-radius: var(--cu-r-panel); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-strong); font: var(--cu-t-body); color: var(--cu-fg); resize: vertical; }
+.cu-textarea { display: block; width: 100%; min-height: 96px; padding: 14px 20px; border: 0; border-radius: var(--cu-r-panel); background: var(--cu-bg-surface); box-shadow: inset 0 0 0 1px var(--cu-line-field); font: var(--cu-t-body); color: var(--cu-fg); resize: vertical; }
 .cu-textarea::placeholder { color: var(--cu-fg-3); }
 .cu-textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--cu-fg); }
 
@@ -411,11 +414,11 @@ button.cu-ib.listening { background: var(--cu-fg); color: var(--cu-fg-on-inverse
 .cu-toast.two { height: auto; min-height: 56px; padding: 8px 8px 8px 10px; }
 .cu-toast.two:not(:has(.u)) { padding-right: 22px; }
 .cu-toast.two .l1 { font: 600 14px/20px var(--cu-font); }
-.cu-toast .l2 { color: rgb(255 255 255 / .72); }
+.cu-toast .l2 { color: var(--cu-on-inverse-2); }
 /* 고리: 문턱까지 남은 만큼(미는 동안) · 되돌릴 수 있는 시간(놓은 뒤). --ring 0~1 */
 .cu-ring { position: relative; width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; }
-.cu-ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(currentColor calc(var(--ring, 0) * 1turn), rgb(255 255 255 / .24) 0);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); }
+.cu-ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(currentColor calc(var(--ring, 0) * 1turn), var(--cu-on-inverse-track) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), var(--cu-mask) calc(100% - 2.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), var(--cu-mask) calc(100% - 2.5px)); }
 .cu-ring svg { width: 16px; height: 16px; }
 .cu-ring .n { font: var(--cu-t-micro); font-variant-numeric: tabular-nums; letter-spacing: 0; }
 /* 놓아도 되는 때: 고리가 흰 원이 돼요 */
@@ -424,7 +427,7 @@ button.cu-ib.listening { background: var(--cu-fg); color: var(--cu-fg-on-inverse
 
 /* 방향 단추: 자리가 미는 방향이에요(.act-l 왼쪽 = 미루기 · .act-m · .act-r 오른쪽 = 추천대로) */
 .act-l svg, .act-m svg, .act-r svg { color: inherit; }
-button.cu-btn:disabled { opacity: .4; cursor: default; }
+button.cu-btn:disabled { opacity: .4; cursor: not-allowed; }   /* 흐림, 커서, disabled 속성, 세 갈래로 알려요(Hallmark 39a) */
 [data-pull="left"] .act-l { color: var(--cu-fg); font-weight: 600; }
 [data-pull="right"] .act-r, [data-nudge] .act-r { color: var(--cu-accent-text); font-weight: 600; }
 /* 추천 답이 없는 덱(알려만 드려요)의 오른쪽 단추는 잉크색이에요 — 빨강은 추천 답에만 */
@@ -502,4 +505,15 @@ details.cu-tidied > summary:focus-visible { outline: none; box-shadow: var(--cu-
   .cu-btn:not(.lg) { min-height: 44px; }
   .cu-nav { height: 44px; }
   button.cu-link { min-height: 44px; }
+}
+
+/* ── 눌림 — 누르는 것은 모두 눌린 티가 나요(Hallmark 26b). 바탕 한 단계, 움직임은 없어요 ── */
+button.cu-btn:not(:disabled):not(.primary):active, a.cu-btn:not(.primary):active, button.cu-ib:active, button.cu-link:not(:disabled):active { background: var(--cu-bg-soft-strong); }
+button.cu-btn.primary:not(:disabled):active, a.cu-btn.primary:active { background: var(--cu-accent-hover); }
+button.cu-nav:active, a.cu-nav:active, .cu-seg button:active { background: var(--cu-bg-soft-strong); }
+
+/* ── 움직임 줄이기 — 앱이 아닌 곳(소개 페이지와 시안 보드)도 이 파일만 읽어요. 앱은 app.css 에 같은 규칙이 있어요 ── */
+@media (prefers-reduced-motion: reduce) {
+  .cu-root *, .cu-root *::before, .cu-root *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+  button.cu-opt:active { transform: none; }
 }

@@ -1,8 +1,16 @@
+/* Hallmark · checked: 2026-11-24 · genre: modern-minimal (inferred) · shape: app screen
+ * floor: fixed 34, 48, 62, 67 here; 27, 39a, 40, 48 in the design system; copy 19 and 63 in locales and data
+ * built: the project · redesign: polish · v2.0.0 */
+/* Hallmark · waive 39b · app UI, the English and 한국어 switch and the All, By me filter are 28px segments inside one 36px track, and each answer row is 64px because an answer has two lines */
+/* Hallmark · dismissed 63 · the arrow is a key cap for ArrowRight beside Go with suggestion, the same key the deck swipes with */
+/* Hallmark · answered F19 · four weights are the design system scale: 400 body, 500 labels, 600 names, 700 card questions */
+/* Hallmark · answered F7 · in CatchUp every pressable is a pill, nav rows and the source strip included, that is the design language */
 /* 앱 배치 — 색 · 글자 · 모서리 · 그늘은 디자인 시스템 토큰만 써요. 여기는 자리와 반응형만 정해요.
    넓음(≥1024): 사이드바 + 본문 · 중간(600–1023): 사이드바는 서랍 · 좁음(<600): 아이폰 모양(카드가 화면, 입력창과 단추는 아래에 붙어요) */
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
-body { margin: 0; overflow: hidden; }
+html, body { overflow-x: clip; }
+body { margin: 0; overflow: clip; }   /* 앱 껍데기는 스스로 굴러요. hidden 은 포커스가 몸통을 몰래 굴릴 수 있어요(Hallmark 34) */
 h1, h2, h3, p { text-wrap: pretty; }
 .cu-ask { text-wrap: balance; }
 
@@ -54,12 +62,13 @@ h1, h2, h3, p { text-wrap: pretty; }
 .talk-examples { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
 button.cu-chip { border: 0; font-family: inherit; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
+button.cu-chip:active { background: var(--cu-bg-soft-strong); }
 .talk-dock { flex: none; padding: 0 40px 20px; }
 .talk-dock .cu-composer { margin-top: 8px; }
 .talk-dock .cu-fail { margin: 0 0 4px; }
 
 /* 덱에서 비서에게 말하기 — 덱 위에 뜨는 시트. 넓은 화면은 본문 아래 가운데, 아이폰은 아래에 붙어요 */
-.talk-sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 24px; margin: 0 auto; width: min(560px, calc(100vw - 48px)); max-height: min(640px, calc(100dvh - 96px)); display: flex; flex-direction: column; padding: 20px 24px; border-radius: var(--cu-r-card); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-pop); animation: rise var(--cu-dur) var(--cu-ease); }
+.talk-sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 24px; margin: 0 auto; width: min(560px, calc(100% - 48px)); max-height: min(640px, calc(100dvh - 96px)); display: flex; flex-direction: column; padding: 20px 24px; border-radius: var(--cu-r-card); background: var(--cu-bg-surface); box-shadow: var(--cu-shadow-pop); animation: rise var(--cu-dur) var(--cu-ease); }
 @media (min-width: 1024px) { .shell.pinned .talk-sheet { left: 264px; } }
 .talk-sheet-head { flex: none; display: flex; align-items: center; gap: 10px; }
 .talk-sheet-head > svg { width: 20px; height: 20px; flex: none; color: var(--cu-fg-2); }
@@ -111,7 +120,7 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .passkeys-h { margin-top: 32px; }
 
 /* 서랍(중간 · 좁음) */
-.drawer-bg { position: fixed; inset: 0; background: rgb(28 26 24 / .32); z-index: 40; animation: fade var(--cu-dur) var(--cu-ease); }
+.drawer-bg { position: fixed; inset: 0; background: var(--cu-scrim); z-index: 40; animation: fade var(--cu-dur) var(--cu-ease); }
 .drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 41; box-shadow: var(--cu-shadow-pop); animation: slide var(--cu-dur) var(--cu-ease); }
 .drawer.cu-side { height: 100%; overflow-y: auto; width: min(300px, 86vw); }
 @media (min-width: 1024px) { .drawer.cu-side { width: 264px; } }
@@ -185,7 +194,8 @@ button.cu-chip:focus-visible { outline: none; box-shadow: var(--cu-focus); }
 .deck-next::after { content: ''; position: absolute; inset: 0; z-index: 3; background: var(--cu-bg-canvas); opacity: calc(.78 - .34 * var(--p, 0)); }
 /* 나가는 카드의 본 — 놓은 속도로 날아가요 */
 .deck-ghost { position: absolute; left: 0; top: 0; z-index: 4; margin: 0; pointer-events: none; transform: translateX(var(--gx, 0px)); box-shadow: var(--cu-shadow-pop); }
-.deck-ghost.fade { opacity: 0; transition: opacity var(--cu-dur) var(--cu-ease); }
+.deck-ghost.fade { animation: ghost-out var(--cu-dur) var(--cu-ease) forwards; }   /* 보이는 데서 시작해요(Hallmark 62) */
+@keyframes ghost-out { to { opacity: 0; } }
 .deck-ghost:not(.filled) .cu-fill { opacity: calc(1 - .55 * var(--d, 0)); }
 /* 새 카드가 들어오는 모습: 뒤에 있던 카드는 가림막만 걷히고, 되돌린 카드는 나간 쪽에서 돌아와요 */
 .deck-top.from-next::after, .deck-top.from-under::after { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: var(--cu-r-card); background: var(--cu-bg-canvas); opacity: 0; pointer-events: none; animation: unveil var(--cu-dur) var(--cu-ease); }
