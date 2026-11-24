@@ -6,7 +6,7 @@ const news = (page: Page) => page.locator('[data-fyi] .cu-ask');
 const toast = (page: Page) => page.locator('.cu-toast:visible').first();
 const acts = (page: Page, phone: boolean) => page.locator(phone ? '.phone-dock .cu-pacts' : '.cu-acts');
 const go = (page: Page, route: string) => page.evaluate(r => { location.hash = `#/${r}`; }, route);
-const FIRST = '#제품 — 12월 출시 일정이 12월 9일로 확정됐어요', SECOND = 'PR 3개가 합쳐졌고, 밤 배포는 문제없이 끝났어요';
+const FIRST = '#제품: 12월 출시 일정이 12월 9일로 확정됐어요', SECOND = 'PR 3개가 합쳐졌고, 밤 배포는 문제없이 끝났어요';
 
 test.beforeEach(async ({ page }) => { await start(page); await go(page, 'fyi'); await expect(news(page)).toHaveText(FIRST); });
 

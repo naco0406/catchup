@@ -8,8 +8,8 @@ export const en: Dataset = {
       id: 'c01', source: 'gmail', who: 'Seoyeon Park', meta: 'Hanbit Design, 8:12 AM', due: { text: 'Reply by 6 PM today', tone: 'wait' },
       question: 'Rebrand quote: go with plan A or plan B?',
       summary: [
-        { strong: 'A: $11,200, 6 weeks', text: ' — logo and 5 detail screens, 2 rounds of edits' },
-        { strong: 'B: $8,700, 4 weeks', text: ' — logo and 3 detail screens, 1 round of edits' },
+        { strong: 'A: $11,200, 6 weeks', text: '. Logo and 5 detail screens, 2 rounds of edits' },
+        { strong: 'B: $8,700, 4 weeks', text: '. Logo and 3 detail screens, 1 round of edits' },
         { text: 'The budget set in October is $9,800. Launch is Jan 12.', dim: true },
       ],
       evidence: ['3 emails', 'quote_hanbit_v2.pdf', 'Q4 budget'],
@@ -246,10 +246,10 @@ export const en: Dataset = {
     },
   ],
   fyi: [
-    { id: 'f01', source: 'slack', title: '#product — December launch is set for Dec 9', sub: 'Dohyun and 4 others, 23 messages, summarized' },
+    { id: 'f01', source: 'slack', title: '#product: December launch is set for Dec 9', sub: 'Dohyun and 4 others, 23 messages, summarized' },
     { id: 'f02', source: 'github', title: '3 PRs merged, and the nightly deploy went fine', sub: 'shop, reviewed by Yuna' },
     { id: 'f03', source: 'gmail', title: 'AWS November estimate is $312', sub: 'Up 8% from last month, within your limit' },
-    { id: 'f04', source: 'kakao', title: 'College friends — voting on a date for the year-end dinner', sub: 'From a chat you uploaded, you haven’t voted yet' },
+    { id: 'f04', source: 'kakao', title: 'College friends: voting on a date for the year-end dinner', sub: 'From a chat you uploaded, you haven’t voted yet' },
     { id: 'f05', source: 'calendar', title: 'Wednesday’s dentist moved from 2 PM to 3 PM', sub: 'Nothing else is booked then' },
   ],
   runs: [

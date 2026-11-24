@@ -1,17 +1,19 @@
 /* Hallmark · checked: 2026-11-24 · genre: modern-minimal (inferred) · shape: app screen
- * floor: fixed 34, 48, 62, 67 here; 27, 39a, 40, 48 in the design system; copy 19 and 63 in locales and data
+ * floor: fixed 34, 48, 62 here; 27, 39a, 40, 48 in the design system; copy 19 in the card data
  * built: the project · redesign: polish · v2.0.0 */
-/* Hallmark · waive 39b · app UI, the English and 한국어 switch and the All, By me filter are 28px segments inside one 36px track, and each answer row is 64px because an answer has two lines */
+/* Hallmark · waive 39b · button.cu-opt 64px · each answer row holds the answer and a second line under it, so the row stands 64px tall and the whole row is the target */
 /* Hallmark · dismissed 63 · the arrow is a key cap for ArrowRight beside Go with suggestion, the same key the deck swipes with */
 /* Hallmark · answered F19 · four weights are the design system scale: 400 body, 500 labels, 600 names, 700 card questions */
-/* Hallmark · answered F7 · in CatchUp every pressable is a pill, nav rows and the source strip included, that is the design language */
+/* Hallmark · dismissed 40 · .cu-opt.picked .key is now accent ink on a white disc, 5.15:1 light and 4.67:1 dark; the linter read the old dark accent text */
+/* Hallmark · reworded "#product — December launch is set for Dec 9" to "#product: December launch is set for Dec 9" · 19 names the dash */
 /* 앱 배치 — 색 · 글자 · 모서리 · 그늘은 디자인 시스템 토큰만 써요. 여기는 자리와 반응형만 정해요.
    넓음(≥1024): 사이드바 + 본문 · 중간(600–1023): 사이드바는 서랍 · 좁음(<600): 아이폰 모양(카드가 화면, 입력창과 단추는 아래에 붙어요) */
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 html, body { overflow-x: clip; }
 body { margin: 0; overflow: clip; }   /* 앱 껍데기는 스스로 굴러요. hidden 은 포커스가 몸통을 몰래 굴릴 수 있어요(Hallmark 34) */
-h1, h2, h3, p { text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
 .cu-ask { text-wrap: balance; }
 
 .shell { display: flex; height: 100%; height: 100dvh; }

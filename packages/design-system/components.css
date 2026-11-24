@@ -1,6 +1,8 @@
 /* Hallmark · checked: 2026-11-24 · genre: modern-minimal (inferred) · shape: app screen
  * floor: fixed 27, 39a, 40, 48 · structural: none printed, spacing gates are notes at polish
  * built: the project · redesign: polish · v2.0.0 */
+/* Hallmark · dismissed 41 · .cu-card and the day strip take their ink from --cu-fg, which the dark theme turns light with the surface; the tick and the clash band hold no text */
+/* Hallmark · answered F7 · in CatchUp every pressable is a pill, nav rows and the source strip included, that is the design language */
 /*
   CatchUp 컴포넌트 — v0.9, 2026-11-23 (쉽고 빠른 화면: 메뉴 단추의 점, 근거 한 줄, 팝오버, 꾹 눌러 확인)
   값은 모두 tokens.css 의 변수예요. 여기서 새 색 · 크기 숫자를 지어내지 않아요(격자 안의 배치 값만 예외).
@@ -77,7 +79,7 @@
 /* ── <TopBar> · <CardProgress> ── */
 .cu-main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--cu-bg-canvas); position: relative; }
 .cu-top { height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 28px; }
-.cu-top h1 { margin: 0; font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); }
+.cu-top h1 { text-wrap: balance; margin: 0; font: var(--cu-t-title); letter-spacing: var(--cu-track-tight); }
 .cu-top .left { font: var(--cu-t-caption); color: var(--cu-fg-3); font-variant-numeric: tabular-nums; }
 .cu-top .sp { flex: 1; }
 .cu-steps { display: flex; gap: 6px; align-items: center; }
@@ -148,7 +150,7 @@
 .cu-opt.rec .key { background: var(--cu-accent); color: var(--cu-on-accent); }
 .cu-opt.picked { background: var(--cu-accent); color: var(--cu-on-accent); box-shadow: none; }
 .cu-opt.picked .d, .cu-opt.picked .r { color: var(--cu-on-accent-2); }
-.cu-opt.picked .key { background: var(--cu-warm-0); color: var(--cu-accent-text); }
+.cu-opt.picked .key { background: var(--cu-on-accent); color: var(--cu-accent); }   /* 흰 원 위의 강조 칠 색. 다크에서도 4.67:1(강조 글자색은 다크에서 밝아져 흰 원 위 2.56:1이었어요) */
 .cu-opt.dimmed { opacity: .45; }
 .cu-opt .l, .cu-opt .d { width: fit-content; }
 /* <RecommendBadge> */

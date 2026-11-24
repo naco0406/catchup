@@ -8,8 +8,8 @@ export const ko: Dataset = {
       id: 'c01', source: 'gmail', who: '박서연', meta: '한빛 디자인, 오전 8:12', due: { text: '오늘 18시까지 답해야 해요', tone: 'wait' },
       question: '리브랜딩 견적, A안과 B안\u00a0중 어느 쪽으로 할까요?',
       summary: [
-        { strong: 'A안 1,480만 원, 6주', text: ' — 로고와 상세 화면 5종, 수정 2번' },
-        { strong: 'B안 1,150만 원, 4주', text: ' — 로고와 상세 화면 3종, 수정 1번' },
+        { strong: 'A안 1,480만 원, 6주', text: '. 로고와 상세 화면 5종, 수정 2번' },
+        { strong: 'B안 1,150만 원, 4주', text: '. 로고와 상세 화면 3종, 수정 1번' },
         { text: '10월에 정한 예산은 1,300만 원이고, 출시는 1월 12일이에요.', dim: true },
       ],
       evidence: ['메일 3통', '견적서_한빛_v2.pdf', '4분기 예산'],
@@ -246,10 +246,10 @@ export const ko: Dataset = {
     },
   ],
   fyi: [
-    { id: 'f01', source: 'slack', title: '#제품 — 12월 출시 일정이 12월 9일로 확정됐어요', sub: '이도현 외 4명, 글 23개를 줄였어요' },
+    { id: 'f01', source: 'slack', title: '#제품: 12월 출시 일정이 12월 9일로 확정됐어요', sub: '이도현 외 4명, 글 23개를 줄였어요' },
     { id: 'f02', source: 'github', title: 'PR 3개가 합쳐졌고, 밤 배포는 문제없이 끝났어요', sub: 'shop, 검토는 정유나 님이 했어요' },
     { id: 'f03', source: 'gmail', title: 'AWS 11월 청구 예상액은 412,000원이에요', sub: '지난달보다 8% 늘었어요, 정해 둔 한도 안이에요' },
-    { id: 'f04', source: 'kakao', title: '대학 동기 방 — 12월 송년회 날짜를 투표 중이에요', sub: '올려 주신 대화 내보내기에서, 아직 내 표가 없어요' },
+    { id: 'f04', source: 'kakao', title: '대학 동기 방: 12월 송년회 날짜를 투표 중이에요', sub: '올려 주신 대화 내보내기에서, 아직 내 표가 없어요' },
     { id: 'f05', source: 'calendar', title: '수요일 치과 예약이 오후 2시에서 3시로 바뀌었어요', sub: '그 시간에 다른 일정은 없어요' },
   ],
   runs: [
