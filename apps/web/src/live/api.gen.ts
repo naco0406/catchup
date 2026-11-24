@@ -532,6 +532,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 켜져 있는 감시 규칙(design.md 17장 제안 2). 켜기는 토마토의 제안을 받아들이는 것(`/v1/me/assistant/{id}/accept`)이에요 */
+        get: operations["list_watch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/watch/{id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 감시 규칙을 멈춰요. 여러 번 눌러도 같아요 */
+        post: operations["stop_watch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -817,6 +851,7 @@ export interface components {
             state: string;
             /** @description 맡길 일의 제안. `session` 이 없으면 아직 맡기지 않은 것이에요 */
             task?: string | null;
+            watch?: null | components["schemas"]["Rule"];
         };
         Passkey: {
             /** Format: date-time */
@@ -876,6 +911,22 @@ export interface components {
         };
         /** @enum {string} */
         Risk: "low" | "money" | "production" | "irreversible";
+        /** @description 감시 규칙 하나 */
+        Rule: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            /** @description from · words */
+            kind: string;
+            /** @description ask · fyi */
+            lane: string;
+            /** @description proposed · active · stopped */
+            state: string;
+            /** Format: date-time */
+            until: string;
+            value: string;
+        };
         SayInput: {
             /**
              * Format: uuid
@@ -1989,6 +2040,52 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_watch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"][];
+                };
+            };
+        };
+    };
+    stop_watch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"];
+                };
             };
             404: {
                 headers: {

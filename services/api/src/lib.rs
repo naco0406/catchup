@@ -20,4 +20,5 @@ pub mod passkeys;
 pub mod promises;
 pub mod push;
 pub mod vault;
+pub mod watch;
 pub mod worker;

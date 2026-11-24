@@ -42,7 +42,7 @@ export const ko: Messages = {
   generic: { reply: '알겠어요. 말씀하신 대로 선택지를 만들어 봤어요.', work: '남기신 말을 읽었어요', asSaid: '말씀하신 대로 답해요', notedDone: '하신 말을 남겨 뒀어요: “{{text}}”', asSaidDone: '말한 대로 답했어요: “{{text}}”' },
   memory: { count_one: '{{count}}개', count_other: '{{count}}개', tell: '토마토에게 알려 주기', tellPh: '기억해 둘 것', about: '기억이 생기는 곳', edit: '고치기', save: '저장', cancel: '취소', forget: '지우기', edited: '내가 고쳤어요', empty: '아직 아는 것이 없어요. 카드에 답하면 여기에 쌓여요.', promise: '내 답, 내가 고친 글, 내가 한 말, 끝난 코딩 세션에서만 생겨요. 지우면 다음 카드부터 쓰지 않아요.', kind: { promise: '내가 한 약속', preference: '내 말과 내가 고친 것', person: '사람과 정한 것', project: '프로젝트' },
     text: { decided: '‘{{q}}’에 ‘{{a}}’(으)로 답했어요', edited: '초안을 이렇게 고쳐 보냈어요: “{{a}}”', said: '이렇게 말했어요: “{{a}}”' } },
-  assistant: { ph: '기억할 것, 궁금한 것, 맡길 일을 말해 주세요', send: '보내기', examples: ['박서연 님 메일은 세 문장 안으로 써 줘', '박서연 님 견적은 어떻게 하기로 했지?', '서연 님 건은 B안으로 한다고 해 줘', 'shop 저장소에서 실패하는 테스트를 고쳐 줘'],
+  assistant: { ph: '기억할 것, 궁금한 것, 맡길 일을 말해 주세요', send: '보내기', examples: ['박서연 님 메일은 세 문장 안으로 써 줘', '박서연 님 견적은 어떻게 하기로 했지?', '서연 님 건은 B안으로 한다고 해 줘', 'shop 저장소에서 실패하는 테스트를 고쳐 줘', '금요일까지 한빛 디자인에서 오는 건 바로 물어봐 줘'],
     thinking: '생각하고 있어요…', failed: '지금은 답하지 못했어요', keep: '그대로 기억해 둬요', connect: '연결하기', remembered: '기억에 넣었어요', forgot: '기억에서 지웠어요', undo: '되돌리기', seeMemory: '토마토가 아는 것 보기',
     card: '이 카드를 말씀하시나요?', cardSay: '이 말로 답해요', cardSaid: '카드에 전했어요', seeCard: '카드 보기', cardGone: '이 카드는 이제 없어요',
     proposal: '코딩 세션 제안', noRepo: '빈 작업 폴더', start: '맡겨요', started: '맡겼어요', seeSession: '세션 보기',
@@ -60,4 +60,5 @@ export const ko: Messages = {
   keys: { title: '키', pick: '답 고르기', suggested: '추천대로', snooze: '미루기', myself: '내가 할게요', undo: '되돌리기', say: '다르게 답하기', talk: '토마토에게 말하기', menu: '메뉴' },
   src: { gmail: 'Gmail', calendar: '캘린더', slack: 'Slack', kakao: '카카오톡', github: 'GitHub', claude: 'Claude Code', codex: 'Codex', local: '로컬' },
   day: { clash: '겹쳐요', clear: '겹치지 않아요', stillClash: '아직 겹쳐요', cleared: '겹치는 일정이 없어져요', ifAgreed: '상대가 받아 주면 겹치지 않아요' },
+  watch: { title: '지켜보는 것', from: '“{{v}}” 쪽에서 온 것', words: '“{{v}}” 낱말이 들어간 글', ask: '바로 물어봐요', fyi: '알려만 드려요', until: '{{when}}까지', turnOn: '켜기', on: '켜져 있어요', stop: '멈추기', stopped: '멈췄어요', proposal: '지켜보기 규칙', about: '규칙은 나에게 올리기만 하고, 늘 끝나는 날이 있어요.' },
 };

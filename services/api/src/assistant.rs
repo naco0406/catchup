@@ -25,6 +25,7 @@ use crate::{
     },
     db::{Db, emit},
     error::{Error, Result},
+    watch,
 };
 
 const MAX_WORDS: usize = 2000;
@@ -55,6 +56,10 @@ pub struct Message {
     pub card_question: Option<String>,
     /// 가리킨 카드에 이 말을 전했어요
     pub accepted: bool,
+    /// 이 말이 제안한 감시 규칙(갈래가 watch 일 때). 내가 켜기 전까지 state 는 proposed 예요
+    #[sqlx(json(nullable))]
+    #[schema(value_type = Option<watch::Rule>)]
+    pub watch: Option<watch::Rule>,
     pub error_code: Option<String>,
     pub created_at: DateTime<Utc>,
 }
@@ -63,7 +68,11 @@ const VIEW: &str = "m.id, m.said, m.state, m.intent, m.reply, m.task, m.repo, \
     CASE WHEN m.note IS NOT NULL AND NOT EXISTS (SELECT 1 FROM catchup.memory_edits e \
       WHERE e.cell = m.cell AND e.key = 'note:' || m.note AND e.state = 'forgotten') THEN 'note:' || m.note END AS memory, \
     m.session, m.card, (SELECT d.question FROM catchup.decision_cards d WHERE d.cell = m.cell AND d.id = m.card) AS card_question, \
-    m.accepted_at IS NOT NULL AS accepted, m.error_code, m.created_at";
+    m.accepted_at IS NOT NULL AS accepted, \
+    (SELECT jsonb_build_object('id', w.id, 'kind', w.kind, 'value', w.value, 'lane', w.lane, 'until', w.until, 'state', \
+      CASE WHEN w.state = 'proposed' AND w.until <= now() THEN 'stopped' ELSE w.state END, 'created_at', w.created_at) \
+      FROM catchup.watch_rules w WHERE w.cell = m.cell AND w.message = m.id) AS watch, \
+    m.error_code, m.created_at";
 
 /// 모델이 정한 것. 믿지 않는 값이라 서버가 다시 걸러요
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -81,6 +90,9 @@ pub struct Routed {
     /// 기억할 것이 '보고 있던 카드의 사람 · 일'에 대한 것인지. 보고 있던 카드가 없으면 쓰지 않아요
     #[serde(default, rename = "about_looking_at")]
     pub about_seen: bool,
+    /// 감시 규칙(갈래가 watch 일 때만). 서버가 `watch::clean` 으로 다시 걸러요
+    #[serde(default)]
+    pub watch: watch::Asked,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -274,6 +286,19 @@ async fn finish(
     Ok(())
 }
 
+/// 규칙이 끝나는 날을 그 칸의 시간대로(12월 1일 · Dec 1)
+async fn until_day(conn: &mut PgConnection, rule: &watch::Rule, ko: bool) -> Result<String> {
+    let (month, day): (i32, i32) = sqlx::query_as(
+        "SELECT EXTRACT(MONTH FROM $1 AT TIME ZONE c.time_zone)::int, EXTRACT(DAY FROM $1 AT TIME ZONE c.time_zone)::int
+         FROM catchup.cells c WHERE c.cell = catchup.current_cell()",
+    )
+    .bind(rule.until)
+    .fetch_one(conn)
+    .await?;
+    const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    Ok(if ko { format!("{month}월 {day}일") } else { format!("{} {day}", MONTHS[(month.clamp(1, 12) - 1) as usize]) })
+}
+
 /// 가리킬 수 있는 카드인지 — 이 칸의, 열려 있는, 정할 일이 있는 카드만
 async fn open_card(conn: &mut PgConnection, card: Option<Uuid>) -> Result<bool> {
     let Some(card) = card else { return Ok(false) };
@@ -309,6 +334,12 @@ pub async fn settle(db: &Db, cell: Uuid, id: Uuid, routed: &Routed) -> Result<()
                 .bind(routed.card)
                 .execute(&mut *tx)
                 .await?;
+        }
+        "watch" if watch::clean(&routed.watch).is_some() => {
+            let clean = watch::clean(&routed.watch).expect("checked");
+            let rule = watch::propose(&mut tx, cell, id, &clean).await?;
+            let day = until_day(&mut tx, &rule, held.ko).await?;
+            finish(&mut tx, id, "watch", &watch::proposal(held.ko, &rule, &day), None, None, None).await?;
         }
         "task" if !task.is_empty() => {
             let reply = if held.ko { "코딩 세션으로 맡길까요?" } else { "Start a coding session for this?" };
@@ -402,6 +433,18 @@ pub async fn accept(db: &Db, cell: Uuid, id: Uuid) -> Result<Message> {
                 emit(&mut tx, "assistant", None).await?;
                 tx.commit().await?;
             }
+        }
+        (Some("watch"), _, _) => {
+            // 감시 규칙을 켜요. 이 말이 제안한 규칙만, 끝나는 날 전에만
+            let mut tx = db.cell_tx(cell).await?;
+            let rule = watch::of_message(&mut tx, id).await?.ok_or(Error::Conflict("nothing_to_accept"))?;
+            watch::start(&mut tx, rule.id).await?;
+            sqlx::query("UPDATE catchup.assistant_messages SET accepted_at = now() WHERE id = $1 AND accepted_at IS NULL")
+                .bind(id)
+                .execute(&mut *tx)
+                .await?;
+            emit(&mut tx, "assistant", None).await?;
+            tx.commit().await?;
         }
         _ => return Err(Error::Conflict("nothing_to_accept")),
     }

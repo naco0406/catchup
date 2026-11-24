@@ -1110,6 +1110,61 @@
           }
         }
       }
+    },
+    "/v1/me/watch": {
+      "get": {
+        "tags": [],
+        "summary": "켜져 있는 감시 규칙(design.md 17장 제안 2). 켜기는 토마토의 제안을 받아들이는 것(`/v1/me/assistant/{id}/accept`)이에요",
+        "operationId": "list_watch",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rule"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/watch/{id}/stop": {
+      "post": {
+        "tags": [],
+        "summary": "감시 규칙을 멈춰요. 여러 번 눌러도 같아요",
+        "operationId": "stop_watch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Rule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2076,6 +2131,17 @@
               "null"
             ],
             "description": "맡길 일의 제안. `session` 이 없으면 아직 맡기지 않은 것이에요"
+          },
+          "watch": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Rule",
+                "description": "이 말이 제안한 감시 규칙(갈래가 watch 일 때). 내가 켜기 전까지 state 는 proposed 예요"
+              }
+            ]
           }
         }
       },
@@ -2257,6 +2323,48 @@
           "production",
           "irreversible"
         ]
+      },
+      "Rule": {
+        "type": "object",
+        "description": "감시 규칙 하나",
+        "required": [
+          "id",
+          "kind",
+          "value",
+          "lane",
+          "until",
+          "state",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "description": "from · words"
+          },
+          "lane": {
+            "type": "string",
+            "description": "ask · fyi"
+          },
+          "state": {
+            "type": "string",
+            "description": "proposed · active · stopped"
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
       },
       "SayInput": {
         "type": "object",

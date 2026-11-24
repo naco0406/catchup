@@ -106,6 +106,17 @@ export function TalkTurn({ m, talk, onNav }: { m: Msg; talk: Talk; onNav: (r: Ta
             : <button type="button" className="cu-btn primary" disabled={!m.card_question} onClick={() => void act(async () => { const done = await call<Msg>('POST', `/me/assistant/${m.id}/accept`); onNav('catchup'); return done; })}>{t('assistant.cardSay')}</button>}
         </div>
       </>}
+      {m.state === 'done' && m.intent === 'watch' && m.watch && <>
+        <div className="cu-work"><I.bell aria-hidden /><span>{t('watch.proposal')}: {t(m.watch.kind === 'from' ? 'watch.from' : 'watch.words', { v: m.watch.value })}</span></div>
+        <p className="cu-reply">{m.reply}</p>
+        <div className="talk-acts">
+          {m.watch.state === 'active'
+            ? <><span className="cu-work"><I.check aria-hidden /><span>{t('watch.on')}</span></span><button type="button" className="cu-link" onClick={() => onNav('memory')}>{t('assistant.seeMemory')}</button></>
+            : m.watch.state === 'stopped'
+              ? <span className="cu-work"><span>{t('watch.stopped')}</span></span>
+              : <button type="button" className="cu-btn primary" onClick={() => void act(() => call<Msg>('POST', `/me/assistant/${m.id}/accept`))}>{t('watch.turnOn')}</button>}
+        </div>
+      </>}
       {m.state === 'done' && (m.intent === 'ask' || m.intent === 'unclear') && <>
         <p className="cu-reply">{m.reply}</p>
         {m.intent === 'unclear' && <div className="talk-acts"><button type="button" className="cu-link" onClick={() => void act(() => call<Msg>('POST', `/me/assistant/${m.id}/keep`))}>{t('assistant.keep')}</button></div>}

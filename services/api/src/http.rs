@@ -27,6 +27,7 @@ use crate::{
         sessions::{self, AgentSession, StartInput},
     },
     connections::{self, Connection},
+    watch::{self, Rule},
     crypto::Key,
     db::Db,
     error::{Error, Result},
@@ -79,6 +80,8 @@ pub fn router(app: App) -> Router {
         .route("/v1/me/assistant", get(assistant_thread).post(tell_assistant))
         .route("/v1/me/assistant/{id}/accept", post(accept_proposal))
         .route("/v1/me/assistant/{id}/keep", post(keep_words))
+        .route("/v1/me/watch", get(list_watch))
+        .route("/v1/me/watch/{id}/stop", post(stop_watch))
         .route("/v1/me/connections", get(list_connections))
         .route("/v1/me/connections/{id}", axum::routing::delete(disconnect))
         .route("/v1/me/codex", get(codex_status).delete(codex_logout))
@@ -428,6 +431,18 @@ async fn keep_words(State(app): State<App>, session: Session, Path(id): Path<Uui
     Ok(Json(assistant::keep(&app.db, session.cell, id).await?))
 }
 
+/// 켜져 있는 감시 규칙(design.md 17장 제안 2). 켜기는 토마토의 제안을 받아들이는 것(`/v1/me/assistant/{id}/accept`)이에요
+#[utoipa::path(get, path = "/v1/me/watch", responses((status = 200, body = Vec<Rule>)))]
+async fn list_watch(State(app): State<App>, session: Session) -> Result<Json<Vec<Rule>>> {
+    Ok(Json(watch::list(&app.db, session.cell).await?))
+}
+
+/// 감시 규칙을 멈춰요. 여러 번 눌러도 같아요
+#[utoipa::path(post, path = "/v1/me/watch/{id}/stop", params(("id" = Uuid, Path)), responses((status = 200, body = Rule), (status = 404)))]
+async fn stop_watch(State(app): State<App>, session: Session, Path(id): Path<Uuid>) -> Result<Json<Rule>> {
+    Ok(Json(watch::stop(&app.db, session.cell, id).await?))
+}
+
 #[utoipa::path(get, path = "/v1/me/connections", responses((status = 200, body = Vec<Connection>)))]
 async fn list_connections(State(app): State<App>, session: Session) -> Result<Json<Vec<Connection>>> {
     Ok(Json(connections::list(&app.db, session.cell).await?))
@@ -553,6 +568,8 @@ async fn session_patch(State(app): State<App>, session: Session, Path(id): Path<
         tell_assistant,
         accept_proposal,
         keep_words,
+        list_watch,
+        stop_watch,
         list_connections,
         disconnect,
         push_key,
@@ -568,6 +585,7 @@ async fn session_patch(State(app): State<App>, session: Session, Path(id): Path<
         session_patch
     ),
     components(schemas(
+        Rule,
         CodexStatus,
         Message,
         AgentSession,

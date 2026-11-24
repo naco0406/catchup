@@ -25,6 +25,7 @@ use crate::{
     db::Db,
     error::{Error, Result},
     model::{CardOption, Effect, NewCard, Risk},
+    watch,
 };
 
 const MAX_TEXT: usize = 20_000;
@@ -465,6 +466,18 @@ pub async fn settle(db: &Db, cell: Uuid, item: Uuid, sorted: &Sorted, by: &str) 
         // 모르는 갈래는 올려요
         _ => "ask",
     };
+    // 내가 켠 감시 규칙(design.md 17장 제안 2)은 갈래를 올리기만 해요. 넘겨요 → 알려만 드려요 → 물어봐요
+    let watched = watch::raise_for(&mut tx, lane, &held.sender, &held.org, &held.subject, held.text.as_deref().unwrap_or_default()).await?;
+    let lane = match &watched {
+        Some((_, rule_lane)) if rule_lane == "ask" => "ask",
+        Some(_) => "fyi",
+        None => lane,
+    };
+    let reason = match &watched {
+        Some(_) if held.ko => clip(&format!("감시 규칙으로 올렸어요. {}", sorted.reason), 300),
+        Some(_) => clip(&format!("Raised by a watch rule. {}", sorted.reason), 300),
+        None => sorted.reason.clone(),
+    };
     let question = clip(&sorted.question, 300);
     let summary: Vec<String> = sorted.summary.iter().map(|line| clip(line, 300)).filter(|line| !line.is_empty()).take(4).collect();
     let card = match lane {
@@ -498,7 +511,10 @@ pub async fn settle(db: &Db, cell: Uuid, item: Uuid, sorted: &Sorted, by: &str) 
             Some(put_card(&mut tx, cell, item, &held, draft).await?)
         }
     };
-    mark(&mut tx, item, lane, &sorted.reason, by, card, &excerpt).await?;
+    mark(&mut tx, item, lane, &reason, by, card, &excerpt).await?;
+    if let Some((rule, _)) = watched {
+        sqlx::query("UPDATE catchup.inbox_items SET watched = $2 WHERE id = $1").bind(item).bind(rule).execute(&mut *tx).await?;
+    }
     tx.commit().await?;
     Ok(card)
 }

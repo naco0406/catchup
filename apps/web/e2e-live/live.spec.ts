@@ -253,7 +253,7 @@ test('토마토에게 한 말은 모델이 없어도 남고, 그대로 기억해
   const me = await signIn(page, []);
   await expect(page.getByText('다 봤어요')).toBeVisible();
   await page.evaluate(() => { location.hash = '#/assistant'; });
-  await expect(page.locator('.talk-examples button')).toHaveCount(4);
+  await expect(page.locator('.talk-examples button')).toHaveCount(5); // 다섯째 갈래(지켜보기)의 예시가 더해졌어요
   await page.getByRole('textbox', { name: '토마토에게 말하기' }).fill('서연 님 메일은 세 문장 안으로 써 줘');
   await page.getByRole('button', { name: '보내기' }).click();
   const turn = page.locator('[data-talk]').filter({ hasText: '세 문장 안으로' });

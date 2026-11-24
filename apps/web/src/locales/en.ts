@@ -40,7 +40,7 @@ export const en = {
   generic: { reply: 'Got it. Here’s a new option based on what you said.', work: 'Read your note', asSaid: 'Answer the way you said', notedDone: 'Noted your words: “{{text}}”', asSaidDone: 'Answered in your words: “{{text}}”' },
   memory: { count_one: '{{count}} item', count_other: '{{count}} items', tell: 'Tell Tomato', tellPh: 'Something to remember', about: 'Where this comes from', edit: 'Edit', save: 'Save', cancel: 'Cancel', forget: 'Forget', edited: 'Edited by you', empty: 'Nothing yet. It builds up as you answer cards.', promise: 'Only your answers, your edits, your own words and finished coding sessions. Forgotten items stop being used from the next card.', kind: { promise: 'Promises you made', preference: 'Your words and edits', person: 'Decisions with people', project: 'Projects' },
     text: { decided: 'Answered “{{a}}” to “{{q}}”', edited: 'You rewrote the draft: “{{a}}”', said: 'You said: “{{a}}”' } },
-  assistant: { ph: 'Remember, ask, or hand off', send: 'Send', examples: ['Keep emails to Seoyeon under three sentences', 'What did we decide on Seoyeon’s quote?', 'Tell Seoyeon we’re going with plan B', 'Fix the failing tests in the shop repo'],
+  assistant: { ph: 'Remember, ask, or hand off', send: 'Send', examples: ['Keep emails to Seoyeon under three sentences', 'What did we decide on Seoyeon’s quote?', 'Tell Seoyeon we’re going with plan B', 'Fix the failing tests in the shop repo', 'Until Friday, ask me about anything from Hanbit Design'],
     thinking: 'Thinking…', failed: 'Couldn’t answer right now', keep: 'Remember it as is', connect: 'Connect', remembered: 'Saved to memory', forgot: 'Removed from memory', undo: 'Undo', seeMemory: 'See what Tomato knows',
     card: 'Is this the card you mean?', cardSay: 'Answer with these words', cardSaid: 'Passed to the card', seeCard: 'See card', cardGone: 'This card is gone',
     proposal: 'Coding session proposal', noRepo: 'empty workspace', start: 'Hand it off', started: 'Handed off', seeSession: 'See session',
@@ -58,5 +58,6 @@ export const en = {
   keys: { title: 'Keys', pick: 'Pick an answer', suggested: 'Go with suggestion', snooze: 'Snooze', myself: 'I’ll do it', undo: 'Undo', say: 'Answer differently', talk: 'Talk to Tomato', menu: 'Menu' },
   src: { gmail: 'Gmail', calendar: 'Calendar', slack: 'Slack', kakao: 'KakaoTalk', github: 'GitHub', claude: 'Claude Code', codex: 'Codex', local: 'Local' },
   day: { clash: 'Overlaps', clear: 'No overlap', stillClash: 'Still overlaps', cleared: 'No overlap left', ifAgreed: 'No overlap if they agree' },
+  watch: { title: 'Watching', from: 'From “{{v}}”', words: 'Mentioning “{{v}}”', ask: 'Asks you', fyi: 'Shows you', until: 'until {{when}}', turnOn: 'Turn on', on: 'On', stop: 'Stop', stopped: 'Stopped', proposal: 'A watch rule', about: 'Rules only bring things up to you, and every rule ends.' },
 };
 export type Messages = typeof en;

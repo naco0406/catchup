@@ -20,6 +20,7 @@ use catchup_api::{
     error::Error,
     executor::{Action, Executor, Found, Outcome, Revision, Source, Task},
     inbox::{self, Choice, Incoming, Sorted},
+    watch,
     memory,
     model::{AnswerInput, Card, CardOption, Effect, NewCard, Receipt, Risk, Surface},
     passkeys,
@@ -910,7 +911,7 @@ async fn a_context_pack_carries_what_is_known_and_is_logged() {
 // ─── 3.6단계: 비서에게 말하기(명령이 들어오는 셋째 길) · 약속
 
 fn routed(intent: &str, reply: &str, task: &str, repo: &str) -> Routed {
-    Routed { intent: intent.into(), reply: reply.into(), task: task.into(), repo: repo.into(), card: None, about_seen: false }
+    Routed { intent: intent.into(), reply: reply.into(), task: task.into(), repo: repo.into(), ..Routed::default() }
 }
 
 /// 비서에게 말하면 먼저 받아 두고(생각 중), 갈래가 정해지면 그대로 처리해요. '기억해'로 남는 것은 내 말 그대로예요
@@ -2036,4 +2037,85 @@ async fn a_message_is_never_lost_and_a_skipped_one_can_be_raised() {
     assert_eq!(fixed, ("skip".to_owned(), Some("ask".to_owned())));
     let stranger = w.cell().await;
     assert!(matches!(inbox::raise(&w.db, stranger, item.id).await, Err(Error::NotFound)));
+}
+
+fn skipped() -> Sorted {
+    Sorted { lane: "skip".into(), reason: "자동으로 온 글".into(), ..Sorted::default() }
+}
+
+fn automatic(id: &str, org: &str, subject: &str) -> Incoming {
+    Incoming { org: org.into(), subject: subject.into(), direct: false, auto: true, ..mail(id, "noreply@hanbit.example", "자동 알림이에요") }
+}
+
+async fn lane_of(w: &World, cell: Uuid, id: &str) -> (String, bool) {
+    let item = inbox::next(&w.db, cell).await.unwrap().expect("가를 것");
+    let card = inbox::settle(&w.db, cell, item.id, &skipped(), "model").await.unwrap();
+    let entry = inbox::list(&w.db, cell).await.unwrap().into_iter().find(|e| e.id == item.id).unwrap_or_else(|| panic!("{id}"));
+    (entry.lane, card.is_some())
+}
+
+/// 말로 만든 감시 규칙(design.md 17장 제안 2): 토마토는 제안만 하고 내가 켜야 적용돼요.
+/// 켠 규칙은 갈래를 올리기만 하고(넘겨요 → 물어봐요), 다른 칸에는 닿지 않고, 멈추면 바로 그쳐요
+#[tokio::test]
+async fn a_watch_rule_only_raises_and_only_after_i_turn_it_on() {
+    let mut w = World::new().await;
+    let (cell, other) = (w.cell().await, w.cell().await);
+    let said = assistant::say(&w.db, cell, Uuid::new_v4(), "다음 주까지 한빛 디자인에서 오는 건 다 넘겨 줘").await.unwrap();
+    let mut model = routed("watch", "", "", "");
+    model.watch = watch::Asked { kind: "from".into(), value: "한빛 디자인".into(), lane: "skip".into(), days: 400 };
+    assistant::settle(&w.db, cell, said.id, &model).await.unwrap();
+    let proposed = assistant::list(&w.db, cell).await.unwrap().remove(0);
+    let rule = proposed.watch.clone().expect("제안된 규칙");
+    assert_eq!((proposed.intent.as_deref(), rule.state.as_str(), rule.lane.as_str()), (Some("watch"), "proposed", "ask"), "넘겨 달라고 해도 올리는 쪽으로만");
+    assert!(rule.until <= chrono::Utc::now() + chrono::Duration::days(31), "끝나는 날은 30일 안");
+    assert!(proposed.reply.unwrap().contains("한빛 디자인"));
+    assert!(watch::list(&w.db, cell).await.unwrap().is_empty(), "켜기 전에는 적용되지 않아요");
+
+    inbox::receive(&w.db, cell, "local", &[automatic("w1", "한빛 디자인", "견적서 갱신")]).await.unwrap();
+    assert_eq!(lane_of(&w, cell, "w1").await, ("skip".into(), false), "켜기 전에는 모델대로 넘겨요");
+
+    let on = assistant::accept(&w.db, cell, said.id).await.unwrap();
+    assert_eq!(on.watch.unwrap().state, "active");
+    assert_eq!(assistant::accept(&w.db, cell, said.id).await.unwrap().watch.unwrap().state, "active", "두 번 눌러도 같아요");
+    assert_eq!(watch::list(&w.db, cell).await.unwrap().len(), 1);
+
+    // 한 통씩 받아요(같이 받으면 받은 시각이 같아 가르는 순서가 정해지지 않아요)
+    inbox::receive(&w.db, cell, "local", &[automatic("w2", "한빛 디자인", "견적서 갱신")]).await.unwrap();
+    assert_eq!(lane_of(&w, cell, "w2").await, ("ask".into(), true), "맞는 글은 물어봐요로 올려요");
+    inbox::receive(&w.db, cell, "local", &[automatic("w3", "다른 회사", "견적서 갱신")]).await.unwrap();
+    assert_eq!(lane_of(&w, cell, "w3").await, ("skip".into(), false), "맞지 않는 글은 그대로");
+
+    inbox::receive(&w.db, other, "local", &[automatic("w4", "한빛 디자인", "견적서 갱신")]).await.unwrap();
+    assert_eq!(lane_of(&w, other, "w4").await, ("skip".into(), false), "다른 칸에는 닿지 않아요");
+    assert!(matches!(watch::stop(&w.db, other, rule.id).await, Err(Error::NotFound)), "다른 칸의 규칙은 멈출 수도 없어요");
+
+    // 알려만 드려요로 올리는 규칙은 물어봐요를 내리지 않아요
+    let fyi = assistant::say(&w.db, cell, Uuid::new_v4(), "청구서는 알려만 줘").await.unwrap();
+    let mut model = routed("watch", "", "", "");
+    model.watch = watch::Asked { kind: "words".into(), value: "청구".into(), lane: "fyi".into(), days: 3 };
+    assistant::settle(&w.db, cell, fyi.id, &model).await.unwrap();
+    assistant::accept(&w.db, cell, fyi.id).await.unwrap();
+    inbox::receive(&w.db, cell, "local", &[mail("w5", "김하나", "이번 달 청구서예요. 금요일까지 확인해 주세요")]).await.unwrap();
+    let item = inbox::next(&w.db, cell).await.unwrap().unwrap();
+    inbox::settle(&w.db, cell, item.id, &ask("확인할까요?", vec![choice("확인했어요", "확인했어요", "low")], 0), "model").await.unwrap();
+    assert_eq!(inbox::list(&w.db, cell).await.unwrap().into_iter().find(|e| e.id == item.id).unwrap().lane, "ask", "내리지 않아요");
+
+    watch::stop(&w.db, cell, rule.id).await.unwrap();
+    watch::stop(&w.db, cell, rule.id).await.unwrap();
+    inbox::receive(&w.db, cell, "local", &[automatic("w6", "한빛 디자인", "견적서 갱신")]).await.unwrap();
+    assert_eq!(lane_of(&w, cell, "w6").await, ("skip".into(), false), "멈추면 바로 그쳐요");
+    assert!(matches!(assistant::accept(&w.db, cell, said.id).await, Err(Error::Conflict("stopped"))), "멈춘 규칙은 다시 켜지 않아요");
+}
+
+/// 무엇을 볼지 모르는 규칙은 만들지 않고, 되물어요
+#[tokio::test]
+async fn a_watch_without_a_target_is_not_made() {
+    let mut w = World::new().await;
+    let cell = w.cell().await;
+    let said = assistant::say(&w.db, cell, Uuid::new_v4(), "중요한 건 다 알려 줘").await.unwrap();
+    let mut model = routed("watch", "무엇을 볼까요?", "", "");
+    model.watch = watch::Asked { kind: "rule".into(), value: "everything important".into(), lane: "ask".into(), days: 7 };
+    assistant::settle(&w.db, cell, said.id, &model).await.unwrap();
+    let m = assistant::list(&w.db, cell).await.unwrap().remove(0);
+    assert_eq!((m.intent.as_deref(), m.watch.is_none()), (Some("unclear"), true));
 }
