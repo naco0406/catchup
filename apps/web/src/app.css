@@ -275,11 +275,13 @@ button.list-row:focus-visible { outline: none; box-shadow: var(--cu-focus); bord
   .cu-opt.rec::before { background: var(--cu-accent-soft); box-shadow: inset 0 0 0 2px var(--cu-accent); }
   .cu-opt.confirm::before { box-shadow: inset 0 0 0 2px var(--cu-fg); }
   .cu-opt.picked::before { background: var(--cu-accent); box-shadow: none; }
-  /* 차오르는 줄: 알약만 차올라요 — 겹친 줄의 이유는 숨기고 아래 줄의 것이 그대로 보여요 */
-  .cu-opt.picked > .d, .cu-opt.held > .d { visibility: hidden; }
-  .cu-opt.held { --held-r: 24px; }
+  /* 차오르는 줄: 알약만 차올라요 — 겹친 줄에는 이유를 그리지 않고, 아래 줄의 것이 그대로 보여요 */
+  /* 겹친 줄은 알약 높이까지만이에요. 이유 글까지 덮으면 자르는 모서리의 아래쪽이 알약 밖으로 나가서, 차오르는 끝이 위만 둥글어 보여요 */
+  .cu-fill > .cu-opt.picked, .cu-fill > .cu-opt.held { bottom: auto; }
+  .cu-opt.picked > .d, .cu-opt.held > .d { display: none; }
+  .cu-opt.held { --held-r: var(--cu-r-full); }
   .cu-opt.held::before { background: var(--cu-bg-inverse); box-shadow: none; }
-  .cu-fill > .cu-opt.picked { clip-path: inset(0 calc((1 - var(--f, 0)) * 100%) 0 0 round 24px); }
+  .cu-fill > .cu-opt.picked { clip-path: inset(0 calc((1 - var(--f, 0)) * 100%) 0 0 round var(--cu-r-full)); }
   button.cu-opt:not(.rec):not(.confirm):hover { box-shadow: none; }
   .cu-opt .r .cu-rec, .cu-opt .r .cu-kbd { display: none; }
   /* 보낸 곳 — 이름과 기한이 한 줄, 자세한 곳은 다음 줄 */
